@@ -29,11 +29,11 @@ async function ds4_info() {
     var hw_ver_minor= view.getUint16(0x23, true)
     var sw_ver_major= view.getUint32(0x25, true)
     var sw_ver_minor= view.getUint16(0x25+4, true)
-    var ooc = "unknown";
+    var ooc = "未知";
 
     try {
         const view = await device.receiveFeatureReport(0x81);
-        ooc = "original";
+        ooc = "原厂";
     } catch(e) {
         ooc = "<font color='red'><b>克隆</b></font>";
         disable_btn = true;
@@ -868,15 +868,15 @@ async function calib_step(i) {
     }
 
     if(i == 2) {
-        $("#calibNextText").text("Initializing...");
+        $("#calibNextText").text("初始化中...");
         await new Promise(r => setTimeout(r, 100));
         ret = await multi_calib_sticks_begin(pc);
     } else if(i == 6) {
-        $("#calibNextText").text("Storing calibration...");
+        $("#calibNextText").text("存储校准结果中...");
         await new Promise(r => setTimeout(r, 100));
         ret = await multi_calib_sticks_end(pc);
     } else if(i > 2 && i < 6){
-        $("#calibNextText").text("Sampling...");
+        $("#calibNextText").text("采样中...");
         await new Promise(r => setTimeout(r, 100));
         ret = await multi_calib_sticks_sample();
     }

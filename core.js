@@ -35,14 +35,14 @@ async function ds4_info() {
         const view = await device.receiveFeatureReport(0x81);
         ooc = "original";
     } catch(e) {
-        ooc = "<font color='red'><b>clone</b></font>";
+        ooc = "<font color='red'><b>克隆</b></font>";
         disable_btn = true;
     }
     clear_info();
-    append_info("Firmware Date: ", k1 + " " + k2);
-    append_info("HW Version:", "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
-    append_info("SW Version:", dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
-    append_info("Device Type:", ooc);
+    append_info("固件日期: ", k1 + " " + k2);
+    append_info("硬件版本:", "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
+    append_info("软件版本:", dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
+    append_info("设备类型:", ooc);
     return true;
 }
 
@@ -66,7 +66,7 @@ try {
         await ds4_nvunlock();
         if(await ds4_nvstatus() != 0) {
             close_calibrate_window();
-            return show_popup("Range calibration failed: cannot unlock NV.");
+            return show_popup("外圈校准失败：无法解锁NV。");
         }
     }
 
@@ -78,12 +78,12 @@ try {
     data2 = await device.receiveFeatureReport(0x92)
     if(data.getUint32(0, false) != 0x91010201 || data2.getUint32(0, false) != 0x920102ff) {
         close_calibrate_window();
-        return show_popup("Range calibration failed: error 1.");
+        return show_popup("外圈校准失败：错误 1。");
     }
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
+    return show_popup("校准失败：" + e);
 }
 }
 
@@ -96,23 +96,23 @@ try {
     data2 = await device.receiveFeatureReport(0x92)
     if(data.getUint32(0, false) != 0x91010202 || data2.getUint32(0, false) != 0x92010201) {
         close_calibrate_window();
-        return show_popup("Range calibration failed: error 3.");
+        return show_popup("外圈校准失败：错误 3。");
     }
 
     if(perm_ch) {
         await ds4_nvlock();
         if(await ds4_nvstatus() != 1) {
             close_calibrate_window();
-            return show_popup("Range calibration failed: cannot relock NV.");
+            return show_popup("外圈校准失败：无法重新锁定NV。");
         }
     }
 
     close_calibrate_window();
-    show_popup("Range calibration completed");
+    show_popup("外圈校准完成");
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
+    return show_popup("校准失败：" + e);
 }
 }
 
@@ -121,7 +121,7 @@ async function ds4_calibrate_sticks_begin(has_perm_changes) {
         if(has_perm_changes) {
             await ds4_nvunlock();
             if(await ds4_nvstatus() != 0) {
-                show_popup("Calibration failed: cannot unlock NV.");
+                show_popup("外圈校准失败：无法解锁NV。");
                 return false;
             }
         }
@@ -133,14 +133,14 @@ async function ds4_calibrate_sticks_begin(has_perm_changes) {
         data = await device.receiveFeatureReport(0x91)
         data2 = await device.receiveFeatureReport(0x92)
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
-            show_popup("Calibration failed: error 1.");
+            show_popup("校准失败：错误 1。");
             return false;
         }
 
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup("校准失败: " + e);
         return false;
     }
 }
@@ -157,13 +157,13 @@ async function ds4_calibrate_sticks_sample() {
             close_calibrate_window();
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
-            show_popup("Calibration failed: error 2 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+            show_popup("校准失败: 错误 2 (获取 " + d1 + ", " + d2 + " 在 i=" + i + ")");
             return false;
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup("校准失败: " + e);
         return false;
     }
 }
@@ -175,14 +175,14 @@ async function ds4_calibrate_sticks_end(has_perm_changes) {
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
-            show_popup("Calibration failed: error 3 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+            show_popup("校准失败: 错误 3 (获取 " + d1 + ", " + d2 + " 在 i=" + i + ")");
             return false;
         }
 
         if(has_perm_changes) {
             await ds4_nvlock();
             if(await ds4_nvstatus() != 1) {
-                show_popup("Calibration failed: cannot relock NV.");
+                show_popup("外圈校准失败：无法重新锁定NV。");
                 return false;
             }
         }
@@ -190,7 +190,7 @@ async function ds4_calibrate_sticks_end(has_perm_changes) {
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup("校准失败: " + e);
         return false;
     }
 }
@@ -207,7 +207,7 @@ try {
     data2 = await device.receiveFeatureReport(0x92)
     if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
         close_calibrate_window();
-        return show_popup("Calibration failed: error 1.");
+        return show_popup("校准失败：错误 1。");
     }
 
     set_progress(10);
@@ -224,7 +224,7 @@ try {
             close_calibrate_window();
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
-            return show_popup("Calibration failed: error 2 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+            return show_popup("校准失败: 错误 2 (got " + d1 + ", " + d2 + " at i=" + i + ")");
         }
 
         await new Promise(r => setTimeout(r, 500));
@@ -237,17 +237,17 @@ try {
         d1 = dec2hex32(data.getUint32(0, false));
         d2 = dec2hex32(data2.getUint32(0, false));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 3 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+        return show_popup("校准失败: 错误 3 (got " + d1 + ", " + d2 + " at i=" + i + ")");
     }
 
     set_progress(100);
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window()
-    show_popup("Calibration completed successfully");
+    show_popup("校准成功完成！");
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
+    return show_popup("校准失败: " + e);
 }
 }
 
@@ -257,11 +257,11 @@ async function ds4_nvstatus() {
     // 1: temporary, 0: permanent
     ret = data.getUint8(1, false);
     if(ret == 1) {
-        $("#d-nvstatus").html("<font color='green'>locked</font>");
+        $("#d-nvstatus").html("<font color='green'>锁定</font>");
     } else if(ret == 0) {
-        $("#d-nvstatus").html("<font color='red'>unlocked</font>");
+        $("#d-nvstatus").html("<font color='red'>解锁</font>");
     } else {
-        $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
+        $("#d-nvstatus").html("<font color='purple'>未知 " + ret + "</font>");
     }
     return ret;
 }
@@ -272,17 +272,17 @@ try {
     data = await device.receiveFeatureReport(0x81)
     ret = data.getUint32(1, false);
     if(ret == 0x03030201) {
-        $("#d-nvstatus").html("<font color='green'>locked</font>");
+        $("#d-nvstatus").html("<font color='green'>锁定</font>");
         return 1; // temporary
     } else if(ret == 0x03030200) {
-        $("#d-nvstatus").html("<font color='red'>unlocked</font>");
+        $("#d-nvstatus").html("<font color='red'>解锁</font>");
         return 0; // permanent
     } else {
-        $("#d-nvstatus").html("<font color='purple'>unk " + dec2hex32(ret) + "</font>");
+        $("#d-nvstatus").html("<font color='purple'>未知 " + dec2hex32(ret) + "</font>");
         return ret; // unknown
     }
 } catch(e) {
-    $("#d-nvstatus").html("<font color='red'>error</font>");
+    $("#d-nvstatus").html("<font color='red'>错误</font>");
     return 2; // error
 }
 }
@@ -303,7 +303,7 @@ try {
     $("#d-bdaddr").text(out);
     return out;
 } catch(e) {
-    $("#d-bdaddr").html("<font color='red'>error</font>");
+    $("#d-bdaddr").html("<font color='red'>错误</font>");
     return "error";
 }
 }
@@ -341,17 +341,17 @@ async function ds5_info() {
 
     clear_info();
 
-    append_info("Build Time: ", build_date + " " + build_time);
-    append_info("Firmware Type:", "0x" + dec2hex(fwtype));
-    append_info("SW Series:", "0x" + dec2hex(swseries));
-    append_info("HW Info:", "0x" + dec2hex32(hwinfo));
-    append_info("FW Version:", "0x" + dec2hex32(fwversion));
+    append_info("构建时间: ", build_date + " " + build_time);
+    append_info("固件类型:", "0x" + dec2hex(fwtype));
+    append_info("软件系列:", "0x" + dec2hex(swseries));
+    append_info("硬件信息:", "0x" + dec2hex32(hwinfo));
+    append_info("固件版本:", "0x" + dec2hex32(fwversion));
     //append_info("deviceinfo:", deviceinfo);
-    append_info("UPD Version:", "0x" + dec2hex(updversion));
+    append_info("UPD版本:", "0x" + dec2hex(updversion));
     //append_info("Unknown:", "0x" + dec2hex(unk));
-    append_info("FW Version1:", "0x" + dec2hex32(fwversion1));
-    append_info("FW Version2:", "0x" + dec2hex32(fwversion2));
-    append_info("FW Version3:", "0x" + dec2hex32(fwversion3));
+    append_info("固件版本1:", "0x" + dec2hex32(fwversion1));
+    append_info("固件版本2:", "0x" + dec2hex32(fwversion2));
+    append_info("固件版本3:", "0x" + dec2hex32(fwversion3));
     return true;
 }
 
@@ -361,7 +361,7 @@ async function ds5_calibrate_sticks_begin(has_perm_changes) {
         if(has_perm_changes) {
             await ds5_nvunlock();
             if(await ds5_nvstatus() != 0) {
-                show_popup("Range calibration failed: cannot unlock NVS.");
+                show_popup("外圈校准失败: 无法解锁NVS。");
                 return false;
             }
         }
@@ -372,13 +372,13 @@ async function ds5_calibrate_sticks_begin(has_perm_changes) {
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
-            show_popup("Calibration failed: error 1 (got " + d1 + ").");
+            show_popup("校准失败: 错误 1 (got " + d1 + ").");
             return false;
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup("校准失败: " + e);
         return false;
     }
 }
@@ -393,13 +393,13 @@ async function ds5_calibrate_sticks_sample() {
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
-            show_popup("Calibration failed: error 2 (got " + d1 + ").");
+            show_popup("校准失败: error 2 (got " + d1 + ").");
             return false;
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup("校准失败: " + e);
         return false;
     }
 }
@@ -413,21 +413,21 @@ async function ds5_calibrate_sticks_end(has_perm_changes) {
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010102) {
             d1 = dec2hex32(data.getUint32(0, false));
-            show_popup("Calibration failed: error 3 (got " + d1 + ").");
+            show_popup("校准失败: error 3 (got " + d1 + ").");
             return false;
         }
 
         if(has_perm_changes) {
             await ds5_nvlock();
             if(await ds5_nvstatus() != 1) {
-                show_popup("Range calibration failed: cannot relock NVS.");
+                show_popup("Range 校准失败: cannot relock NVS.");
                 return false;
             }
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup("校准失败: " + e);
         return false;
     }
 }
@@ -444,7 +444,7 @@ try {
     if(data.getUint32(0, false) != 0x83010101) {
         d1 = dec2hex32(data.getUint32(0, false));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 1 (got " + d1 + ").");
+        return show_popup("校准失败: error 1 (got " + d1 + ").");
     }
 
     set_progress(10);
@@ -460,7 +460,7 @@ try {
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
             close_calibrate_window();
-            return show_popup("Calibration failed: error 2 (got " + d1 + ").");
+            return show_popup("校准失败: error 2 (got " + d1 + ").");
         }
 
         await new Promise(r => setTimeout(r, 500));
@@ -477,7 +477,7 @@ try {
     if(data.getUint32(0, false) != 0x83010102) {
         d1 = dec2hex32(data.getUint32(0, false));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 3 (got " + d1 + ").");
+        return show_popup("校准失败: error 3 (got " + d1 + ").");
     }
 
     set_progress(100);
@@ -485,11 +485,11 @@ try {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window()
 
-    show_popup("Calibration completed successfully");
+    show_popup("校准成功完成！");
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
+    return show_popup("校准失败: " + e);
 }
 }
 
@@ -499,7 +499,7 @@ try {
         await ds5_nvunlock();
         if(await ds5_nvstatus() != 0) {
             close_calibrate_window();
-            return show_popup("Range calibration failed: cannot unlock NVS.");
+            return show_popup("外圈校准失败: 无法解锁NVS。");
         }
     }
 
@@ -511,12 +511,12 @@ try {
     if(data.getUint32(0, false) != 0x83010201) {
         d1 = dec2hex32(data.getUint32(0, false));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 1 (got " + d1 + ").");
+        return show_popup("校准失败: error 1 (got " + d1 + ").");
     }
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
+    return show_popup("校准失败: " + e);
 }
 }
 
@@ -530,23 +530,23 @@ try {
     if(data.getUint32(0, false) != 0x83010202) {
         d1 = dec2hex32(data.getUint32(0, false));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 1 (got " + d1 + ").");
+        return show_popup("校准失败: error 1 (got " + d1 + ").");
     }
 
     if(perm_ch) {
         await ds5_nvlock();
         if(await ds5_nvstatus() != 1) {
             close_calibrate_window();
-            return show_popup("Range calibration failed: cannot relock NVS.");
+            return show_popup("Range 校准失败: cannot relock NVS.");
         }
     }
 
     close_calibrate_window();
-    show_popup("Range calibration completed");
+    show_popup("校准成功完成！");
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
+    return show_popup("校准失败: " + e);
 }
 }
 
@@ -640,7 +640,7 @@ try {
 
     if (devices.length > 1) {
         $("#btnconnect").prop("disabled", false);
-        show_popup("Please connect only one controller at time.");
+        show_popup("请一次只连接一个手柄。");
         return;
     }
 
@@ -676,7 +676,7 @@ try {
         }
     } else {
         $("#btnconnect").prop("disabled", false);
-        show_popup("Connected invalid device: " + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
+        show_popup("已连接无效设备: " + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
         disconnect();
         return;
     }
@@ -693,9 +693,9 @@ try {
 
     if(disable_btn) {
         if(device.productId == 0x0df2) {
-            show_popup("Calibration of the DualSense Edge is not currently supported.");
+            show_popup("目前不支持对DualSense Edge进行校准。");
         } else {
-            show_popup("The device appears to be a DS4 clone. All functionalities are disabled.");
+            show_popup("该设备似乎是DS4的克隆版本。所有功能都已禁用。");
         }
     }
 
@@ -900,16 +900,16 @@ async function calib_step(i) {
     $("#list-" + i + "-calib").addClass("active");
 
     if(i == 1) {
-        $("#calibTitle").text("Stick center calibration");
-        $("#calibNextText").text("Start");
+        $("#calibTitle").text("摇杆中心校准");
+        $("#calibNextText").text("开始");
     }
     else if(i == 6) {
-        $("#calibTitle").text("Stick center calibration");
-        $("#calibNextText").text("Done");
+        $("#calibTitle").text("摇杆中心校准");
+        $("#calibNextText").text("完毕");
     }
     else {
-        $("#calibTitle").html("Calibration in progress");
-        $("#calibNextText").text("Continue");
+        $("#calibTitle").html("校准中");
+        $("#calibNextText").text("继续");
     }
     if(i == 1 || i == 6)
         $("#calibCross").show();

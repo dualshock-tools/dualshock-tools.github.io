@@ -846,6 +846,8 @@ function show_popup(text) {
     new bootstrap.Modal(document.getElementById('popupModal'), {}).show()
 }
 
+function discord_popup() { show_popup("My handle on discord is: the_al"); }
+
 function calib_perm_changes() { return $("#calibPermanentChanges").is(':checked') }
 
 function reset_calib_perm_changes() { 

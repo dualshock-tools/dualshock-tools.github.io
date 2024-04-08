@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DualShock Calibration GUI</title>
+<title>手柄校准图形界面</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/fontawesome.min.css" integrity="sha384-BY+fdrpOd3gfeRvTSMT+VUZmA728cfF9Z2G42xpaRkUGu2i3DyzpTURDo5A6CaLK" crossorigin="anonymous">
@@ -28,27 +28,27 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <div class="container p-2">
-<h1>DualShock Calibration GUI</h1>
+<h1>手柄校准图形界面</h1>
 
 <div id="missinghid" style="display: none;">
-<p>Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).</p>
+<p>不支持的浏览器。请使用支持 WebHID 的浏览器（例如 Chrome）。</p>
 </div>
 
 <div id="offlinebar" class="vstack p-2" style="display: none;">
-<p>Connect a DualShock 4 or a DualSense to your computer and press Connect.</p>
-<button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">Connect</button><br>
+<p>将PS4手柄或PS5手柄连接到您的计算机，然后按 连接 按钮。</p>
+<button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">连接</button><br>
 </div>
 
 <div id="onlinebar" class="vstack p-2" style="display: none;">
-<div class="hstack gap-2"><p><b>Connected to:</b></p><p id="devname"></p></div>
-<button type="button" class="btn btn-outline-secondary" onclick="disconnect()">Disconnect</button><br>
+<div class="hstack gap-2"><p><b>已连接到：</b></p><p id="devname"></p></div>
+<button type="button" class="btn btn-outline-secondary" onclick="disconnect()">断开连接</button><br>
 </div>
 
 <div id="mainmenu" class="container" style="display: none;">
 <div class="row">
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-            <div class="card-header">Firmware Info</div>
+            <div class="card-header">固件信息</div>
 
             <div class="vstack p-2" id="fwinfo"> </div>
         </div>
@@ -57,26 +57,26 @@
 
     <div class="col-md-6 col-sm-12">
         <div class="vstack gap-2 p-2">
-            <button id="btnmcs2" type="button" class="btn btn-primary ds-btn" onclick="calib_open()">Calibrate stick center</button>
+            <button id="btnmcs2" type="button" class="btn btn-primary ds-btn" onclick="calib_open()">校准摇杆中心</button>
             <div class="hstack gap-2">
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_range(true)">Calibrate stick range (permanent)</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_range(false)">Calibrate stick range (temporary)</button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_range(true)">校准摇杆外圈（永久）</button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_range(false)">校准摇杆外圈（临时）</button>
             </div>
-            <button type="button" class="btn btn-danger ds-btn" onclick="multi_reset()" id="resetBtn">Reset controller</button>
+            <button type="button" class="btn btn-danger ds-btn" onclick="multi_reset()" id="resetBtn">重置手柄</button>
         </div>
     </div>
 </div>
 
 <div class="row">
-<p> Sections below are not useful, just some debug infos or manual commands</p>
+<p> 下面的部分不太有用，只是一些调试信息或手动命令</p>
 </div>
 <div class="row">
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-            <div class="card-header">Debug info</div>
+            <div class="card-header">调试信息</div>
             <div class="vstack p-2">
-                <div class="hstack"><p>NVS Status</p><p class="ms-auto" id="d-nvstatus">Unknown</p></div>
-                <div class="hstack"><p>BD Addr</p><p class="ms-auto" id="d-bdaddr">Unknown</p></div>
+                <div class="hstack"><p>NVS 状态</p><p class="ms-auto" id="d-nvstatus">未知</p></div>
+                <div class="hstack"><p>BD 地址</p><p class="ms-auto" id="d-bdaddr">未知</p></div>
             </div>
         </div>
         <br>
@@ -84,15 +84,15 @@
 
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-        <div class="card-header">Debug buttons</div>
+        <div class="card-header">调试按钮</div>
         <div class="vstack gap-2 p-2">
             <div class="hstack gap-2">
-                <button type="button" class="btn btn-success ds-btn" onclick="multi_nvstatus()">Query NVS status</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_nvsunlock()">NVS unlock</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_nvslock()">NVS lock</button>
+                <button type="button" class="btn btn-success ds-btn" onclick="multi_nvstatus()">查询 NVS 状态</button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="multi_nvsunlock()">NVS 解锁</button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="multi_nvslock()">NVS 锁定</button>
             </div>
-            <button type="button" class="btn btn-primary ds-btn" onclick="multi_getbdaddr()">Get BDAddr</button>
-            <button id="btnmcs" type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
+            <button type="button" class="btn btn-primary ds-btn" onclick="multi_getbdaddr()">获取 BD 地址</button>
+            <button id="btnmcs" type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_sticks()">快速校准摇杆中心（旧版）</button>
         </div>
         </div>
     </div>
@@ -105,7 +105,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="calibTitle">Stick Center calibration</h1>
+        <h1 class="modal-title fs-5" id="calibTitle">摇杆中心校准</h1>
         <button type="button" id="calibCross" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -113,66 +113,66 @@
         <div class="row">
             <div class="col-4">
                 <div class="list-group" id="list-tab">
-                <a class="list-group-item list-group-item-action active" id="list-1-calib">Welcome</a>
-                <a class="list-group-item list-group-item-action" id="list-2-calib">Step 1</a>
-                <a class="list-group-item list-group-item-action" id="list-3-calib">Step 2</a>
-                <a class="list-group-item list-group-item-action" id="list-4-calib">Step 3</a>
-                <a class="list-group-item list-group-item-action" id="list-5-calib">Step 4</a>
-                <a class="list-group-item list-group-item-action" id="list-6-calib">Completed</a>
+                <a class="list-group-item list-group-item-action active" id="list-1-calib">欢迎</a>
+                <a class="list-group-item list-group-item-action" id="list-2-calib">第 1 步</a>
+                <a class="list-group-item list-group-item-action" id="list-3-calib">第 2 步</a>
+                <a class="list-group-item list-group-item-action" id="list-4-calib">第 3 步</a>
+                <a class="list-group-item list-group-item-action" id="list-5-calib">第 4 步</a>
+                <a class="list-group-item list-group-item-action" id="list-6-calib">已完成</a>
                 </div>
             </div>
             <div class="col-8">
                 <div class="container" id="list-1">
-                    <h4>Welcome to the stick center-calibration wizard!</h4>
+                    <h4>欢迎来到摇杆中心校准向导！</h4>
 
-                    <p>This tool will guide you in re-centering the analog sticks of your controller.
-                    It consists in four steps: you will be asked to move both
-                    sticks in a direction and release them.</p>
+                    <p>此工具将指导您重新调整手柄的摇杆中心点。
+                      它由四个步骤组成：您将被要求将两个
+                      摇杆移动到一个方向并释放它们。</p>
 
-                    <p>Please be aware that, <i>once the calibration is running,
-                    it cannot be canceled</i>. Do not close this page or
-                    disconnect your controller until is completed.</p>
+                    <p>请注意，<i>一旦校准开始，
+                      就无法取消</i>。 不要关闭此页面或
+                      断开控制器，直到完成。</p>
 
-                    <h5>Calibration storage</h5>
+                    <h5>校准结果存储</h5>
 
-                    <p>By default the calibration is only saved in a volatile
-                    storage, so that if you (or this tool) mess something up, a
-                    reset of the controller is enough to make it work again. </p>
+                    <p>默认情况下，校准仅保存在易失性存储器中
+                      因此，如果您（或此工具）弄乱了某些东西，
+                      重置控制器就足以使其再次正常工作。 </p>
 
-                    <p>If you wish to store the calibration permanently in the controller, tick the checkbox below:</p>
+                    <p>如果您希望永久将校准存储在手柄中，请勾选下面的复选框：</p>
 
                     <input class="form-check-input" type="checkbox" value="" id="calibPermanentChanges">
                     <label class="form-check-label" for="calibPermanentChanges">
-                        Write changes permanently in the controller
+                      在手柄中永久写入更改
                     </label>
 
                     <br><br>
 
-                    <p>Press <b>Start</b> to begin calibration.</p>
+                    <p>按 <b>开始</b> 开始校准。</p>
 
                 </div>
                 <div class="container" style="display: none;" id="list-2">
-                    <p>Please move both sticks to the <b>top-left corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p>请将两个摇杆移动到 <b>左上角</b> 并释放它们。</p>
+                    <p>当摇杆回到中心时，请按 <b>继续</b>。</p>
                 </div>
                 <div class="container" style="display: none;" id="list-3">
-                    <p>Please move both sticks to the <b>top-right corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p>请将两个摇杆移动到 <b>右上角</b> 并释放它们。</p>
+                    <p>当摇杆回到中心时，请按 <b>继续</b>。</p>
                 </div>
                 <div class="container" style="display: none;" id="list-4">
-                    <p>Please move both sticks to the <b>bottom-left corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p>请将两个摇杆移动到 <b>左下角</b> 并释放它们。</p>
+                    <p>当摇杆回到中心时，请按 <b>继续</b>。</p>
                 </div>
                 <div class="container" style="display: none;" id="list-5">
-                    <p>Please move both sticks to the <b>bottom-right corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p>请将两个摇杆移动到 <b>右下角</b> 并释放它们。</p>
+                    <p>当摇杆回到中心时，请按 <b>继续</b>。</p>
                 </div>
                 <div class="container" style="display: none;" id="list-6">
-                    Calibration completed successfully!<br><br>
+                    校准成功完成！<br><br>
 
-                    You can check the calibration with the <a href="https://hardwaretester.com/gamepad" target="_blank">gamepad tester</a>.
+                    您可以使用<a href="https://hardwaretester.com/gamepad" target="_blank">游戏手柄测试器</a>检查校准情况。
                     <br><br> 
-                    Have a nice day :)
+                    祝您有个愉快的一天 :)
                 </div>
             </div>
         </div>
@@ -181,7 +181,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="calibNext" onclick="calib_next()">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="btnSpinner" style="display: none;"></span>
-        <span id="calibNextText">Next</span>
+        <span id="calibNextText">下一步</span>
         </button>
       </div>
     </div>
@@ -194,11 +194,11 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Calibrating center</h1>
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">校准中心</h1>
       </div>
       <div class="modal-body">
-        Recentering the controller sticks. <br>
-        Please do not close this window and do not disconnect your controller.<br>
+        重新校准控制器摇杆。 <br>
+        请不要关闭此窗口，也不要断开控制器。<br>
         <div class="progress" role="progressbar" aria-label="Centering" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
             <div class="progress-bar" style="width: 0%"></div>
         </div>
@@ -214,14 +214,14 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Range calibration</h1>
+        <h1 class="modal-title fs-5" id="staticBackdropLabel">范围校准</h1>
       </div>
       <div class="modal-body">
-        <b>The controller is now sampling data!</b> <br>
-        Rotate the sticks slowly to cover the whole range. Press "Done" when completed.
+        <b>控制器现在正在采样数据！</b> <br>
+        慢慢地旋转摇杆，覆盖整个范围。 完成后按“完成”。
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="multi_calibrate_range_on_close()">Done</button>
+        <button type="button" class="btn btn-primary" onclick="multi_calibrate_range_on_close()">完成</button>
       </div>
     </div>
   </div>
@@ -233,7 +233,7 @@
     <div class="modal-content">
       <div class="modal-body" id="popupBody"></div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">完毕</button>
       </div>
     </div>
   </div>

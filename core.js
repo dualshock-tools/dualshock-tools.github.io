@@ -3,6 +3,14 @@ var devname = "";
 var mode = 0;
 var disable_btn = false;
 
+var lang_orig_text = {};
+var lang_cur = {};
+var lang_disabled = true;
+
+var available_langs = {
+    "it_it": "it_it.json",
+};
+
 function dec2hex(i) {
    return (i+0x10000).toString(16).substr(-4).toUpperCase();
 }
@@ -29,20 +37,20 @@ async function ds4_info() {
     var hw_ver_minor= view.getUint16(0x23, true)
     var sw_ver_major= view.getUint32(0x25, true)
     var sw_ver_minor= view.getUint16(0x25+4, true)
-    var ooc = "unknown";
+    var ooc = l("unknown");
 
     try {
         const view = await device.receiveFeatureReport(0x81);
-        ooc = "original";
+        ooc = l("original");
     } catch(e) {
-        ooc = "<font color='red'><b>clone</b></font>";
+        ooc = "<font color='red'><b>" + l("clone") + "</b></font>";
         disable_btn = true;
     }
     clear_info();
-    append_info("Firmware Date: ", k1 + " " + k2);
-    append_info("HW Version:", "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
-    append_info("SW Version:", dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
-    append_info("Device Type:", ooc);
+    append_info(l("Build Date:"), k1 + " " + k2);
+    append_info(l("HW Version:"), "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
+    append_info(l("SW Version:"), dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
+    append_info(l("Device Type:"), ooc);
     return true;
 }
 
@@ -61,67 +69,70 @@ async function ds5_reset() {
 }
 
 async function ds4_calibrate_range_begin(perm_ch) {
-try {
-    if(perm_ch) {
-        await ds4_nvunlock();
-        if(await ds4_nvstatus() != 0) {
-            close_calibrate_window();
-            return show_popup("Range calibration failed: cannot unlock NV.");
+    var err = l("Range calibration failed: ");
+    try {
+        if(perm_ch) {
+            await ds4_nvunlock();
+            if(await ds4_nvstatus() != 0) {
+                close_calibrate_window();
+                return show_popup(err + l("Cannot unlock NVS"));
+            }
         }
-    }
-
-    // Begin
-    await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,2]))
-
-    // Assert
-    data = await device.receiveFeatureReport(0x91)
-    data2 = await device.receiveFeatureReport(0x92)
-    if(data.getUint32(0, false) != 0x91010201 || data2.getUint32(0, false) != 0x920102ff) {
+    
+        // Begin
+        await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,2]))
+    
+        // Assert
+        data = await device.receiveFeatureReport(0x91)
+        data2 = await device.receiveFeatureReport(0x92)
+        if(data.getUint32(0, false) != 0x91010201 || data2.getUint32(0, false) != 0x920102ff) {
+            close_calibrate_window();
+            return show_popup(err + l("Error 1"));
+        }
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
         close_calibrate_window();
-        return show_popup("Range calibration failed: error 1.");
+        return show_popup(err + e);
     }
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
-}
 }
 
 async function ds4_calibrate_range_end(perm_ch) {
-try {
-    // Write
-    await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,2]))
-
-    data = await device.receiveFeatureReport(0x91)
-    data2 = await device.receiveFeatureReport(0x92)
-    if(data.getUint32(0, false) != 0x91010202 || data2.getUint32(0, false) != 0x92010201) {
-        close_calibrate_window();
-        return show_popup("Range calibration failed: error 3.");
-    }
-
-    if(perm_ch) {
-        await ds4_nvlock();
-        if(await ds4_nvstatus() != 1) {
+    var err = l("Range calibration failed: ");
+    try {
+        // Write
+        await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,2]))
+    
+        data = await device.receiveFeatureReport(0x91)
+        data2 = await device.receiveFeatureReport(0x92)
+        if(data.getUint32(0, false) != 0x91010202 || data2.getUint32(0, false) != 0x92010201) {
             close_calibrate_window();
-            return show_popup("Range calibration failed: cannot relock NV.");
+            return show_popup(err + l("Error 3"));
         }
+    
+        if(perm_ch) {
+            await ds4_nvlock();
+            if(await ds4_nvstatus() != 1) {
+                close_calibrate_window();
+                return show_popup(err + l("Cannot relock NVS"));
+            }
+        }
+    
+        close_calibrate_window();
+        show_popup(l("Range calibration completed"));
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
+        close_calibrate_window();
+        return show_popup(err + e);
     }
-
-    close_calibrate_window();
-    show_popup("Range calibration completed");
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
-}
 }
 
 async function ds4_calibrate_sticks_begin(has_perm_changes) {
+    var err = l("Stick calibration failed: ");
     try {
         if(has_perm_changes) {
             await ds4_nvunlock();
             if(await ds4_nvstatus() != 0) {
-                show_popup("Calibration failed: cannot unlock NV.");
+                show_popup(err + l("Cannot unlock NVS"));
                 return false;
             }
         }
@@ -133,19 +144,20 @@ async function ds4_calibrate_sticks_begin(has_perm_changes) {
         data = await device.receiveFeatureReport(0x91)
         data2 = await device.receiveFeatureReport(0x92)
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
-            show_popup("Calibration failed: error 1.");
+            show_popup(err + l("Error 1"));
             return false;
         }
 
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup(err + e);
         return false;
     }
 }
 
 async function ds4_calibrate_sticks_sample() {
+    var err = l("Stick calibration failed: ");
     try {
         // Sample
         await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
@@ -157,32 +169,33 @@ async function ds4_calibrate_sticks_sample() {
             close_calibrate_window();
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
-            show_popup("Calibration failed: error 2 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+            show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
             return false;
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup(err + e);
         return false;
     }
 }
 
 async function ds4_calibrate_sticks_end(has_perm_changes) {
+    var err = l("Stick calibration failed: ");
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
-            show_popup("Calibration failed: error 3 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+            show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
             return false;
         }
 
         if(has_perm_changes) {
             await ds4_nvlock();
             if(await ds4_nvstatus() != 1) {
-                show_popup("Calibration failed: cannot relock NV.");
+                show_popup(err + l("Cannot relock NVS"));
                 return false;
             }
         }
@@ -190,65 +203,66 @@ async function ds4_calibrate_sticks_end(has_perm_changes) {
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup(err + e);
         return false;
     }
 }
 
 async function ds4_calibrate_sticks() {
-try {
-    set_progress(0);
-
-    // Begin
-    await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
-
-    // Assert
-    data = await device.receiveFeatureReport(0x91)
-    data2 = await device.receiveFeatureReport(0x92)
-    if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
-        close_calibrate_window();
-        return show_popup("Calibration failed: error 1.");
-    }
-
-    set_progress(10);
-    await new Promise(r => setTimeout(r, 100));
-
-    for(var i=0;i<3;i++) {
-        // Sample
-        await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
-
+    var err = l("Stick calibration failed: ");
+    try {
+        set_progress(0);
+    
+        // Begin
+        await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
+    
         // Assert
-        data = await device.receiveFeatureReport(0x91);
-        data2 = await device.receiveFeatureReport(0x92);
+        data = await device.receiveFeatureReport(0x91)
+        data2 = await device.receiveFeatureReport(0x92)
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
             close_calibrate_window();
+            return show_popup(err + l("Error 1"));
+        }
+    
+        set_progress(10);
+        await new Promise(r => setTimeout(r, 100));
+    
+        for(var i=0;i<3;i++) {
+            // Sample
+            await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
+    
+            // Assert
+            data = await device.receiveFeatureReport(0x91);
+            data2 = await device.receiveFeatureReport(0x92);
+            if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
+                close_calibrate_window();
+                d1 = dec2hex32(data.getUint32(0, false));
+                d2 = dec2hex32(data2.getUint32(0, false));
+                return show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
+            }
+    
+            await new Promise(r => setTimeout(r, 500));
+            set_progress(20 + i * 30);
+        }
+    
+        // Write
+        await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
+        if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
-            return show_popup("Calibration failed: error 2 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+            close_calibrate_window();
+            return show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
         }
-
+    
+        set_progress(100);
         await new Promise(r => setTimeout(r, 500));
-        set_progress(20 + i * 30);
-    }
-
-    // Write
-    await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
-    if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
-        d1 = dec2hex32(data.getUint32(0, false));
-        d2 = dec2hex32(data2.getUint32(0, false));
+        close_calibrate_window()
+        show_popup(l("Stick calibration completed"));
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 3 (got " + d1 + ", " + d2 + " at i=" + i + ")");
+        return show_popup(err + e);
     }
-
-    set_progress(100);
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window()
-    show_popup("Calibration completed successfully");
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
-}
 }
 
 async function ds4_nvstatus() {
@@ -257,9 +271,9 @@ async function ds4_nvstatus() {
     // 1: temporary, 0: permanent
     ret = data.getUint8(1, false);
     if(ret == 1) {
-        $("#d-nvstatus").html("<font color='green'>locked</font>");
+        $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
     } else if(ret == 0) {
-        $("#d-nvstatus").html("<font color='red'>unlocked</font>");
+        $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
     } else {
         $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
     }
@@ -267,24 +281,24 @@ async function ds4_nvstatus() {
 }
 
 async function ds5_nvstatus() {
-try {
-    await device.sendFeatureReport(0x80, alloc_req(0x80, [3,3]))
-    data = await device.receiveFeatureReport(0x81)
-    ret = data.getUint32(1, false);
-    if(ret == 0x03030201) {
-        $("#d-nvstatus").html("<font color='green'>locked</font>");
-        return 1; // temporary
-    } else if(ret == 0x03030200) {
-        $("#d-nvstatus").html("<font color='red'>unlocked</font>");
-        return 0; // permanent
-    } else {
-        $("#d-nvstatus").html("<font color='purple'>unk " + dec2hex32(ret) + "</font>");
-        return ret; // unknown
+    try {
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [3,3]))
+        data = await device.receiveFeatureReport(0x81)
+        ret = data.getUint32(1, false);
+        if(ret == 0x03030201) {
+            $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
+            return 1; // temporary
+        } else if(ret == 0x03030200) {
+            $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
+            return 0; // permanent
+        } else {
+            $("#d-nvstatus").html("<font color='purple'>unk " + dec2hex32(ret) + "</font>");
+            return ret; // unknown
+        }
+    } catch(e) {
+        $("#d-nvstatus").html("<font color='red'>" + l("error") + "</font>");
+        return 2; // error
     }
-} catch(e) {
-    $("#d-nvstatus").html("<font color='red'>error</font>");
-    return 2; // error
-}
 }
 
 async function ds4_getbdaddr() {
@@ -292,20 +306,20 @@ async function ds4_getbdaddr() {
 }
 
 async function ds5_getbdaddr() {
-try {
-    await device.sendFeatureReport(0x80, alloc_req(0x80, [9,2]))
-    data = await device.receiveFeatureReport(0x81)
-    out = ""
-    for(i=0;i<6;i++) {
-        if(i >= 1) out += ":";
-        out += dec2hex8(data.getUint8(4 + i, false));
+    try {
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [9,2]))
+        data = await device.receiveFeatureReport(0x81)
+        out = ""
+        for(i=0;i<6;i++) {
+            if(i >= 1) out += ":";
+            out += dec2hex8(data.getUint8(4 + i, false));
+        }
+        $("#d-bdaddr").text(out);
+        return out;
+    } catch(e) {
+        $("#d-bdaddr").html("<font color='red'>" + l("error") + "</font>");
+        return "error";
     }
-    $("#d-bdaddr").text(out);
-    return out;
-} catch(e) {
-    $("#d-bdaddr").html("<font color='red'>error</font>");
-    return "error";
-}
 }
 
 async function ds4_nvlock() {
@@ -341,27 +355,26 @@ async function ds5_info() {
 
     clear_info();
 
-    append_info("Build Time: ", build_date + " " + build_time);
-    append_info("Firmware Type:", "0x" + dec2hex(fwtype));
-    append_info("SW Series:", "0x" + dec2hex(swseries));
-    append_info("HW Info:", "0x" + dec2hex32(hwinfo));
-    append_info("FW Version:", "0x" + dec2hex32(fwversion));
-    //append_info("deviceinfo:", deviceinfo);
-    append_info("UPD Version:", "0x" + dec2hex(updversion));
-    //append_info("Unknown:", "0x" + dec2hex(unk));
-    append_info("FW Version1:", "0x" + dec2hex32(fwversion1));
-    append_info("FW Version2:", "0x" + dec2hex32(fwversion2));
-    append_info("FW Version3:", "0x" + dec2hex32(fwversion3));
+    append_info(l("Build Date:"), build_date + " " + build_time);
+    append_info(l("Firmware Type:"), "0x" + dec2hex(fwtype));
+    append_info(l("SW Series:"), "0x" + dec2hex(swseries));
+    append_info(l("HW Info:"), "0x" + dec2hex32(hwinfo));
+    append_info(l("SW Version:"), "0x" + dec2hex32(fwversion));
+    append_info(l("UPD Version:"), "0x" + dec2hex(updversion));
+    append_info(l("FW Version1:"), "0x" + dec2hex32(fwversion1));
+    append_info(l("FW Version2:"), "0x" + dec2hex32(fwversion2));
+    append_info(l("FW Version3:"), "0x" + dec2hex32(fwversion3));
     return true;
 }
 
 async function ds5_calibrate_sticks_begin(has_perm_changes) {
+    var err = l("Range calibration failed: ");
     console.log("::ds5_calibrate_sticks_begin(" + has_perm_changes + ")");
     try {
         if(has_perm_changes) {
             await ds5_nvunlock();
             if(await ds5_nvstatus() != 0) {
-                show_popup("Range calibration failed: cannot unlock NVS.");
+                show_popup(err + l("Cannot unlock NVS"));
                 return false;
             }
         }
@@ -372,18 +385,19 @@ async function ds5_calibrate_sticks_begin(has_perm_changes) {
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
-            show_popup("Calibration failed: error 1 (got " + d1 + ").");
+            show_popup(err + l("Error 1") + " (" + d1 + ").");
             return false;
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup(err + e);
         return false;
     }
 }
 
 async function ds5_calibrate_sticks_sample() {
+    var err = l("Stick calibration failed: ");
     console.log("::ds5_calibrate_sticks_sample()");
     try {
         // Sample
@@ -393,18 +407,19 @@ async function ds5_calibrate_sticks_sample() {
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
-            show_popup("Calibration failed: error 2 (got " + d1 + ").");
+            show_popup(err + l("Error 2") + " (" + d1 + ").");
             return false;
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup(err + e);
         return false;
     }
 }
 
 async function ds5_calibrate_sticks_end(has_perm_changes) {
+    var err = l("Stick calibration failed: ");
     console.log("::ds5_calibrate_sticks_end(" + has_perm_changes + ")");
     try {
         // Write
@@ -413,152 +428,155 @@ async function ds5_calibrate_sticks_end(has_perm_changes) {
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010102) {
             d1 = dec2hex32(data.getUint32(0, false));
-            show_popup("Calibration failed: error 3 (got " + d1 + ").");
+            show_popup(err + l("Error 3") + " (" + d1 + ").");
             return false;
         }
 
         if(has_perm_changes) {
             await ds5_nvlock();
             if(await ds5_nvstatus() != 1) {
-                show_popup("Range calibration failed: cannot relock NVS.");
+                show_popup(err + l("Cannot relock NVS"));
                 return false;
             }
         }
         return true;
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
-        show_popup("Calibration failed: " + e);
+        show_popup(err + e);
         return false;
     }
 }
 
 async function ds5_calibrate_sticks() {
-try {
-    set_progress(0);
-
-    // Begin
-    await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,1]))
-
-    // Assert
-    data = await device.receiveFeatureReport(0x83)
-    if(data.getUint32(0, false) != 0x83010101) {
-        d1 = dec2hex32(data.getUint32(0, false));
-        close_calibrate_window();
-        return show_popup("Calibration failed: error 1 (got " + d1 + ").");
-    }
-
-    set_progress(10);
-
-    await new Promise(r => setTimeout(r, 100));
-
-    for(var i=0;i<3;i++) {
-        // Sample
-        await device.sendFeatureReport(0x82, alloc_req(0x82, [3,1,1]))
-
+    var err = l("Stick calibration failed: ");
+    try {
+        set_progress(0);
+    
+        // Begin
+        await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,1]))
+    
         // Assert
         data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
             close_calibrate_window();
-            return show_popup("Calibration failed: error 2 (got " + d1 + ").");
+            return show_popup(err + l("Error 1") + " (" + d1 + ").");
         }
-
-        await new Promise(r => setTimeout(r, 500));
-        set_progress(20 + i * 20);
-    }
-
-    await new Promise(r => setTimeout(r, 200));
-    set_progress(80);
-
-    // Write
-    await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,1]))
-
-    data = await device.receiveFeatureReport(0x83)
-    if(data.getUint32(0, false) != 0x83010102) {
-        d1 = dec2hex32(data.getUint32(0, false));
-        close_calibrate_window();
-        return show_popup("Calibration failed: error 3 (got " + d1 + ").");
-    }
-
-    set_progress(100);
     
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window()
-
-    show_popup("Calibration completed successfully");
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
-}
+        set_progress(10);
+    
+        await new Promise(r => setTimeout(r, 100));
+    
+        for(var i=0;i<3;i++) {
+            // Sample
+            await device.sendFeatureReport(0x82, alloc_req(0x82, [3,1,1]))
+    
+            // Assert
+            data = await device.receiveFeatureReport(0x83)
+            if(data.getUint32(0, false) != 0x83010101) {
+                d1 = dec2hex32(data.getUint32(0, false));
+                close_calibrate_window();
+                return show_popup(err + l("Error 2") + " (" + d1 + ").");
+            }
+    
+            await new Promise(r => setTimeout(r, 500));
+            set_progress(20 + i * 20);
+        }
+    
+        await new Promise(r => setTimeout(r, 200));
+        set_progress(80);
+    
+        // Write
+        await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,1]))
+    
+        data = await device.receiveFeatureReport(0x83)
+        if(data.getUint32(0, false) != 0x83010102) {
+            d1 = dec2hex32(data.getUint32(0, false));
+            close_calibrate_window();
+            return show_popup(err + l("Error 3") + " (" + d1 + ").");
+        }
+    
+        set_progress(100);
+        
+        await new Promise(r => setTimeout(r, 500));
+        close_calibrate_window()
+    
+        show_popup(l("Stick calibration completed"));
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
+        close_calibrate_window();
+        return show_popup(err + e);
+    }
 }
 
 async function ds5_calibrate_range_begin(perm_ch) {
-try {
-    if(perm_ch) {
-        await ds5_nvunlock();
-        if(await ds5_nvstatus() != 0) {
-            close_calibrate_window();
-            return show_popup("Range calibration failed: cannot unlock NVS.");
+    var err = l("Range calibration failed: ");
+    try {
+        if(perm_ch) {
+            await ds5_nvunlock();
+            if(await ds5_nvstatus() != 0) {
+                close_calibrate_window();
+                return show_popup(err + l("Cannot unlock NVS"));
+            }
         }
-    }
-
-    // Begin
-    await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,2]))
-
-    // Assert
-    data = await device.receiveFeatureReport(0x83)
-    if(data.getUint32(0, false) != 0x83010201) {
-        d1 = dec2hex32(data.getUint32(0, false));
+    
+        // Begin
+        await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,2]))
+    
+        // Assert
+        data = await device.receiveFeatureReport(0x83)
+        if(data.getUint32(0, false) != 0x83010201) {
+            d1 = dec2hex32(data.getUint32(0, false));
+            close_calibrate_window();
+            return show_popup(err + l("Error 1") + " (" + d1 + ").");
+        }
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
         close_calibrate_window();
-        return show_popup("Calibration failed: error 1 (got " + d1 + ").");
+        return show_popup(err + e);
     }
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
-}
 }
 
 async function ds5_calibrate_range_end(perm_ch) {
-try {
-    // Write
-    await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,2]))
-
-    // Assert
-    data = await device.receiveFeatureReport(0x83)
-    if(data.getUint32(0, false) != 0x83010202) {
-        d1 = dec2hex32(data.getUint32(0, false));
-        close_calibrate_window();
-        return show_popup("Calibration failed: error 1 (got " + d1 + ").");
-    }
-
-    if(perm_ch) {
-        await ds5_nvlock();
-        if(await ds5_nvstatus() != 1) {
+    var err = l("Range calibration failed: ");
+    try {
+        // Write
+        await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,2]))
+    
+        // Assert
+        data = await device.receiveFeatureReport(0x83)
+        if(data.getUint32(0, false) != 0x83010202) {
+            d1 = dec2hex32(data.getUint32(0, false));
             close_calibrate_window();
-            return show_popup("Range calibration failed: cannot relock NVS.");
+            return show_popup(err + l("Error 1") + " (" + d1 + ").");
         }
+    
+        if(perm_ch) {
+            await ds5_nvlock();
+            if(await ds5_nvstatus() != 1) {
+                close_calibrate_window();
+                return show_popup(err + l("Cannot relock NVS"));
+            }
+        }
+    
+        close_calibrate_window();
+        show_popup(l("Range calibration completed"));
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
+        close_calibrate_window();
+        return show_popup(err + e);
     }
-
-    close_calibrate_window();
-    show_popup("Range calibration completed");
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("Calibration failed: " + e);
-}
 }
 
 async function ds5_nvlock() {
-try {
-    await device.sendFeatureReport(0x80, alloc_req(0x80, [3,1]))
-    data = await device.receiveFeatureReport(0x83)
-} catch(e) {
-    await new Promise(r => setTimeout(r, 500));
-    close_calibrate_window();
-    return show_popup("NVSLock failed: " + e);
-}
+    try {
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [3,1]))
+        data = await device.receiveFeatureReport(0x83)
+    } catch(e) {
+        await new Promise(r => setTimeout(r, 500));
+        close_calibrate_window();
+        return show_popup(l("NVS Lock failed: ") + e);
+    }
 }
 
 async function ds5_nvunlock() {
@@ -568,7 +586,7 @@ try {
 } catch(e) {
     await new Promise(r => setTimeout(r, 500));
     close_calibrate_window();
-    return show_popup("NVSUnlock failed: " + e);
+    return show_popup(l("NVS Unlock failed: ") + e);
 }
 }
 
@@ -591,7 +609,56 @@ function handleDisconnectedDevice(e) {
     disconnect();
 }
 
+function createCookie(name, value, days) {
+    var expires;
+
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toGMTString();
+    } else {
+        expires = "";
+    }
+    document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = encodeURIComponent(name) + "=";
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) === ' ')
+            c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0)
+            return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name, "", -1);
+}
+
+function welcome_modal() {
+    var already_accepted = readCookie("welcome_accepted");
+    if(already_accepted == "1")
+        return;
+
+    curModal = new bootstrap.Modal(document.getElementById('welcomeModal'), {})
+    curModal.show();
+}
+
+function welcome_accepted() {
+    createCookie("welcome_accepted", "1");
+    $("#welcomeModal").modal("hide");
+}
+
 function gboot() {
+    window.addEventListener('DOMContentLoaded', function() {
+        lang_init();
+        welcome_modal();
+    });
+
     if (!("hid" in navigator)) {
         $("#offlinebar").hide();
         $("#onlinebar").hide();
@@ -640,7 +707,7 @@ try {
 
     if (devices.length > 1) {
         $("#btnconnect").prop("disabled", false);
-        show_popup("Please connect only one controller at time.");
+        show_popup(l("Please connect only one controller at time."));
         return;
     }
 
@@ -653,30 +720,30 @@ try {
         if(await ds4_info()) {
             connected = true
             mode = 1;
-            devname = "Sony DualShock 4 V1";
+            devname = l("Sony DualShock 4 V1");
         }
     } else if(device.productId == 0x09cc) {
         if(await ds4_info()) {
             connected = true
             mode = 1;
-            devname = "Sony DualShock 4 V2";
+            devname = l("Sony DualShock 4 V2");
         }
     } else if(device.productId == 0x0ce6) {
         if(await ds5_info()) {
             connected = true
             mode = 2;
-            devname = "Sony DualSense";
+            devname = l("Sony DualSense");
         }
     } else if(device.productId == 0x0df2) {
         if(await ds5_info()) {
             connected = true
             mode = 0;
-            devname = "Sony DualSense Edge";
+            devname = l("Sony DualSense Edge");
             disable_btn = true;
         }
     } else {
         $("#btnconnect").prop("disabled", false);
-        show_popup("Connected invalid device: " + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
+        show_popup(l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
         disconnect();
         return;
     }
@@ -687,15 +754,15 @@ try {
         $("#onlinebar").show();
         $("#mainmenu").show();
         $("#resetBtn").show();
-        $("#d-nvstatus").text = "Unknown";
-        $("#d-bdaddr").text = "Unknown";
+        $("#d-nvstatus").text = l("Unknown");
+        $("#d-bdaddr").text = l("Unknown");
     }
 
     if(disable_btn) {
         if(device.productId == 0x0df2) {
-            show_popup("Calibration of the DualSense Edge is not currently supported.");
+            show_popup(l("Calibration of the DualSense Edge is not currently supported."));
         } else {
-            show_popup("The device appears to be a DS4 clone. All functionalities are disabled.");
+            show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
         }
     }
 
@@ -704,7 +771,7 @@ try {
     $("#btnconnect").prop("disabled", false);
 } catch(error) {
     $("#btnconnect").prop("disabled", false);
-    show_popup("Error: " + error);
+    show_popup(l("Error: ") + error);
     return;
 }
 }
@@ -846,7 +913,7 @@ function show_popup(text) {
     new bootstrap.Modal(document.getElementById('popupModal'), {}).show()
 }
 
-function discord_popup() { show_popup("My handle on discord is: the_al"); }
+function discord_popup() { show_popup(l("My handle on discord is: the_al")); }
 
 function calib_perm_changes() { return $("#calibPermanentChanges").is(':checked') }
 
@@ -870,15 +937,19 @@ async function calib_step(i) {
     }
 
     if(i == 2) {
-        $("#calibNextText").text("Initializing...");
+        $("#calibNextText").text(l("Initializing..."));
         await new Promise(r => setTimeout(r, 100));
         ret = await multi_calib_sticks_begin(pc);
     } else if(i == 6) {
-        $("#calibNextText").text("Storing calibration...");
+        $("#calibNextText").text(l("Sampling..."));
+        await new Promise(r => setTimeout(r, 100));
+        ret = await multi_calib_sticks_sample();
+        await new Promise(r => setTimeout(r, 100));
+        $("#calibNextText").text(l("Storing calibration..."));
         await new Promise(r => setTimeout(r, 100));
         ret = await multi_calib_sticks_end(pc);
     } else if(i > 2 && i < 6){
-        $("#calibNextText").text("Sampling...");
+        $("#calibNextText").text(l("Sampling..."));
         await new Promise(r => setTimeout(r, 100));
         ret = await multi_calib_sticks_sample();
     }
@@ -902,16 +973,16 @@ async function calib_step(i) {
     $("#list-" + i + "-calib").addClass("active");
 
     if(i == 1) {
-        $("#calibTitle").text("Stick center calibration");
-        $("#calibNextText").text("Start");
+        $("#calibTitle").text(l("Stick center calibration"));
+        $("#calibNextText").text(l("Start"));
     }
     else if(i == 6) {
-        $("#calibTitle").text("Stick center calibration");
-        $("#calibNextText").text("Done");
+        $("#calibTitle").text(l("Stick center calibration"));
+        $("#calibNextText").text(l("Done"));
     }
     else {
-        $("#calibTitle").html("Calibration in progress");
-        $("#calibNextText").text("Continue");
+        $("#calibTitle").html(l("Calibration in progress"));
+        $("#calibNextText").text(l("Continue"));
     }
     if(i == 1 || i == 6)
         $("#calibCross").show();
@@ -929,7 +1000,6 @@ async function calib_open() {
 }
 
 async function calib_next() {
-    console.log(cur_calib);
     if(cur_calib == 6) {
         close_new_calib()
         return;
@@ -938,4 +1008,82 @@ async function calib_next() {
         cur_calib += 1;
         await calib_step(cur_calib);
     }
+}
+
+function lang_init() {
+    var id_iter = 0;
+    var items = document.getElementsByClassName('ds-i18n');
+    for(i=0; i<items.length; i++) { 
+        var item = items[i];
+        if (item.id.length == 0) {
+            var new_id = "ds-g-id-" + (id_iter++);
+            item.id = new_id;
+        }
+
+        lang_orig_text[item.id] = $(item).html();
+    }
+    lang_orig_text[".title"] = document.title;
+
+    var nlang = navigator.language.replace('-', '_').toLowerCase();
+    var ljson = available_langs[nlang];
+    if(ljson !== undefined) {
+        lang_translate(ljson);
+    }
+}
+
+function lang_reset_page() {
+    var items = document.getElementsByClassName('ds-i18n');
+    for(i=0; i<items.length; i++) { 
+        var item = items[i];
+        $(item).html(lang_orig_text[item.id]);
+    }
+}
+
+function l(text) {
+    if(lang_disabled)
+        return text;
+    
+    var out = lang_cur[text];
+    if(out !== undefined) {
+        return out;
+    }
+
+    console.log("Missing translation for: '" + text + "'");
+    return text;
+}
+
+function lang_translate(target_lang) {
+    lang_cur = {}
+    $.getJSON("lang/" + target_lang, function(data) {
+        $.each( data, function( key, val ) {
+             if(lang_cur[key] !== undefined) {
+                 console.log("Warn: already exists " + key);
+             } else { 
+                 lang_cur[key] = [val];
+             }
+        });
+
+        if(Object.keys(lang_cur).length > 0) {
+            lang_disabled = false;
+        }
+
+        var items = document.getElementsByClassName('ds-i18n');
+        for(i=0; i<items.length; i++) { 
+            var item = items[i];
+            var old = lang_orig_text[item.id];
+
+            var tnew = lang_cur[old];
+            if (tnew !== undefined && tnew.length == 1 && tnew[0].length > 0) {
+                $(item).html(tnew[0]);
+            } else {
+                console.log("Cannot find mapping for " + old); 
+            }
+        }
+        var old_title = lang_orig_text[".title"];
+        document.title = lang_cur[old_title];
+        if(lang_cur[".authorMsg"] !== undefined) {
+            $("#authorMsg").html(lang_cur[".authorMsg"])
+        }
+    });
+
 }

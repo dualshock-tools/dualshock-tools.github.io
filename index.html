@@ -5,12 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DualShock Calibration GUI</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/fontawesome.min.css" integrity="sha384-BY+fdrpOd3gfeRvTSMT+VUZmA728cfF9Z2G42xpaRkUGu2i3DyzpTURDo5A6CaLK" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet" 
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
 
-<script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
-		integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
-		crossorigin="anonymous"></script>
+<link rel="stylesheet" 
+      href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/fontawesome.min.css"
+      integrity="sha384-BY+fdrpOd3gfeRvTSMT+VUZmA728cfF9Z2G42xpaRkUGu2i3DyzpTURDo5A6CaLK"
+      crossorigin="anonymous">
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous"></script>
+
 
 <script src="core.js"></script>
 </head>
@@ -34,27 +42,27 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <div class="container p-2">
-<h1>DualShock Calibration GUI</h1>
+<h1 class="ds-i18n">DualShock Calibration GUI</h1>
 
 <div id="missinghid" style="display: none;">
-<p>Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).</p>
+<p class="ds-i18n">Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).</p>
 </div>
 
 <div id="offlinebar" class="vstack p-2" style="display: none;">
-<p>Connect a DualShock 4 or a DualSense to your computer and press Connect.</p>
-<button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">Connect</button><br>
+<p class="ds-i18n">Connect a DualShock 4 or a DualSense controller to your computer and press Connect.</p>
+<button id="btnconnect" type="button" class="btn btn-outline-primary ds-i18n" onclick="connect()">Connect</button><br>
 </div>
 
 <div id="onlinebar" class="vstack p-2" style="display: none;">
-<div class="hstack gap-2"><p><b>Connected to:</b></p><p id="devname"></p></div>
-<button type="button" class="btn btn-outline-secondary" onclick="disconnect()">Disconnect</button><br>
+<div class="hstack gap-2"><p><b class="ds-i18n">Connected to:</b></p><p id="devname"></p></div>
+<button type="button" class="btn btn-outline-secondary ds-i18n" onclick="disconnect()">Disconnect</button><br>
 </div>
 
 <div id="mainmenu" class="container" style="display: none;">
 <div class="row">
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-            <div class="card-header">Firmware Info</div>
+            <div class="card-header ds-i18n">Firmware Info</div>
 
             <div class="vstack p-2" id="fwinfo"> </div>
         </div>
@@ -63,26 +71,26 @@
 
     <div class="col-md-6 col-sm-12">
         <div class="vstack gap-2 p-2">
-            <button id="btnmcs2" type="button" class="btn btn-primary ds-btn" onclick="calib_open()">Calibrate stick center</button>
+            <button id="btnmcs2" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
             <div class="hstack gap-2">
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_range(true)">Calibrate stick range (permanent)</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_range(false)">Calibrate stick range (temporary)</button>
+                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range(true)">Calibrate stick range (permanent)</button>
+                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range(false)">Calibrate stick range (temporary)</button>
             </div>
-            <button type="button" class="btn btn-danger ds-btn" onclick="multi_reset()" id="resetBtn">Reset controller</button>
+            <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reset controller</button>
         </div>
     </div>
 </div>
 
 <div class="row">
-<p> Sections below are not useful, just some debug infos or manual commands</p>
+<p class="ds-i18n">Sections below are not useful, just some debug infos or manual commands</p>
 </div>
 <div class="row">
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
             <div class="card-header">Debug info</div>
             <div class="vstack p-2">
-                <div class="hstack"><p>NVS Status</p><p class="ms-auto" id="d-nvstatus">Unknown</p></div>
-                <div class="hstack"><p>BD Addr</p><p class="ms-auto" id="d-bdaddr">Unknown</p></div>
+                <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
+                <div class="hstack"><p class="ds-i18n">BD Addr</p><p class="ms-auto ds-i18n" id="d-bdaddr">Unknown</p></div>
             </div>
         </div>
         <br>
@@ -90,15 +98,15 @@
 
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-        <div class="card-header">Debug buttons</div>
+        <div class="card-header ds-i18n">Debug buttons</div>
         <div class="vstack gap-2 p-2">
             <div class="hstack gap-2">
-                <button type="button" class="btn btn-success ds-btn" onclick="multi_nvstatus()">Query NVS status</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_nvsunlock()">NVS unlock</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="multi_nvslock()">NVS lock</button>
+                <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
+                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
+                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
             </div>
-            <button type="button" class="btn btn-primary ds-btn" onclick="multi_getbdaddr()">Get BDAddr</button>
-            <button id="btnmcs" type="button" class="btn btn-primary ds-btn" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
+            <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_getbdaddr()">Get BDAddr</button>
+            <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
         </div>
         </div>
     </div>
@@ -106,12 +114,36 @@
 
 </div>
 
+<!-- Welcome Modal -->
+<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="welcomeModalLabel">Welcome to the Calibration GUI</h1>
+      </div>
+      <div class="modal-body">
+      <p class="ds-i18n">Just few things to know before you can start:</p>
+      <ul>
+        <li class="ds-i18n">This website is not affiliated with Sony, PlayStation &amp; co.</li>
+        <li class="ds-i18n">This service is provided without warranty. Use at your own risk.</li>
+        <li class="ds-i18n">Keep the internal battery of the controller connected and ensure it is well charged. If the battery dies during operations, the controller will be damaged and rendered unusable.</li>
+        <li class="ds-i18n">Before doing the permanent calibration, try the temporary one to ensure that everything is working well.</li>
+      </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary ds-i18n" onclick="welcome_accepted();">Understood</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- New calibrate modal -->
 <div class="modal fade" id="calibCenterModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="calibTitle" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="calibTitle">Stick Center calibration</h1>
+        <h1 class="modal-title fs-5 ds-i18n" id="calibTitle">Stick center calibration</h1>
         <button type="button" id="calibCross" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -119,70 +151,58 @@
         <div class="row">
             <div class="col-4">
                 <div class="list-group" id="list-tab">
-                <a class="list-group-item list-group-item-action active" id="list-1-calib">Welcome</a>
-                <a class="list-group-item list-group-item-action" id="list-2-calib">Step 1</a>
-                <a class="list-group-item list-group-item-action" id="list-3-calib">Step 2</a>
-                <a class="list-group-item list-group-item-action" id="list-4-calib">Step 3</a>
-                <a class="list-group-item list-group-item-action" id="list-5-calib">Step 4</a>
-                <a class="list-group-item list-group-item-action" id="list-6-calib">Completed</a>
+                <a class="ds-i18n list-group-item list-group-item-action active" id="list-1-calib">Welcome</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-2-calib">Step 1</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-3-calib">Step 2</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-4-calib">Step 3</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-5-calib">Step 4</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-6-calib">Completed</a>
                 </div>
             </div>
             <div class="col-8">
                 <div class="container" id="list-1">
-                    <h4>Welcome to the stick center-calibration wizard!</h4>
+                    <h4 class="ds-i18n">Welcome to the stick center-calibration wizard!</h4>
 
-                    <p>This tool will guide you in re-centering the analog sticks of your controller.
-                    It consists in four steps: you will be asked to move both
-                    sticks in a direction and release them.</p>
+                    <p class="ds-i18n">This tool will guide you in re-centering the analog sticks of your controller. It consists in four steps: you will be asked to move both sticks in a direction and release them.</p>
 
-                    <p>Please be aware that, <i>once the calibration is running,
-                    it cannot be canceled</i>. Do not close this page or
-                    disconnect your controller until is completed.</p>
+                    <p class="ds-i18n">Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.</p>
 
-                    <h5>Calibration storage</h5>
+                    <h5 class="ds-i18n">Calibration storage</h5>
 
-                    <p>By default the calibration is only saved in a volatile
-                    storage, so that if you (or this tool) mess something up, a
-                    reset of the controller is enough to make it work again. </p>
+                    <p class="ds-i18n">By default the calibration is only saved in a volatile storage, so that if you (or this tool) mess something up, a reset of the controller is enough to make it work again.</p>
 
-                    <p>If you wish to store the calibration permanently in the controller, tick the checkbox below:</p>
+                    <p class="ds-i18n">If you wish to store the calibration permanently in the controller, tick the checkbox below:</p>
 
                     <input class="form-check-input" type="checkbox" value="" id="calibPermanentChanges">
-                    <label class="form-check-label" for="calibPermanentChanges">
-                        Write changes permanently in the controller
-                    </label>
+                    <label class="form-check-label ds-i18n" for="calibPermanentChanges">Write changes permanently in the controller</label>
 
                     <br>
 
-                    <p><small>Warning: <font color="red">Do not store the calibration permanently if
-                    the controller battery is low or disconnected. It will
-                    damage your controller.</font></small></p>
+                    <p class="ds-i18n"><small>Warning: <font color="red">Do not store the calibration permanently if the controller battery is low or disconnected. It will damage your controller.</font></small></p>
 
-                    <p>Press <b>Start</b> to begin calibration.</p>
+                    <p class="ds-i18n">Press <b>Start</b> to begin calibration.</p>
 
                 </div>
                 <div class="container" style="display: none;" id="list-2">
-                    <p>Please move both sticks to the <b>top-left corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p class="ds-i18n">Please move both sticks to the <b>top-left corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
                 </div>
                 <div class="container" style="display: none;" id="list-3">
-                    <p>Please move both sticks to the <b>top-right corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p class="ds-i18n">Please move both sticks to the <b>top-right corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
                 </div>
                 <div class="container" style="display: none;" id="list-4">
-                    <p>Please move both sticks to the <b>bottom-left corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p class="ds-i18n">Please move both sticks to the <b>bottom-left corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
                 </div>
                 <div class="container" style="display: none;" id="list-5">
-                    <p>Please move both sticks to the <b>bottom-right corner</b> and release them.</p>
-                    <p>When the sticks are back in the center, press <b>Continue</b>.</p>
+                    <p class="ds-i18n">Please move both sticks to the <b>bottom-right corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
                 </div>
                 <div class="container" style="display: none;" id="list-6">
-                    Calibration completed successfully!<br><br>
-
-                    You can check the calibration with the <a href="https://hardwaretester.com/gamepad" target="_blank">gamepad tester</a>.
-                    <br><br>
-                    Have a nice day :)
+                    <p class="ds-i18n">Calibration completed successfully!</p>
+                    <p><span class="ds-i18n">You can check the calibration with the</span> <a href="https://hardwaretester.com/gamepad" target="_blank">gamepad tester</a>.</p>
+                    <p class="ds-i18n">Have a nice day :)</p>
                 </div>
             </div>
         </div>
@@ -191,7 +211,7 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" id="calibNext" onclick="calib_next()">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="btnSpinner" style="display: none;"></span>
-        <span id="calibNextText">Next</span>
+        <span id="calibNextText" class="ds-i18n">Next</span>
         </button>
       </div>
     </div>
@@ -207,8 +227,8 @@
         <h1 class="modal-title fs-5" id="staticBackdropLabel">Calibrating center</h1>
       </div>
       <div class="modal-body">
-        Recentering the controller sticks. <br>
-        Please do not close this window and do not disconnect your controller.<br>
+        <p class="ds-i18n">Recentering the controller sticks. </p>
+        <p class="ds-i18n">Please do not close this window and do not disconnect your controller. </p>
         <div class="progress" role="progressbar" aria-label="Centering" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
             <div class="progress-bar" style="width: 0%"></div>
         </div>
@@ -224,14 +244,14 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Range calibration</h1>
+        <h1 class="modal-title fs-5 ds-i18n" id="staticBackdropLabel">Range calibration</h1>
       </div>
       <div class="modal-body">
-        <b>The controller is now sampling data!</b> <br>
-        Rotate the sticks slowly to cover the whole range. Press "Done" when completed.
+        <p class="ds-i18n"><b>The controller is now sampling data!</b></p>
+        <p class="ds-i18n">Rotate the sticks slowly to cover the whole range. Press "Done" when completed.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="multi_calibrate_range_on_close()">Done</button>
+        <button type="button" class="btn btn-primary ds-i18n" onclick="multi_calibrate_range_on_close()">Done</button>
       </div>
     </div>
   </div>
@@ -246,10 +266,10 @@
       </div>
 
       <div class="modal-body p-4" id="donateBody">
-        Hi, thank you for using this software.<br><br>
-        If you're finding it helpful and you want to support my efforts, feel free to <a href="https://paypal.me/alaincarlucci" target="_blank" class="text-body-secondary">buy me a coffee</a>! :)<br><br>
-        Do you have any suggestion or issue? Drop me a message via email or discord.<br><br>
-        Cheers!
+        <p class="ds-i18n">Hi, thank you for using this software.</p>
+        <p><span class="ds-i18n">If you're finding it helpful and you want to support my efforts, feel free to</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="text-body-secondary ds-i18n">buy me a coffee</a><span class="ds-i18n">! :)</span></p>
+        <p class="ds-i18n">Do you have any suggestion or issue? Drop me a message via email or discord.</p>
+        <p class="ds-i18n">Cheers!</p>
       </div>
       <div class="modal-footer">
         <button onclick="window.open('https://paypal.me/alaincarlucci')" type="button" class="btn btn-success" data-bs-dismiss="modal"> &nbsp;&nbsp;
@@ -275,7 +295,7 @@
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-      <p>Version 0.3<small class="text-muted">beta</small> (2024-04-06) - <a href="#" data-bs-toggle="modal" data-bs-target="#donateModal">Support this project</a></p>
+      <p><span class="ds-i18n">Version</span> 0.4<small class="text-muted">beta</small> (2024-04-09) - <a href="#" class="ds-i18n" data-bs-toggle="modal" data-bs-target="#donateModal">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

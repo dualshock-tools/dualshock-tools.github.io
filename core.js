@@ -9,7 +9,7 @@ var lang_disabled = true;
 
 var available_langs = {
     "it_it": "it_it.json",
-    "zh_cn": "zh_cn.json",
+    "zh_cn": "zh_cn.json"
 };
 
 function dec2hex(i) {

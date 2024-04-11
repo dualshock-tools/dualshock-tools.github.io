@@ -9,8 +9,9 @@ var lang_disabled = true;
 
 var available_langs = {
     "fr_fr": "fr_fr.json",
+    "hu_hu": "hu_hu.json",
     "it_it": "it_it.json",
-    "zh_cn": "zh_cn.json"
+    "zh_cn": "zh_cn.json",
 };
 
 function dec2hex(i) {

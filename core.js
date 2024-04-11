@@ -8,6 +8,7 @@ var lang_cur = {};
 var lang_disabled = true;
 
 var available_langs = {
+    "fr_fr": "fr_fr.json",
     "it_it": "it_it.json",
     "zh_cn": "zh_cn.json"
 };

@@ -8,10 +8,10 @@ var lang_cur = {};
 var lang_disabled = true;
 
 var available_langs = {
-    "fr_fr": "fr_fr.json",
-    "hu_hu": "hu_hu.json",
-    "it_it": "it_it.json",
-    "zh_cn": "zh_cn.json",
+    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
+    "fr_fr": { "name": "Français", "file": "fr_fr.json"},
+    "it_it": { "name": "Italiano", "file": "it_it.json"},
+    "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
 };
 
 function dec2hex(i) {
@@ -1030,7 +1030,38 @@ function lang_init() {
     var nlang = navigator.language.replace('-', '_').toLowerCase();
     var ljson = available_langs[nlang];
     if(ljson !== undefined) {
-        lang_translate(ljson);
+        lang_translate(ljson["file"], nlang);
+    }
+
+    var langs = Object.keys(available_langs);
+    var olangs = "";
+    olangs += '<li><a class="dropdown-item" href="#" onclick="lang_set(\'en_us\');">English</a></li>';
+    for(i=0;i<langs.length;i++) {
+        name = available_langs[langs[i]]["name"];
+        olangs += '<li><a class="dropdown-item" href="#" onclick="lang_set(\'' + langs[i] + '\');">' + name + '</a></li>';
+    }
+    olangs += '<li><hr class="dropdown-divider"></li>';
+    olangs += '<li><a class="dropdown-item" href="https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/TRANSLATIONS.md" target="_blank">Missing your language?</a></li>';
+    $("#availLangs").html(olangs);
+
+    var force_lang = readCookie("force_lang");
+    if (force_lang != null) {
+        lang_set(force_lang, true);
+    }
+}
+
+function lang_set(l, skip_modal=false) {
+    if(l == "en_us") {
+        lang_reset_page();
+    } else {
+        var file = available_langs[l]["file"];
+        lang_translate(file, l);
+    }
+
+    createCookie("force_lang", l);
+    if(!skip_modal) {
+        createCookie("welcome_accepted", "0");
+        welcome_modal();
     }
 }
 
@@ -1040,6 +1071,8 @@ function lang_reset_page() {
         var item = items[i];
         $(item).html(lang_orig_text[item.id]);
     }
+    $("#authorMsg").html("");
+    $("#curLang").html("English");
 }
 
 function l(text) {
@@ -1055,9 +1088,9 @@ function l(text) {
     return text;
 }
 
-function lang_translate(target_lang) {
+function lang_translate(target_file, target_lang) {
     lang_cur = {}
-    $.getJSON("lang/" + target_lang, function(data) {
+    $.getJSON("lang/" + target_file, function(data) {
         $.each( data, function( key, val ) {
              if(lang_cur[key] !== undefined) {
                  console.log("Warn: already exists " + key);
@@ -1085,8 +1118,9 @@ function lang_translate(target_lang) {
         var old_title = lang_orig_text[".title"];
         document.title = lang_cur[old_title];
         if(lang_cur[".authorMsg"] !== undefined) {
-            $("#authorMsg").html(lang_cur[".authorMsg"])
+            $("#authorMsg").html(lang_cur[".authorMsg"]);
         }
+        $("#curLang").html(available_langs[target_lang]["name"]);
     });
 
 }

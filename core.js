@@ -1032,10 +1032,15 @@ function lang_init() {
     }
     lang_orig_text[".title"] = document.title;
 
-    var nlang = navigator.language.replace('-', '_').toLowerCase();
-    var ljson = available_langs[nlang];
-    if(ljson !== undefined) {
-        lang_translate(ljson["file"], nlang);
+    var force_lang = readCookie("force_lang");
+    if (force_lang != null) {
+        lang_set(force_lang, true);
+    } else {
+        var nlang = navigator.language.replace('-', '_').toLowerCase();
+        var ljson = available_langs[nlang];
+        if(ljson !== undefined) {
+            lang_translate(ljson["file"], nlang);
+        }
     }
 
     var langs = Object.keys(available_langs);
@@ -1049,10 +1054,6 @@ function lang_init() {
     olangs += '<li><a class="dropdown-item" href="https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/TRANSLATIONS.md" target="_blank">Missing your language?</a></li>';
     $("#availLangs").html(olangs);
 
-    var force_lang = readCookie("force_lang");
-    if (force_lang != null) {
-        lang_set(force_lang, true);
-    }
 }
 
 function lang_set(l, skip_modal=false) {

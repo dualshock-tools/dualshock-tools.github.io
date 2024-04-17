@@ -44,19 +44,29 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-<nav class="navbar bg-body-tertiary navbar-expand-lg bg-body-tertiary">
+<nav class="navbar bg-body-tertiary navbar-expand-md bg-body-tertiary">
   <div class="container-fluid">
-    <a class="navbar-brand ds-i18n">DualShock Calibration GUI</a>
+    <a class="navbar-brand ds-i18n" href="https://dualshock-tools.github.io">DualShock Calibration GUI</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-    <div class="d-flex" id="navbarNavAltMarkup">
-        <div class="nav-item dropdown me-2">
-            <a class="nav-link dropdown-toggle" id="langMenuButton" role="button" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
-                <svg class="bi text-secondary" width="1.5em" height="1.5em" ><use xlink:href="#lang"/></svg>&nbsp;<span id="curLang">English</span>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langMenuButton"  id="availLangs">
-            </ul>
-        </div>
+    <div class="collapse navbar-collapse container-fluid justify-content-end" id="navbarNavDropdown">
+
+    <ul class="navbar-nav">
+    <li class="nav-item">
+        <a class="nav-link ds-i18n" href="#" onclick="show_faq_modal();">Frequently Asked Questions</a>
+    </li>
+    <li class="nav-item dropdown" id="navbarNavAltMarkup">
+        <a class="nav-link dropdown-toggle" id="langMenuButton" role="button" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+            <svg class="bi text-secondary" width="1.5em" height="1.5em" ><use xlink:href="#lang"/></svg>&nbsp;<span id="curLang">English</span>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langMenuButton"  id="availLangs">
+        </ul>
+    </li>
+    </ul>
     </div>
+
   </div>
 </nav>
 
@@ -311,10 +321,116 @@
   </div>
 </div>
 
+<!-- FAQ -->
+<div class="modal fade" id="faqModal" tabindex="-1" role="dialog" aria-labelledby="faqModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-fullscreen-md-down" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title ds-i18n" id="faqModalTitle">Frequently Asked Questions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="p-3 ds-i18n">Welcome to the F.A.Q. section! Below, you'll find answers to some of the most commonly asked questions about this website. If you have any other inquiries or need further assistance, feel free to reach out to me directly. Your feedback and questions are always welcome!</div>
+        <div class="accordion accordion-flush" id="accordionFlushExample">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse3" aria-expanded="false" aria-controls="flush-collapse3">How does it work?</button>
+            </h2>
+            <div id="flush-collapse3" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">Behind the scenes, this website is the culmination of one year of dedicated effort in reverse-engineering DualShock controllers for fun/hobby from a random guy on the internet.</p>
+                
+                <p><span class="ds-i18n">Through</span> <a class="ds-i18n" href='https://blog.the.al' target='_blank'>this research</a><span class="ds-i18n">, it was discovered that there exist some undocumented commands on DualShock controllers that can be sent via USB and are used during factory assembly process. If these commands are sent, the controller starts the recalibration of analog sticks.</span></p>
+                <p class="ds-i18n">While the primary focus of this research wasn't initially centered on recalibration, it became apparent that a service offering this capability could greatly benefit numerous individuals. And thus, here we are.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">Does the calibration remain effective during gameplay on PS4/PS5?</button>
+            </h2>
+            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="ds-i18n accordion-body">Yes, if you tick the checkbox "Write changes permanently in the controller". In that case, the calibration is flashed directly in the controller firmware. This ensures that it remains in place regardless of the console it's connected to.</div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">Is this an officially endorsed service?</button>
+            </h2>
+            <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="ds-i18n accordion-body">No, this service is simply a creation by a DualShock enthusiast.</div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse4" aria-expanded="false" aria-controls="flush-collapse4">Does this website detects if a controller is a clone?</button>
+            </h2>
+            <div id="flush-collapse4" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">Yes, only DualShock4 at the moment. This happened because I accidentally purchased some clones, spent time identifying the differences and added this functionality to prevent future deception.</p>
+                
+                <p class="ds-i18n">Unfortunately, the clones cannot be calibrated anyway, because they only clone the behavior of a DualShock4 during a normal gameplay, not all the undocumented functionalities.</p>
+
+                <p class="ds-i18n">If you want to extend this detection functionality to DualSense, please ship me a fake DualSense and you'll see it in few weeks.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse5" aria-expanded="false" aria-controls="flush-collapse5">What development is in plan?</button>
+            </h2>
+            <div id="flush-collapse5" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">I maintain two separate to-do lists for this project, although the priority has yet to be established.</p>
+                
+                <p class="ds-i18n">The first list is about enhancing support for DualShock4 and DualSense controllers:</p>
+                <ul>
+                <li class="ds-i18n">Implement calibration of L2/R2 triggers.</li>
+                <li class="ds-i18n">Improve detection of clones, particularly beneficial for those seeking to purchase used controllers with assurance of authenticity.</li>
+                <li class="ds-i18n">Enhance user interface (e.g. provide additional controller information)</li>
+                <li class="ds-i18n">Add support for recalibrating IMUs.</li>
+                <li class="ds-i18n">Additionally, explore the possibility of reviving non-functioning DualShock controllers (further discussion available on Discord for interested parties).</li>
+                </ul>
+                
+                <p class="ds-i18n">The second list contains new controllers I aim to support:</p>
+                <ul>
+                <li class="ds-i18n">DualSense Edge</li>
+                <li class="ds-i18n">DualShock 3</li>
+                <li class="ds-i18n">XBox Controllers</li>
+                </ul>
+                
+                <p class="ds-i18n">Each of these tasks presents both immense interest and significant time investment. To provide context, supporting a new controller typically demands 6-12 months of full-time research, alongside a stroke of good fortune.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse6" aria-expanded="false" aria-controls="flush-collapse6">I love this service, it helped me! How can I contribute?</button>
+            </h2>
+            <div id="flush-collapse6" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">I'm glad to hear that you found this helpful! If you're interested in contributing, here are a few ways you can help me:</p>
+                <ul>
+                <li><span class="ds-i18n">Consider making a</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="ds-i18n">donation</a> <span class="ds-i18n">to support my late-night caffeine-fueled reverse-engineering efforts.</span></li>
+                <li class="ds-i18n">Ship me a controller you would love to add (send me an email for organization).</li>
+                <li><a href="https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/TRANSLATIONS.md" class="ds-i18n" target="_blank">Translate this website in your language</a><span class="ds-i18n">, to help more people like you!</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-      <p><span class="ds-i18n">Version</span> 0.5 (2024-04-14) - <a href="#" class="ds-i18n" data-bs-toggle="modal" data-bs-target="#donateModal">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+      <p><span class="ds-i18n">Version</span> 0.6 (2024-04-17) - <a href="#" class="ds-i18n" data-bs-toggle="modal" data-bs-target="#donateModal">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

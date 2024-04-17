@@ -916,6 +916,10 @@ function show_popup(text) {
     new bootstrap.Modal(document.getElementById('popupModal'), {}).show()
 }
 
+function show_faq_modal() {
+    new bootstrap.Modal(document.getElementById('faqModal'), {}).show()
+}
+
 function discord_popup() { show_popup(l("My handle on discord is: the_al")); }
 
 function calib_perm_changes() { return $("#calibPermanentChanges").is(':checked') }

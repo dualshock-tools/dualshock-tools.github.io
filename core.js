@@ -307,7 +307,19 @@ async function ds5_nvstatus() {
 }
 
 async function ds4_getbdaddr() {
-    return "not implemented";
+    try {
+        data = await device.receiveFeatureReport(0x12)
+        out = ""
+        for(i=0;i<6;i++) {
+            if(i >= 1) out += ":";
+            out += dec2hex8(data.getUint8(i, false));
+        }
+        $("#d-bdaddr").text(out);
+        return out;
+    } catch(e) {
+        $("#d-bdaddr").html("<font color='red'>" + l("error") + "</font>");
+        return "error";
+    }
 }
 
 async function ds5_getbdaddr() {
@@ -317,7 +329,7 @@ async function ds5_getbdaddr() {
         out = ""
         for(i=0;i<6;i++) {
             if(i >= 1) out += ":";
-            out += dec2hex8(data.getUint8(4 + i, false));
+            out += dec2hex8(data.getUint8(4 + 5 - i, false));
         }
         $("#d-bdaddr").text(out);
         return out;
@@ -1080,6 +1092,7 @@ function lang_reset_page() {
     }
     $("#authorMsg").html("");
     $("#curLang").html("English");
+    document.title = lang_orig_text[".title"];
 }
 
 function l(text) {
@@ -1120,6 +1133,7 @@ function lang_translate(target_file, target_lang) {
                 $(item).html(tnew[0]);
             } else {
                 console.log("Cannot find mapping for " + old); 
+                $(item).html(old);
             }
         }
         var old_title = lang_orig_text[".title"];

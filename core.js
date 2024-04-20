@@ -14,6 +14,7 @@ var available_langs = {
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
     "it_it": { "name": "Italiano", "file": "it_it.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
+    "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
 };
 
 function dec2hex(i) {

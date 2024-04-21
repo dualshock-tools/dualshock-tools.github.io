@@ -52,7 +52,7 @@
     "Done": "Fertig",
     "Hi, thank you for using this software.": "Hallo, vielen Dank, dass Sie diese Software verwenden.",
     "If you're finding it helpful and you want to support my efforts, feel free to": "Wenn Sie es hilfreich finden und meine Bemühungen unterstützen möchten, können Sie gerne",
-    "buy me a coffee": "mir einen Kaffee kaufen",
+    "buy me a coffee": "mir einen Kaffee anbieten",
     "! :)": "! :)",
     "Do you have any suggestion or issue? Drop me a message via email or discord.": "Haben Sie einen Vorschlag oder ein Problem? Schicken Sie mir eine Nachricht per E-Mail oder Discord.",
     "Cheers!": "Prost!",
@@ -156,5 +156,9 @@
     "Translate this website in your language": "Übersetzen Sie diese Website in Ihre Sprache",
     ", to help more people like you!": ", um mehr Menschen wie Sie zu helfen!",
 
+    "Board Model:": "",
+    "This feature is experimental.": "",
+    "Please let me know if the board model of your controller is not detected correctly.": "",
+    "Board model detection thanks to": "",
     "": ""
 }

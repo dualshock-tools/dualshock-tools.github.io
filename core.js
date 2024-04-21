@@ -28,36 +28,74 @@ function dec2hex8(i) {
    return (i+0x100).toString(16).substr(-2).toUpperCase();
 }
 
+function ds4_hw_to_bm(hw_ver) {
+    a = hw_ver >> 8;
+    if(a == 0x31) {
+        return "JDM-001";
+    } else if(a == 0x43) {
+        return "JDM-011";
+    } else if(a == 0x54) {
+        return "JDM-030";
+    } else if(a == 0x64) {
+        return "JDM-040";
+    } else if(a == 0xa4) {
+        return "JDM-050";
+    } else if(a == 0xb4) {
+        return "JDM-055";
+    } else {
+        return l("Unknown");
+    }
+}
+
 async function ds4_info() {
-    const view = await device.receiveFeatureReport(0xa3);
-
-    var cmd = view.getUint8(0, true);
-    if(cmd != 0xa3 || view.buffer.byteLength != 49)
-        return false;
-
-    var k1 = new TextDecoder().decode(view.buffer.slice(1, 0x10));
-    var k2 = new TextDecoder().decode(view.buffer.slice(0x10, 0x20));
-    k1=k1.replace(/\0/g, '');
-    k2=k2.replace(/\0/g, '');
-
-    var hw_ver_major= view.getUint16(0x21, true)
-    var hw_ver_minor= view.getUint16(0x23, true)
-    var sw_ver_major= view.getUint32(0x25, true)
-    var sw_ver_minor= view.getUint16(0x25+4, true)
-    var ooc = l("unknown");
-
     try {
-        const view = await device.receiveFeatureReport(0x81);
+        const view = await device.receiveFeatureReport(0xa3);
+
+        var cmd = view.getUint8(0, true);
+        if(cmd != 0xa3 || view.buffer.byteLength != 49)
+            return false;
+
+        var k1 = new TextDecoder().decode(view.buffer.slice(1, 0x10));
+        var k2 = new TextDecoder().decode(view.buffer.slice(0x10, 0x20));
+        k1=k1.replace(/\0/g, '');
+        k2=k2.replace(/\0/g, '');
+
+        var hw_ver_major= view.getUint16(0x21, true)
+        var hw_ver_minor= view.getUint16(0x23, true)
+        var sw_ver_major= view.getUint32(0x25, true)
+        var sw_ver_minor= view.getUint16(0x25+4, true)
+        var ooc = l("unknown");
+
         ooc = l("original");
+
+        var is_clone = false;
+        try {
+            const view = await device.receiveFeatureReport(0x81);
+            ooc = l("original");
+        } catch(e) {
+            is_clone = true;
+            ooc = "<font color='red'><b>" + l("clone") + "</b></font>";
+            disable_btn = true;
+        }
+
+        clear_info();
+        append_info(l("Build Date:"), k1 + " " + k2);
+        append_info(l("HW Version:"), "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
+        append_info(l("SW Version:"), dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
+        append_info(l("Device Type:"), ooc);
+        if(!is_clone) {
+            b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
+                    '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
+            append_info(l("Board Model:"), ds4_hw_to_bm(hw_ver_minor) + b_info);
+
+            // All ok, safe to query NVS Status and BD Addr
+            await ds4_nvstatus();
+            await ds4_getbdaddr();
+        }
     } catch(e) {
         ooc = "<font color='red'><b>" + l("clone") + "</b></font>";
         disable_btn = true;
     }
-    clear_info();
-    append_info(l("Build Date:"), k1 + " " + k2);
-    append_info(l("HW Version:"), "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
-    append_info(l("SW Version:"), dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
-    append_info(l("Device Type:"), ooc);
     return true;
 }
 
@@ -707,6 +745,8 @@ function alloc_req(id, data=[]) {
 async function connect() {
 try {
     $("#btnconnect").prop("disabled", true);
+    $("#connectspinner").show();
+    await new Promise(r => setTimeout(r, 100));
 
     let ds4v1 = { vendorId: 0x054c, productId: 0x05c4 };
     let ds4v2 = { vendorId: 0x054c, productId: 0x09cc };
@@ -721,11 +761,13 @@ try {
     
     if (devices.length == 0) {
         $("#btnconnect").prop("disabled", false);
+        $("#connectspinner").hide();
         return;
     }
 
     if (devices.length > 1) {
         $("#btnconnect").prop("disabled", false);
+        $("#connectspinner").hide();
         show_popup(l("Please connect only one controller at time."));
         return;
     }
@@ -762,6 +804,7 @@ try {
         }
     } else {
         $("#btnconnect").prop("disabled", false);
+        $("#connectspinner").hide();
         show_popup(l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
         disconnect();
         return;
@@ -788,8 +831,10 @@ try {
     $(".ds-btn").prop("disabled", disable_btn);
 
     $("#btnconnect").prop("disabled", false);
+    $("#connectspinner").hide();
 } catch(error) {
     $("#btnconnect").prop("disabled", false);
+    $("#connectspinner").hide();
     show_popup(l("Error: ") + error);
     return;
 }
@@ -927,8 +972,12 @@ function append_info(key, value) {
     $("#fwinfo").html($("#fwinfo").html() + s);
 }
 
-function show_popup(text) {
-    $("#popupBody").text(text);
+function show_popup(text, is_html = false) {
+    if(is_html) {
+        $("#popupBody").html(text);
+    } else {
+        $("#popupBody").text(text);
+    }
     new bootstrap.Modal(document.getElementById('popupModal'), {}).show()
 }
 
@@ -937,6 +986,13 @@ function show_faq_modal() {
 }
 
 function discord_popup() { show_popup(l("My handle on discord is: the_al")); }
+
+function board_model_info() {
+    l1 = l("This feature is experimental.");
+    l2 = l("Please let me know if the board model of your controller is not detected correctly.");
+    l3 = l("Board model detection thanks to") + ' <a href="https://battlebeavercustoms.com/">Battle Beaver Customs</a>.';
+    show_popup(l3 + "<br><br>" + l1 + " " + l2, true);
+}
 
 function calib_perm_changes() { return $("#calibPermanentChanges").is(':checked') }
 

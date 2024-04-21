@@ -156,5 +156,10 @@
     "Translate this website in your language": "Traduci questo sito web nella tua lingua",
     ", to help more people like you!": ", per aiutare più persone come te!",
 
+    "Board Model:": "Modello scheda:",
+    "This feature is experimental.": "Questa funzionalità è sperimentale.",
+    "Please let me know if the board model of your controller is not detected correctly.": "Scrivimi se il modello della scheda del tuo controller non viene riconosciuto correttamente.",
+    "Board model detection thanks to": "Rilevamento del modello della scheda grazie a",
+
     "": ""
 }

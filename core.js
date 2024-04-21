@@ -11,6 +11,7 @@ var available_langs = {
     "zh_cn": { "name": "中文", "file": "zh_cn.json"},
     "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
     "de_de": { "name": "Deutsch", "file": "de_de.json"},
+    "es_es": { "name": "Español", "file": "es_es.json"},
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
     "it_it": { "name": "Italiano", "file": "it_it.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},

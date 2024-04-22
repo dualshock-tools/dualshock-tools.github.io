@@ -156,10 +156,10 @@
     "Translate this website in your language": "将这个网站翻译成您的语言",
     ", to help more people like you!": "以帮助更多像您一样的人！",
 
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
+    "Board Model:": "主板型号",
+    "This feature is experimental.": "此功能为实验性质。",
+    "Please let me know if the board model of your controller is not detected correctly.": "如果您的手柄的主板型号没有被正确检测，请告诉我。",
+    "Board model detection thanks to": "主板型号检测功能需要感谢",
 
     "This website uses analytics to improve the service.": "该网站使用分析工具来改善服务。",
     "": ""

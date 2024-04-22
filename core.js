@@ -36,6 +36,21 @@ function dec2hex8(i) {
    return (i+0x100).toString(16).substr(-2).toUpperCase();
 }
 
+function ds5_hw_to_bm(hw_ver) {
+    a = (hw_ver >> 8) & 0xff;
+    if(a == 0x03) {
+        return "BDM-010";
+    } else if(a == 0x04) {
+        return "BDM-020";
+    } else if(a == 0x05) {
+        return "BDM-030";
+    } else if(a == 0x06) {
+        return "BDM-040";
+    } else {
+        return l("Unknown");
+    }
+}
+
 function ds4_hw_to_bm(hw_ver) {
     a = hw_ver >> 8;
     if(a == 0x31) {
@@ -46,6 +61,8 @@ function ds4_hw_to_bm(hw_ver) {
         return "JDM-030";
     } else if(a == 0x64) {
         return "JDM-040";
+    } else if(a == 0x83) {
+        return "JDM-020";
     } else if(a == 0xa4) {
         return "JDM-050";
     } else if(a == 0xb4) {
@@ -365,9 +382,8 @@ async function ds5_nvstatus() {
 }
 
 async function ds4_getbdaddr() {
-    la("ds4_getbdaddr");
     try {
-        data = await device.receiveFeatureReport(0x12);
+        data = lf("ds4_getbdaddr", await device.receiveFeatureReport(0x12));
         out = ""
         for(i=0;i<6;i++) {
             if(i >= 1) out += ":";
@@ -382,9 +398,8 @@ async function ds4_getbdaddr() {
 }
 
 async function ds5_getbdaddr() {
-    la("ds5_getbdaddr");
     try {
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [9,2]))
+        await lf("ds5_getbdaddr", device.sendFeatureReport(0x80, alloc_req(0x80, [9,2])))
         data = await device.receiveFeatureReport(0x81);
         out = ""
         for(i=0;i<6;i++) {
@@ -443,6 +458,13 @@ async function ds5_info() {
     append_info(l("FW Version1:"), "0x" + dec2hex32(fwversion1));
     append_info(l("FW Version2:"), "0x" + dec2hex32(fwversion2));
     append_info(l("FW Version3:"), "0x" + dec2hex32(fwversion3));
+
+    b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
+            '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
+    append_info(l("Board Model:"), ds5_hw_to_bm(hwinfo) + b_info);
+
+    await ds5_nvstatus();
+    await ds5_getbdaddr();
     return true;
 }
 

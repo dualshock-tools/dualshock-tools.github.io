@@ -399,8 +399,8 @@ async function ds4_getbdaddr() {
 
 async function ds5_getbdaddr() {
     try {
-        await lf("ds5_getbdaddr", device.sendFeatureReport(0x80, alloc_req(0x80, [9,2])))
-        data = await device.receiveFeatureReport(0x81);
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [9,2]));
+        data = lf("ds5_getbdaddr", await device.receiveFeatureReport(0x81));
         out = ""
         for(i=0;i<6;i++) {
             if(i >= 1) out += ":";

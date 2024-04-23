@@ -15,15 +15,15 @@ To translate the project into a new language, follow these steps:
 
 3. **Save the File**: Save the changes to the JSON file.
 
-4. **Update `core.js`**: Add the new language to the list of available languages (`available_langs`) in [core.js](https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/core.js). The languages are inserted in alphabetical order with respect to the name. For example:
+4. **Update `core.js`**: Add the new language to the list of available languages (`available_langs`) in [core.js](https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/core.js). The languages are inserted in alphabetical order with respect to the locale (es_es, fr_fr, ..). For example:
    
 ```javascript
 var available_langs = {
-    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
     "es_es": { "name": "Español", "file": "es_es.json"},
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
-    "it_it": { "name": "Italiano", "file": "it_it.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
+    "it_it": { "name": "Italiano", "file": "it_it.json"},
+    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
 };
 ```
 

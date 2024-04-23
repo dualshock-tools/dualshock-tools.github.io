@@ -10,14 +10,16 @@ var gj = 0;
 var gu = 0;
 
 var available_langs = {
-    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
-    "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
+    "bg_bg": { "name": "Български", "file": "bg_bg.json"},
     "de_de": { "name": "Deutsch", "file": "de_de.json"},
     "es_es": { "name": "Español", "file": "es_es.json"},
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
-    "it_it": { "name": "Italiano", "file": "it_it.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
+    "it_it": { "name": "Italiano", "file": "it_it.json"},
+    "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
+    "ru_ru": { "name": "Русский", "file": "ru_ru.json"},
     "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
+    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
 };
 
 function buf2hex(buffer) {

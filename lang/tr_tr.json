@@ -37,11 +37,11 @@
     "Write changes permanently in the controller": "Değişiklikleri denetleyiciye kalıcı olarak yaz",
     "<small>Warning: <font color=\"red\">Do not store the calibration permanently if the controller battery is low or disconnected. It will damage your controller.</font></small>": "<small>Uyarı: <font color='red'>Denetleyici pilinin düşük veya bağlantısız olduğu durumda kalibrasyonu kalıcı olarak kaydetmeyin. Bu denetleyicinize zarar verebilir.</font></small>",
     "Press <b>Start</b> to begin calibration.": "Kalibrasyonu başlatmak için <b>Başlat</b> düğmesine basın.",
-    "Please move both sticks to the <b>top-left corner</b> and release them.": "Lütfen her iki çubuğu da <b>sol üst köşeye</b> taşıyın ve bırakın.",
+    "Please move both sticks to the <b>top-left corner</b> and release them.": "Lütfen her iki analogu <b>sol üst köşeye</b> taşıyın ve bırakın.",
     "When the sticks are back in the center, press <b>Continue</b>.": "Analoglar tekrar merkezdeyken, <b>Devam</b> düğmesine basın.",
-    "Please move both sticks to the <b>top-right corner</b> and release them.": "Lütfen her iki çubuğu da <b>sağ üst köşeye</b> taşıyın ve bırakın.",
-    "Please move both sticks to the <b>bottom-left corner</b> and release them.": "Lütfen her iki çubuğu da <b>sol alt köşeye</b> taşıyın ve bırakın.",
-    "Please move both sticks to the <b>bottom-right corner</b> and release them.": "Lütfen her iki çubuğu da <b>sağ alt köşeye</b> taşıyın ve bırakın.",
+    "Please move both sticks to the <b>top-right corner</b> and release them.": "Lütfen her iki analogu <b>sağ üst köşeye</b> taşıyın ve bırakın.",
+    "Please move both sticks to the <b>bottom-left corner</b> and release them.": "Lütfen her iki analogu <b>sol alt köşeye</b> taşıyın ve bırakın.",
+    "Please move both sticks to the <b>bottom-right corner</b> and release them.": "Lütfen her iki analogu <b>sağ alt köşeye</b> taşıyın ve bırakın.",
     "Calibration completed successfully!": "Kalibrasyon başarıyla tamamlandı!",
     "Next": "İleri",
     "Recentering the controller sticks. ": "Denetleyici analoglarını yeniden merkezleme. ",
@@ -55,7 +55,7 @@
     "buy me a coffee": "bana bir kahve alabilirsiniz",
     "! :)": "! :)",
     "Do you have any suggestion or issue? Drop me a message via email or discord.": "Herhangi bir öneriniz veya sorunuz var mı? Bana e-posta veya discord üzerinden mesaj atabilirsiniz.",
-    "Cheers!": "Sağ Olun!",
+    "Cheers!": "Teşekkürler!",
     "Support this project": "Bu projeyi destekle",
 
     "unknown": "bilinmeyen",
@@ -76,6 +76,7 @@
     "FW Version1:": "Firmware Sürüm1:",
     "FW Version2:": "Firmware Sürüm2:",
     "FW Version3:": "Firmware Sürüm3:",
+	
     "Range calibration completed": "Ara mesafe kalibrasyonu tamamlandı",
     "Range calibration failed: ": "Ara mesafe kalibrasyonu başarısız oldu: ",
     "Cannot unlock NVS": "NVS kilidi açılamıyor", 
@@ -154,12 +155,12 @@
     "Ship me a controller you would love to add (send me an email for organization).": "Eklemek istediğiniz bir denetleyiciyi var ise bana gönderin (organizasyon için bana bir e-posta gönderin).",
     "Translate this website in your language": "Bu web sitesini kendi dilinize çevirin",
     ", to help more people like you!": ", sizin gibi daha fazla insanın faydalanması için!",
-
+	
     "Board Model:": "",
     "This feature is experimental.": "",
     "Please let me know if the board model of your controller is not detected correctly.": "",
     "Board model detection thanks to": "",
-	
-    "This website uses analytics to improve the service.": "Bu web sitesi hizmeti iyileştirmek için analiz kullanır.",
+
+    "This website uses analytics to improve the service.": "Bu web sitesi hizmeti iyileştirmek için analiz kullanıyor.",
 	"": ""
 }

@@ -24,6 +24,13 @@
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+<symbol id="paypal" viewBox="0 0 384 512">
+<path fill="#ffffff" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4 .7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9 .7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/>
+</symbol>
+<symbol id="ethereum" viewBox="0 0 320 512">
+<path fill="#ffffff" d="M311.9 260.8L160 353.6 8 260.8 160 0l151.9 260.8zM160 383.4L8 290.6 160 512l152-221.4-152 92.8z"/>
+</symbol>
+
 <symbol id="info" viewBox="0 -860 960 960">
 <path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
 </symbol>
@@ -307,10 +314,22 @@
         <p><span class="ds-i18n">If you're finding it helpful and you want to support my efforts, feel free to</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="text-body-secondary ds-i18n">buy me a coffee</a><span class="ds-i18n">! :)</span></p>
         <p class="ds-i18n">Do you have any suggestion or issue? Drop me a message via email or discord.</p>
         <p class="ds-i18n">Cheers!</p>
+
+        <div class="collapse" id="ethereumCollapse">
+            <div class="card card-body">
+                <h5 class="card-title">Ethereum Address</h5>
+                <center><img src="donate.png" width="128px" /></center>
+                <input type="text" class="form-control" value="0x27dDA2f15A6A477fcdFB3709Ed0760aEF0246D5D" readonly />
+            </div>
+        </div>
       </div>
       <div class="modal-footer">
-        <button onclick="window.open('https://paypal.me/alaincarlucci')" type="button" class="btn btn-success" data-bs-dismiss="modal"> &nbsp;&nbsp;
-            <svg class="bi" width="18" height="18"><use xlink:href="#mug"/></svg>&nbsp;&nbsp;
+        <button data-bs-toggle="collapse" data-bs-target="#ethereumCollapse" aria-expanded="false" aria-controls="ethereumCollapse" type="button" class="btn btn-success"> 
+            <svg class="bi" width="18" height="18"><use xlink:href="#ethereum"/></svg>&nbsp;Ethereum
+        </button>
+
+        <button onclick="window.open('https://paypal.me/alaincarlucci')" type="button" class="btn btn-primary" data-bs-dismiss="modal">
+            <svg class="bi" width="18" height="18"><use xlink:href="#paypal"/></svg>&nbsp;&nbsp;PayPal
         </button>
       </div>
     </div>
@@ -438,7 +457,7 @@
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-      <p><span class="ds-i18n">Version</span> 0.8 (2024-04-22) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+      <p><span class="ds-i18n">Version</span> 0.9 (2024-04-25) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

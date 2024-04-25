@@ -70,8 +70,15 @@ function ds4_hw_to_bm(hw_ver) {
     } else if(a == 0xb4) {
         return "JDM-055";
     } else {
+        if(is_rare(hw_ver))
+            return "WOW!";
         return l("Unknown");
     }
+}
+
+function is_rare(hw_ver) {
+    a = hw_ver >> 8;
+    return (a == 0x74 || a == 0x93 || a == 0xb0 || a == 0xa0);
 }
 
 async function ds4_info() {
@@ -120,6 +127,10 @@ async function ds4_info() {
             // All ok, safe to query NVS Status and BD Addr
             await ds4_nvstatus();
             await ds4_getbdaddr();
+
+            if(is_rare(hw_ver_minor)) {
+                show_popup("Wow, this is a rare/weird controller! Please write me an email at ds4@the.al or contact me on Discord (the_al)");
+            }
         }
     } catch(e) {
         ooc = "<font color='red'><b>" + l("clone") + "</b></font>";

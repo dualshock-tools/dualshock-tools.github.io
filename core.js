@@ -62,7 +62,7 @@ function ds4_hw_to_bm(hw_ver) {
         return "JDM-011";
     } else if(a == 0x54) {
         return "JDM-030";
-    } else if(a >= 0x64 || a <= 0x74) {
+    } else if(a >= 0x64 && a <= 0x74) {
         return "JDM-040";
     } else if((a > 0x80 && a < 0x84) || a == 0x93) {
         return "JDM-020";

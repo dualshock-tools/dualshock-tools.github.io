@@ -62,7 +62,7 @@ function ds4_hw_to_bm(hw_ver) {
         return "JDM-011";
     } else if(a == 0x54) {
         return "JDM-030";
-    } else if(a == 0x64 || a == 0x74) {
+    } else if(a >= 0x64 || a <= 0x74) {
         return "JDM-040";
     } else if((a > 0x80 && a < 0x84) || a == 0x93) {
         return "JDM-020";
@@ -82,7 +82,7 @@ function ds4_hw_to_bm(hw_ver) {
 function is_rare(hw_ver) {
     a = hw_ver >> 8;
     b = a >> 4;
-    return ((b == 7 && a != 0x74) || (b == 9 && a != 0x93) || a == 0xb0 || a == 0xa0);
+    return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93) || a == 0xa0);
 }
 
 async function ds4_info() {

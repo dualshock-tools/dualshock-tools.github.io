@@ -12,6 +12,7 @@ var gu = 0;
 var available_langs = {
     "bg_bg": { "name": "Български", "file": "bg_bg.json"},
     "de_de": { "name": "Deutsch", "file": "de_de.json"},
+    "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
     "es_es": { "name": "Español", "file": "es_es.json"},
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},

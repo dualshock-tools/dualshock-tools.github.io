@@ -9,15 +9,16 @@ var lang_disabled = true;
 var gj = 0;
 var gu = 0;
 
+// Alphabetical order
 var available_langs = {
     "bg_bg": { "name": "Български", "file": "bg_bg.json"},
     "de_de": { "name": "Deutsch", "file": "de_de.json"},
-    "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
     "es_es": { "name": "Español", "file": "es_es.json"},
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
     "it_it": { "name": "Italiano", "file": "it_it.json"},
     "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
+    "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
     "pt_br": { "name": "Português do Brasil", "file": "pt_br.json"},
     "ru_ru": { "name": "Русский", "file": "ru_ru.json"},
     "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
@@ -25,7 +26,7 @@ var available_langs = {
 };
 
 function buf2hex(buffer) {
-  return [...new Uint8Array(buffer)] .map(x => x.toString(16).padStart(2, '0')) .join('');
+  return [...new Uint8Array(buffer)].map(x => x.toString(16).padStart(2, '0')) .join('');
 }
 
 function dec2hex(i) {
@@ -770,6 +771,8 @@ async function disconnect() {
     $("#offlinebar").show();
     $("#onlinebar").hide();
     $("#mainmenu").hide();
+    $("#d-nvstatus").text = l("Unknown");
+    $("#d-bdaddr").text = l("Unknown");
     close_calibrate_window();
 }
 
@@ -857,6 +860,85 @@ function alloc_req(id, data=[]) {
     return out;
 }
 
+async function continue_connection(report) {
+    try {
+        device.oninputreport = null;
+        var reportLen = report.data.byteLength;
+
+        var connected = false;
+
+        // Detect if the controller is connected via USB
+        if(reportLen != 63) {
+            $("#btnconnect").prop("disabled", false);
+            $("#connectspinner").hide();
+            show_popup(l("Please connect the device using a USB cable."))
+            disconnect();
+            return;
+        }
+
+        if(device.productId == 0x05c4) {
+            if(await ds4_info()) {
+                connected = true;
+                mode = 1;
+                devname = l("Sony DualShock 4 V1");
+            }
+        } else if(device.productId == 0x09cc) {
+            if(await ds4_info()) {
+                connected = true;
+                mode = 1;
+                devname = l("Sony DualShock 4 V2");
+            }
+        } else if(device.productId == 0x0ce6) {
+            if(await ds5_info()) {
+                connected = true;
+                mode = 2;
+                devname = l("Sony DualSense");
+            }
+        } else if(device.productId == 0x0df2) {
+            if(await ds5_info()) {
+                connected = true;
+                mode = 0;
+                devname = l("Sony DualSense Edge");
+                disable_btn = true;
+            }
+        } else {
+            $("#btnconnect").prop("disabled", false);
+            $("#connectspinner").hide();
+            show_popup(l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
+            disconnect();
+            return;
+        }
+
+        if(connected) {
+            $("#devname").text(devname + " (" + dec2hex(device.vendorId) + ":" + dec2hex(device.productId) + ")");
+            $("#offlinebar").hide();
+            $("#onlinebar").show();
+            $("#mainmenu").show();
+            $("#resetBtn").show();
+            $("#d-nvstatus").text = l("Unknown");
+            $("#d-bdaddr").text = l("Unknown");
+        }
+
+        if(disable_btn) {
+            if(device.productId == 0x0df2) {
+                show_popup(l("Calibration of the DualSense Edge is not currently supported."));
+            } else {
+                show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
+            }
+        }
+
+        $(".ds-btn").prop("disabled", disable_btn);
+
+        $("#btnconnect").prop("disabled", false);
+        $("#connectspinner").hide();
+    } catch(error) {
+        $("#btnconnect").prop("disabled", false);
+        $("#connectspinner").hide();
+        show_popup(l("Error: ") + error);
+        return;
+    }
+}
+
 async function connect() {
     gj = crypto.randomUUID();
     la("begin");
@@ -893,63 +975,9 @@ async function connect() {
     
         device = devices[0]
         la("connect", {"p": device.productId, "v": device.vendorId});
-    
-        var connected = false
-        if(device.productId == 0x05c4) {
-            if(await ds4_info()) {
-                connected = true
-                mode = 1;
-                devname = l("Sony DualShock 4 V1");
-            }
-        } else if(device.productId == 0x09cc) {
-            if(await ds4_info()) {
-                connected = true
-                mode = 1;
-                devname = l("Sony DualShock 4 V2");
-            }
-        } else if(device.productId == 0x0ce6) {
-            if(await ds5_info()) {
-                connected = true
-                mode = 2;
-                devname = l("Sony DualSense");
-            }
-        } else if(device.productId == 0x0df2) {
-            if(await ds5_info()) {
-                connected = true
-                mode = 0;
-                devname = l("Sony DualSense Edge");
-                disable_btn = true;
-            }
-        } else {
-            $("#btnconnect").prop("disabled", false);
-            $("#connectspinner").hide();
-            show_popup(l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId))
-            disconnect();
-            return;
-        }
-    
-        if(connected) {
-            $("#devname").text(devname + " (" + dec2hex(device.vendorId) + ":" + dec2hex(device.productId) + ")");
-            $("#offlinebar").hide();
-            $("#onlinebar").show();
-            $("#mainmenu").show();
-            $("#resetBtn").show();
-            $("#d-nvstatus").text = l("Unknown");
-            $("#d-bdaddr").text = l("Unknown");
-        }
-    
-        if(disable_btn) {
-            if(device.productId == 0x0df2) {
-                show_popup(l("Calibration of the DualSense Edge is not currently supported."));
-            } else {
-                show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
-            }
-        }
-    
-        $(".ds-btn").prop("disabled", disable_btn);
-    
-        $("#btnconnect").prop("disabled", false);
-        $("#connectspinner").hide();
+
+        device.oninputreport = continue_connection
+
     } catch(error) {
         $("#btnconnect").prop("disabled", false);
         $("#connectspinner").hide();

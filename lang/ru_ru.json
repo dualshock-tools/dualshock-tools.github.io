@@ -154,12 +154,13 @@
 	"Ship me a controller you would love to add (send me an email for organization).": "Отправьте мне контроллер, который вы хотели бы добавить (отправьте мне электронное письмо для организации).",
 	"Translate this website in your language": "Переведите этот сайт на свой язык",
 	", to help more people like you!": ", чтобы помочь большему числу людей, подобных вам!",
+    "This website uses analytics to improve the service.": "Этот сайт использует аналитику для улучшения сервиса.",
 	
     "Board Model:": "",
     "This feature is experimental.": "",
     "Please let me know if the board model of your controller is not detected correctly.": "",
     "Board model detection thanks to": "",
+    "Please connect the device using a USB cable.": "",
 
-    "This website uses analytics to improve the service.": "Этот сайт использует аналитику для улучшения сервиса.",
 	"": ""
 }

@@ -154,12 +154,13 @@
     "Ship me a controller you would love to add (send me an email for organization).": "Küldj a fejlesztőnek egy kontrollert, amelyet szívesen látnál a támogatott kontrollerek listájában (küldj e-mailt a fejlesztőnek).",
     "Translate this website in your language": "Fordítsd le ezt a webhelyet a saját nyelvedre",
     ", to help more people like you!": ", hogy több hozzád hasonló embernek segítsen!",
+    "This website uses analytics to improve the service.": "Ez a weboldal analitikát használ a szolgáltatás javításához.",
 
     "Board Model:": "Alaplap verzió",
     "This feature is experimental.": "Ez egy kisérleti funkció",
     "Please let me know if the board model of your controller is not detected correctly.": "Kérlek értesítsd a fejlesztőt, ha az alaplap verziója nem egyezik meg a felimert verzióval!",
     "Board model detection thanks to": "Az alaplapfelismerési funkciőért köszönet neki:",
 
-    "This website uses analytics to improve the service.": "Ez a weboldal analitikát használ a szolgáltatás javításához.",
+    "Please connect the device using a USB cable.": "",
     "": ""
 }

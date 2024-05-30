@@ -155,10 +155,10 @@
     "Translate this website in your language": "Przetłumacz tę stronę na swój język",
     ", to help more people like you!": ", aby pomóc większej ilości osób takich jak ty!",
 
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
+    "Board Model:": "Model płytki:",
+    "This feature is experimental.": "Ta funkcja jest eksperymentalna.",
+    "Please let me know if the board model of your controller is not detected correctly.": "Proszę daj mi znać jaki model płytki kontrolera nie został wykryty poprawnie",
+    "Board model detection thanks to": "Podziękowania dla osoby która wykryła model płytki",
 
     "This website uses analytics to improve the service.": "Ta strona korzysta z analiz w celu ulepszenia usług.",
     "": ""

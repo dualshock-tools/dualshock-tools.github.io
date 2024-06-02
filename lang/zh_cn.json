@@ -162,5 +162,8 @@
     "Board model detection thanks to": "主板型号检测功能需要感谢",
 
     "Please connect the device using a USB cable.": "",
+    "This DualSense controller has outdated firmware.": "",
+    "Please update the firmware and try again.": "",
+
     "": ""
 }

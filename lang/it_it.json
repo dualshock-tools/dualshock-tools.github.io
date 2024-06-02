@@ -161,6 +161,8 @@
     "Please let me know if the board model of your controller is not detected correctly.": "Scrivimi se il modello della scheda del tuo controller non viene riconosciuto correttamente.",
     "Board model detection thanks to": "Rilevamento del modello della scheda grazie a",
     "Please connect the device using a USB cable.": "Connetti il controller usando un cavo USB.",
+    "This DualSense controller has outdated firmware.": "Questo controller DualSense ha un firmware non aggiornato.",
+    "Please update the firmware and try again.": "Aggiorna il firmware e riprova.",
 
     "": ""
 }

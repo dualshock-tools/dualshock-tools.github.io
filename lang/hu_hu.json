@@ -162,5 +162,7 @@
     "Board model detection thanks to": "Az alaplapfelismerési funkciőért köszönet neki:",
 
     "Please connect the device using a USB cable.": "",
+    "This DualSense controller has outdated firmware.": "",
+    "Please update the firmware and try again.": "",
     "": ""
 }

@@ -469,46 +469,59 @@ async function ds4_nvunlock() {
 }
 
 async function ds5_info() {
-    const view = lf("ds5_info", await device.receiveFeatureReport(0x20));
+    try {
+        const view = lf("ds5_info", await device.receiveFeatureReport(0x20));
 
-    var cmd = view.getUint8(0, true);
-    if(cmd != 0x20 || view.buffer.byteLength != 64)
+        var cmd = view.getUint8(0, true);
+        if(cmd != 0x20 || view.buffer.byteLength != 64)
+            return false;
+
+        var build_date = new TextDecoder().decode(view.buffer.slice(1, 1+11));
+        var build_time = new TextDecoder().decode(view.buffer.slice(12, 20));
+
+        var fwtype     = view.getUint16(20, true);
+        var swseries   = view.getUint16(22, true);
+        var hwinfo     = view.getUint32(24, true);
+        var fwversion  = view.getUint32(28, true);
+
+        var deviceinfo = new TextDecoder().decode(view.buffer.slice(32, 32+12));
+        var updversion = view.getUint16(44, true);
+        var unk        = view.getUint16(46, true);
+
+        var fwversion1 = view.getUint32(50, true);
+        var fwversion2 = view.getUint32(54, true);
+        var fwversion3 = view.getUint32(58, true);
+
+        clear_info();
+
+        append_info(l("Build Date:"), build_date + " " + build_time);
+        append_info(l("Firmware Type:"), "0x" + dec2hex(fwtype));
+        append_info(l("SW Series:"), "0x" + dec2hex(swseries));
+        append_info(l("HW Info:"), "0x" + dec2hex32(hwinfo));
+        append_info(l("SW Version:"), "0x" + dec2hex32(fwversion));
+        append_info(l("UPD Version:"), "0x" + dec2hex(updversion));
+        append_info(l("FW Version1:"), "0x" + dec2hex32(fwversion1));
+        append_info(l("FW Version2:"), "0x" + dec2hex32(fwversion2));
+        append_info(l("FW Version3:"), "0x" + dec2hex32(fwversion3));
+
+        b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
+                '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
+        append_info(l("Board Model:"), ds5_hw_to_bm(hwinfo) + b_info);
+
+        old_controller = build_date.search(/ 2020| 2021/);
+        if(old_controller != -1) {
+            la("ds5_info_error", {"r": "old"})
+            disable_btn = true;
+            return true;
+        }
+
+        await ds5_nvstatus();
+        await ds5_getbdaddr();
+    } catch(e) {
+        la("ds5_info_error", {"r": e})
+        show_popup(l("Cannot read controller information"));
         return false;
-
-    var build_date = new TextDecoder().decode(view.buffer.slice(1, 1+11));
-    var build_time = new TextDecoder().decode(view.buffer.slice(12, 20));
-
-    var fwtype     = view.getUint16(20, true);
-    var swseries   = view.getUint16(22, true);
-    var hwinfo     = view.getUint32(24, true);
-    var fwversion  = view.getUint32(28, true);
-
-    var deviceinfo = new TextDecoder().decode(view.buffer.slice(32, 32+12));
-    var updversion = view.getUint16(44, true);
-    var unk        = view.getUint16(46, true);
-
-    var fwversion1 = view.getUint32(50, true);
-    var fwversion2 = view.getUint32(54, true);
-    var fwversion3 = view.getUint32(58, true);
-
-    clear_info();
-
-    append_info(l("Build Date:"), build_date + " " + build_time);
-    append_info(l("Firmware Type:"), "0x" + dec2hex(fwtype));
-    append_info(l("SW Series:"), "0x" + dec2hex(swseries));
-    append_info(l("HW Info:"), "0x" + dec2hex32(hwinfo));
-    append_info(l("SW Version:"), "0x" + dec2hex32(fwversion));
-    append_info(l("UPD Version:"), "0x" + dec2hex(updversion));
-    append_info(l("FW Version1:"), "0x" + dec2hex32(fwversion1));
-    append_info(l("FW Version2:"), "0x" + dec2hex32(fwversion2));
-    append_info(l("FW Version3:"), "0x" + dec2hex32(fwversion3));
-
-    b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
-            '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
-    append_info(l("Board Model:"), ds5_hw_to_bm(hwinfo) + b_info);
-
-    await ds5_nvstatus();
-    await ds5_getbdaddr();
+    }
     return true;
 }
 
@@ -871,8 +884,8 @@ async function continue_connection(report) {
         if(reportLen != 63) {
             $("#btnconnect").prop("disabled", false);
             $("#connectspinner").hide();
-            show_popup(l("Please connect the device using a USB cable."))
             disconnect();
+            show_popup(l("Please connect the device using a USB cable."))
             return;
         }
 
@@ -917,10 +930,18 @@ async function continue_connection(report) {
             $("#resetBtn").show();
             $("#d-nvstatus").text = l("Unknown");
             $("#d-bdaddr").text = l("Unknown");
+        } else {
+            show_popup(l("Connected invalid device: ") + l("Error 1"));
+            $("#btnconnect").prop("disabled", false);
+            $("#connectspinner").hide();
+            disconnect();
+            return;
         }
 
         if(disable_btn) {
-            if(device.productId == 0x0df2) {
+            if(device.productId == 0x0ce6) {
+                show_popup(l("This DualSense controller has outdated firmware.") + "<br>" + l("Please update the firmware and try again."), true);
+            } else if(device.productId == 0x0df2) {
                 show_popup(l("Calibration of the DualSense Edge is not currently supported."));
             } else {
                 show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
@@ -1370,5 +1391,4 @@ function lang_translate(target_file, target_lang) {
         }
         $("#curLang").html(available_langs[target_lang]["name"]);
     });
-
 }

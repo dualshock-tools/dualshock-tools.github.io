@@ -161,6 +161,9 @@
     "Please let me know if the board model of your controller is not detected correctly.": "",
     "Board model detection thanks to": "",
     "Please connect the device using a USB cable.": "",
+    "This DualSense controller has outdated firmware.": "",
+    "Please update the firmware and try again.": "",
+
 
 	"": ""
 }

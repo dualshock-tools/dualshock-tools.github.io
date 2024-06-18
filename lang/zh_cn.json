@@ -161,13 +161,13 @@
     "Please let me know if the board model of your controller is not detected correctly.": "如果您的手柄的主板型号没有被正确检测，请告诉我。",
     "Board model detection thanks to": "主板型号检测功能需要感谢",
 
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
-    "Joystick Info": "",
-    "Err R:": "", 
-    "Err L:": "", 
-    "Check circularity": "",
+    "Please connect the device using a USB cable.": "请使用USB线连接设备。",
+    "This DualSense controller has outdated firmware.": "该DualSense手柄的固件已过时。",
+    "Please update the firmware and try again.": "请更新固件后重试。",
+    "Joystick Info": "摇杆信息",
+    "Err R:": "右摇杆错误率", 
+    "Err L:": "左摇杆错误率", 
+    "Check circularity": "检查摇杆外圈圆度。",
 
     "": ""
 }

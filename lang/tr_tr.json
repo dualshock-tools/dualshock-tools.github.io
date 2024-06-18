@@ -156,14 +156,17 @@
     ", to help more people like you!": ", sizin gibi daha fazla insanın faydalanması için!",
     "This website uses analytics to improve the service.": "Bu web sitesi hizmeti iyileştirmek için analiz kullanıyor.",
 	
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
-
+    "Board Model:": "Kart Modeli:",
+    "This feature is experimental.": "Bu özellik deneysel.",
+    "Please let me know if the board model of your controller is not detected correctly.": "Denetleyicinizin kart modeli doğru tespit edilmezse lütfen bana bildirin.",
+    "Board model detection thanks to": "Kart modeli tespiti sayesinde",
+    "Please connect the device using a USB cable.": "Lütfen cihazı bir USB kablosu kullanarak bağlayın.",
+    "This DualSense controller has outdated firmware.": "Bu DualSense denetleyicisinin yazılımı güncel değil.",
+    "Please update the firmware and try again.": "Lütfen yazılımı güncelleyin ve tekrar deneyin.",
+    "Joystick Info": "Joystick Bilgisi",
+    "Err R:": "Hata D:",
+    "Err L:": "Hata S:",
+    "Check circularity": "Daireselliği kontrol et",
 
 	"": ""
 }

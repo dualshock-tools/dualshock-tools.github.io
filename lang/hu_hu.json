@@ -155,14 +155,16 @@
     "Translate this website in your language": "Fordítsd le ezt a webhelyet a saját nyelvedre",
     ", to help more people like you!": ", hogy több hozzád hasonló embernek segítsen!",
     "This website uses analytics to improve the service.": "Ez a weboldal analitikát használ a szolgáltatás javításához.",
-
     "Board Model:": "Alaplap verzió",
     "This feature is experimental.": "Ez egy kisérleti funkció",
     "Please let me know if the board model of your controller is not detected correctly.": "Kérlek értesítsd a fejlesztőt, ha az alaplap verziója nem egyezik meg a felimert verzióval!",
     "Board model detection thanks to": "Az alaplapfelismerési funkciőért köszönet neki:",
-
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
+    "Please connect the device using a USB cable.": "Kérjük, csatlakoztassa az eszközt USB-kábellel.",
+    "This DualSense controller has outdated firmware.": "Ennek a DualSense vezérlőnek elavult a firmware-e.",
+    "Please update the firmware and try again.": "Kérjük, frissítse a firmware-t, és próbálja újra.",
+    "Joystick Info": "Joystick Információ",
+    "Err R:": "Hiba J:",
+    "Err L:": "Hiba B:",
+    "Check circularity": "Ellenőrizze a körkörösséget",
     "": ""
 }

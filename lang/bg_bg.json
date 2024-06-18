@@ -155,14 +155,17 @@
 	"Translate this website in your language": "Преведете този уебсайт на ваш език",
 	", to help more people like you!": ", за да помогнете на повече хора като вас!",	
     "This website uses analytics to improve the service.": "Този уебсайт използва анализи за подобряване на услугата.",
-
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
+    "Board Model:": "Модел на платката:",
+    "This feature is experimental.": "Тази функция е експериментална.",
+    "Please let me know if the board model of your controller is not detected correctly.": "Моля, уведомете ме, ако моделът на платката на вашия контролер не е разпознат правилно.",
+    "Board model detection thanks to": "Разпознаване на модела на платката благодарение на",
+    "Please connect the device using a USB cable.": "Моля, свържете устройството с USB кабел.",
+    "This DualSense controller has outdated firmware.": "Този контролер DualSense има остарял фърмуер.",
+    "Please update the firmware and try again.": "Моля, актуализирайте фърмуера и опитайте отново.",
+    "Joystick Info": "Информация за джойстика",
+    "Err R:": "Грешка Д:",
+    "Err L:": "Грешка Л:",
+    "Check circularity": "Проверка на кръговостта",
 
     "": ""
 }

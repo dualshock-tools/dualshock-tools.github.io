@@ -780,7 +780,7 @@ async function disconnect() {
     device.close();
     device = null;
     disable_btn = false;
-
+    reset_circularity();
     $("#offlinebar").show();
     $("#onlinebar").hide();
     $("#mainmenu").hide();
@@ -845,6 +845,8 @@ function gboot() {
     window.addEventListener('DOMContentLoaded', function() {
         lang_init();
         welcome_modal();
+        $("#checkCircularity").on('change', on_circ_check_change);
+        on_circ_check_change();
     });
 
     if (!("hid" in navigator)) {
@@ -873,6 +875,286 @@ function alloc_req(id, data=[]) {
     return out;
 }
 
+var last_lx = 0, last_ly = 0, last_rx = 0, last_ry = 0;
+var ll_updated = false;
+
+var ll_data=new Array(48);
+var rr_data=new Array(48);
+var enable_circ_test = false;
+
+function reset_circularity() {
+    for(i=0;i<ll_data.length;i++) ll_data[i] = 0;
+    for(i=0;i<rr_data.length;i++) rr_data[i] = 0;
+    enable_circ_test = false;
+    ll_updated = false;
+    $("#checkCircularity").prop('checked', false);
+    refresh_stick_pos();
+}
+
+function refresh_stick_pos() {
+    var c = document.getElementById("stickCanvas");
+    var ctx = c.getContext("2d");
+    var sz = 60;
+    var hb = 20 + sz;
+    var yb = 15 + sz;
+    var w = c.width;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#000000';
+
+    // Left circle
+    ctx.beginPath();
+    ctx.arc(hb, yb, sz, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Right circle
+    ctx.beginPath();
+    ctx.arc(w - hb, yb, sz, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    function cc_to_color(cc) {
+        var dd = Math.sqrt(Math.pow((1.0 - cc), 2));
+        if(cc <= 1.0)
+            hh = 220 - 220 * Math.min(1.0, Math.max(0, (dd - 0.05)) / 0.1);
+        else
+            hh = (245 + (360-245) * Math.min(1.0, Math.max(0, (dd - 0.05)) / 0.15)) % 360;
+        return hh;
+    }
+
+    if(enable_circ_test) {
+        var MAX_N = ll_data.length;
+
+        for(i=0;i<MAX_N;i++) {
+            var kd = ll_data[i];
+            var kd1 = ll_data[(i+1) % ll_data.length];
+            if (kd === undefined || kd1 === undefined) continue;
+            var ka = i * Math.PI * 2 / MAX_N;
+            var ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
+
+            var kx = Math.cos(ka) * kd;
+            var ky = Math.sin(ka) * kd;
+            var kx1 = Math.cos(ka1) * kd1;
+            var ky1 = Math.sin(ka1) * kd1;
+
+            ctx.beginPath();
+            ctx.moveTo(hb, yb);
+            ctx.lineTo(hb+kx*sz, yb+ky*sz);
+            ctx.lineTo(hb+kx1*sz, yb+ky1*sz);
+            ctx.lineTo(hb, yb);
+            ctx.closePath();
+
+            var cc = (kd + kd1) / 2;
+            var hh = cc_to_color(cc);
+            ctx.fillStyle = 'hsla(' + parseInt(hh) + ', 100%, 50%, 0.5)';
+            ctx.fill();
+        }
+
+        for(i=0;i<MAX_N;i++) {
+            var kd = rr_data[i];
+            var kd1 = rr_data[(i+1) % rr_data.length];
+            if (kd === undefined || kd1 === undefined) continue;
+            var ka = i * Math.PI * 2 / MAX_N;
+            var ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
+
+            var kx = Math.cos(ka) * kd;
+            var ky = Math.sin(ka) * kd;
+            var kx1 = Math.cos(ka1) * kd1;
+            var ky1 = Math.sin(ka1) * kd1;
+
+            ctx.beginPath();
+            ctx.moveTo(w-hb, yb);
+            ctx.lineTo(w-hb+kx*sz, yb+ky*sz);
+            ctx.lineTo(w-hb+kx1*sz, yb+ky1*sz);
+            ctx.lineTo(w-hb, yb);
+            ctx.closePath();
+
+            var cc = (kd + kd1) / 2;
+            var hh = cc_to_color(cc);
+            ctx.fillStyle = 'hsla(' + parseInt(hh) + ', 100%, 50%, 0.5)';
+            ctx.fill();
+        }
+    }
+
+    ctx.strokeStyle = '#aaaaaa';
+    ctx.beginPath();
+    ctx.moveTo(hb-sz, yb);
+    ctx.lineTo(hb+sz, yb);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(w-hb-sz, yb);
+    ctx.lineTo(w-hb+sz, yb);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hb, yb-sz);
+    ctx.lineTo(hb, yb+sz);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(w-hb, yb-sz);
+    ctx.lineTo(w-hb, yb+sz);
+    ctx.closePath();
+    ctx.stroke();
+
+    var plx = last_lx;
+    var ply = last_ly;
+    var prx = last_rx;
+    var pry = last_ry;
+
+    if(enable_circ_test) {
+        var pld = Math.sqrt(plx*plx + ply*ply);
+        var pla = (parseInt(Math.round(Math.atan2(ply, plx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
+        var old = ll_data[pla];
+        if(old === undefined) old = 0;
+        ll_data[pla] = Math.max(old, pld);
+
+        var prd = Math.sqrt(prx*prx + pry*pry);
+        var pra = (parseInt(Math.round(Math.atan2(pry, prx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
+        var old = rr_data[pra];
+        if(old === undefined) old = 0;
+        rr_data[pra] = Math.max(old, prd);
+    }
+
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(hb+plx*sz,yb+ply*sz,4, 0, 2*Math.PI);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(hb, yb);
+    ctx.lineTo(hb+plx*sz, yb+ply*sz);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(w-hb+prx*sz, yb+pry*sz,4, 0, 2*Math.PI);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(w-hb, yb);
+    ctx.lineTo(w-hb+prx*sz, yb+pry*sz);
+    ctx.stroke();
+
+    var lbl = "", lbx = "";
+    $("#lx-lbl").text(float_to_str(plx));
+    $("#ly-lbl").text(float_to_str(ply));
+    $("#rx-lbl").text(float_to_str(prx));
+    $("#ry-lbl").text(float_to_str(pry));
+
+    if(enable_circ_test) {
+        var ofl = 0, ofr = 0, lcounter = 0, rcounter = 0;
+        ofl = 0; ofr = 0;
+        for (i=0;i<ll_data.length;i++) 
+            if(ll_data[i] > 0.2) {
+                lcounter += 1;
+                ofl += Math.pow(ll_data[i] - 1, 2);
+            }
+        for (i=0;i<rr_data.length;i++) {
+            if(ll_data[i] > 0.2) {
+                rcounter += 1;
+                ofr += Math.pow(rr_data[i] - 1, 2);
+            }
+        }
+        if(lcounter > 0)
+            ofl = Math.sqrt(ofl / lcounter) * 100;
+        if(rcounter > 0)
+            ofr = Math.sqrt(ofr / rcounter) * 100;
+
+        el = ofl.toFixed(2) + "%";
+        er = ofr.toFixed(2) + "%";
+        $("#el-lbl").text(el);
+        $("#er-lbl").text(er);
+    }
+}
+
+function circ_checked() { return $("#checkCircularity").is(':checked') }
+
+function on_circ_check_change() {
+    enable_circ_test = circ_checked();
+    for(i=0;i<ll_data.length;i++) ll_data[i] = 0;
+    for(i=0;i<rr_data.length;i++) rr_data[i] = 0;
+
+    if(enable_circ_test) {
+        $("#circ-data").show();
+    } else {
+        $("#circ-data").hide();
+    }
+    refresh_stick_pos();
+}
+
+function float_to_str(f) {
+    if(f < 0.004 && f >= -0.004) return "+0.00";
+    return (f<0?"":"+") + f.toFixed(2);
+}
+
+var on_delay = false;
+
+function timeout_ok() {
+    on_delay = false;
+    if(ll_updated)
+        refresh_stick_pos();
+}
+
+function refresh_sticks() {
+    if(on_delay)
+        return;
+
+    refresh_stick_pos();
+    on_delay = true;
+    setTimeout(timeout_ok, 20);
+}
+
+function process_ds4_input(data) {
+    var lx = data.data.getUint8(0);
+    var ly = data.data.getUint8(1);
+    var rx = data.data.getUint8(2);
+    var ry = data.data.getUint8(3);
+
+    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
+    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
+    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
+    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
+
+    if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
+        last_lx = new_lx;
+        last_ly = new_ly;
+        last_rx = new_rx;
+        last_ry = new_ry;
+        ll_updated = true;
+        refresh_sticks();
+    }
+}
+
+function process_ds_input(data) {
+    var lx = data.data.getUint8(0);
+    var ly = data.data.getUint8(1);
+    var rx = data.data.getUint8(2);
+    var ry = data.data.getUint8(3);
+
+    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
+    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
+    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
+    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
+
+    if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
+        last_lx = new_lx;
+        last_ly = new_ly;
+        last_rx = new_rx;
+        last_ry = new_ry;
+        ll_updated = true;
+        refresh_sticks();
+    }
+}
+
 async function continue_connection(report) {
     try {
         device.oninputreport = null;
@@ -894,18 +1176,21 @@ async function continue_connection(report) {
                 connected = true;
                 mode = 1;
                 devname = l("Sony DualShock 4 V1");
+                device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x09cc) {
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
                 devname = l("Sony DualShock 4 V2");
+                device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x0ce6) {
             if(await ds5_info()) {
                 connected = true;
                 mode = 2;
                 devname = l("Sony DualSense");
+                device.oninputreport = process_ds_input;
             }
         } else if(device.productId == 0x0df2) {
             if(await ds5_info()) {
@@ -962,6 +1247,7 @@ async function continue_connection(report) {
 
 async function connect() {
     gj = crypto.randomUUID();
+    reset_circularity();
     la("begin");
     try {
         $("#btnconnect").prop("disabled", true);
@@ -1059,9 +1345,10 @@ async function multi_calib_sticks_begin(pc) {
 
 async function multi_calib_sticks_end(pc) {
     if(mode == 1) 
-        return ds4_calibrate_sticks_end(pc);
+        await ds4_calibrate_sticks_end(pc);
     else
-        return ds5_calibrate_sticks_end(pc);
+        await ds5_calibrate_sticks_end(pc);
+    on_circ_check_change();
 }
 
 async function multi_calib_sticks_sample() {
@@ -1092,9 +1379,10 @@ async function multi_calibrate_range(perm_ch) {
 
 async function multi_calibrate_range_on_close() {
     if(mode == 1) 
-        ds4_calibrate_range_end(last_perm_ch);
+        await ds4_calibrate_range_end(last_perm_ch);
     else
-        ds5_calibrate_range_end(last_perm_ch);
+        await ds5_calibrate_range_end(last_perm_ch);
+    on_circ_check_change();
 }
 
 
@@ -1391,4 +1679,5 @@ function lang_translate(target_file, target_lang) {
         }
         $("#curLang").html(available_langs[target_lang]["name"]);
     });
+
 }

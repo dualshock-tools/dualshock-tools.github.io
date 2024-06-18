@@ -155,14 +155,17 @@
     "Translate this website in your language": "Traduz esta web en tu idioma",
     ", to help more people like you!": ", para que ayude mas personas como tu!",
     "This website uses analytics to improve the service.": "Este sitio web utiliza análisis para mejorar el servicio.",
-
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
+    "Board Model:": "Modelo de la placa:",
+    "This feature is experimental.": "Esta función es experimental.",
+    "Please let me know if the board model of your controller is not detected correctly.": "Por favor, avísame si el modelo de la placa de tu controlador no se detecta correctamente.",
+    "Board model detection thanks to": "Detección del modelo de la placa gracias a",
+    "Please connect the device using a USB cable.": "Por favor, conecta el dispositivo usando un cable USB.",
+    "This DualSense controller has outdated firmware.": "Este controlador DualSense tiene un firmware desactualizado.",
+    "Please update the firmware and try again.": "Por favor, actualiza el firmware y vuelve a intentarlo.",
+    "Joystick Info": "Información del joystick",
+    "Err R:": "Error D:",
+    "Err L:": "Error I:",
+    "Check circularity": "Comprobar circularidad",
 
     "": ""
 }

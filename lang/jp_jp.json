@@ -156,14 +156,17 @@
     ", to help more people like you!": "、あなたのような多くの人々を助けるために！",
     "This website uses analytics to improve the service.": "このウェブサイトはサービスを向上させるためにアナリティクスを使用しています。",
 
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
-
+    "Board Model:": "基板モデル：",
+    "This feature is experimental.": "この機能は実験的です。",
+    "Please let me know if the board model of your controller is not detected correctly.": "コントローラーの基板モデルが正しく検出されない場合はお知らせください。",
+    "Board model detection thanks to": "基板モデルの検出には感謝します",
+    "Please connect the device using a USB cable.": "デバイスをUSBケーブルで接続してください。",
+    "This DualSense controller has outdated firmware.": "このDualSenseコントローラーのファームウェアは古くなっています。",
+    "Please update the firmware and try again.": "ファームウェアを更新してから再試行してください。",
+    "Joystick Info": "ジョイスティック情報",
+    "Err R:": "エラー 右：",
+    "Err L:": "エラー 左：",
+    "Check circularity": "円形を確認",
 
     "": ""
 }

@@ -164,6 +164,10 @@
     "Please connect the device using a USB cable.": "",
     "This DualSense controller has outdated firmware.": "",
     "Please update the firmware and try again.": "",
+    "Joystick Info": "",
+    "Err R:": "", 
+    "Err L:": "", 
+    "Check circularity": "",
 
     "": ""
 }

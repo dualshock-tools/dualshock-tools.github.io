@@ -155,7 +155,6 @@
     "Translate this website in your language": "Traduci questo sito web nella tua lingua",
     ", to help more people like you!": ", per aiutare più persone come te!",
     "This website uses analytics to improve the service.": "Questo sito web utilizza analytics per migliorare il servizio.",
-
     "Board Model:": "Modello scheda:",
     "This feature is experimental.": "Questa funzionalità è sperimentale.",
     "Please let me know if the board model of your controller is not detected correctly.": "Scrivimi se il modello della scheda del tuo controller non viene riconosciuto correttamente.",
@@ -163,6 +162,10 @@
     "Please connect the device using a USB cable.": "Connetti il controller usando un cavo USB.",
     "This DualSense controller has outdated firmware.": "Questo controller DualSense ha un firmware non aggiornato.",
     "Please update the firmware and try again.": "Aggiorna il firmware e riprova.",
+    "Joystick Info": "Informazioni sui Joystick",
+    "Err R:": "Err Dx:", 
+    "Err L:": "Err Sx:", 
+    "Check circularity": "Controlla circolarità",
 
     "": ""
 }

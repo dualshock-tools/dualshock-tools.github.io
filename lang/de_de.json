@@ -155,14 +155,17 @@
     "Translate this website in your language": "Übersetzen Sie diese Website in Ihre Sprache",
     ", to help more people like you!": ", um mehr Menschen wie Sie zu helfen!",
     "This website uses analytics to improve the service.": "Diese Website verwendet Analytics, um den Service zu verbessern.",
-
-    "Board Model:": "",
-    "This feature is experimental.": "",
-    "Please let me know if the board model of your controller is not detected correctly.": "",
-    "Board model detection thanks to": "",
-    "Please connect the device using a USB cable.": "",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
+    "Board Model:": "Platinentyp:",
+    "This feature is experimental.": "Diese Funktion ist experimentell.",
+    "Please let me know if the board model of your controller is not detected correctly.": "Bitte lassen Sie mich wissen, wenn das Platinentyp Ihres Controllers nicht korrekt erkannt wird.",
+    "Board model detection thanks to": "Platinentyp-Erkennung dank",
+    "Please connect the device using a USB cable.": "Bitte verbinden Sie das Gerät mit einem USB-Kabel.",
+    "This DualSense controller has outdated firmware.": "Dieser DualSense-Controller hat eine veraltete Firmware.",
+    "Please update the firmware and try again.": "Bitte aktualisieren Sie die Firmware und versuchen Sie es erneut.",
+    "Joystick Info": "Joystick-Informationen",
+    "Err R:": "Fehler R:",
+    "Err L:": "Fehler L:",
+    "Check circularity": "Kreisförmigkeit prüfen",
 
     "": ""
 }

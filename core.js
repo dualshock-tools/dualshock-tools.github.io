@@ -23,6 +23,7 @@ var available_langs = {
     "ru_ru": { "name": "Русский", "file": "ru_ru.json"},
     "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
     "zh_cn": { "name": "中文", "file": "zh_cn.json"},
+    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json"},
 };
 
 function buf2hex(buffer) {

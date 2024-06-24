@@ -149,7 +149,7 @@ async function ds4_info() {
 async function ds4_reset() {
     la("ds4_reset");
     try {
-        await device.sendFeatureReport(0xa0, alloc_req(0x80, [4,1,0]))
+        await device.sendFeatureReport(0xa0, alloc_req(0xa0, [4,1,0]))
     } catch(error) {
     }
 }

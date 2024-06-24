@@ -8,7 +8,7 @@
     "Disconnect": "Rozłącz",
     "Firmware Info": "Informacje o Firmware",
     "Calibrate stick center": "Skalibruj centralny punkt drążków",
-    "Calibrate stick range (permanent)": "Skalibruj maksymalny zasięg drążków (na stałe)",
+    "Calibrate stick range (permanent)": "Skalibruj maksymalny zasięg drążków (stale)",
     "Calibrate stick range (temporary)": "Skalibruj maksymalny zasięg drążków (chwilowo)",
     "Reset controller": "Zresetuj kontroler",
     "Sections below are not useful, just some debug infos or manual commands": "Poniższe sekcje nie są przydatne, zawierają jedynie informacje dotyczące debugowania lub ręcznych poleceń",
@@ -162,12 +162,12 @@
     "Board model detection thanks to": "Podziękowania dla osoby która wykryła model płytki",
 
     "Please connect the device using a USB cable.": "Proszę podłącz urządzenie przy pomocy kabla USB.",
-    "This DualSense controller has outdated firmware.": "",
-    "Please update the firmware and try again.": "",
-    "Joystick Info": "",
-    "Err R:": "", 
-    "Err L:": "", 
-    "Check circularity": "",
+    "This DualSense controller has outdated firmware.": "Ten kontroler Dualsense posiada przestarzały firmware.",
+    "Please update the firmware and try again.": "Proszę zaktualizuj firmware i spróbuj ponownie.",
+    "Joystick Info": "Informacje o drążkach",
+    "Err R:": "Błędność R",
+    "Err L:": "Błędność L",
+    "Check circularity": "Sprawdź okrężność",
 
     "": ""
 }

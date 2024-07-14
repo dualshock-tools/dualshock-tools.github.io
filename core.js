@@ -18,6 +18,7 @@ var available_langs = {
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
     "it_it": { "name": "Italiano", "file": "it_it.json"},
+    "ko_kr": { "name": "한국어", "file": "ko_kr.json"},
     "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
     "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
     "pt_br": { "name": "Português do Brasil", "file": "pt_br.json"},

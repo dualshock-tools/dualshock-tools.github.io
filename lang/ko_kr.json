@@ -125,7 +125,7 @@
     ", it was discovered that there exist some undocumented commands on DualShock controllers that can be sent via USB and are used during factory assembly process. If these commands are sent, the controller starts the recalibration of analog sticks.": "DualShock 컨트롤러에는 USB를 통해 전송되고 공장 조립 과정에서 사용되는 몇 가지 문서화되지 않은 명령이 존재한다는 것을 발견했다. 이러한 명령이 전송되면 컨트롤러는 아날로그 스틱의 재보정을 시작합니다.",
     "While the primary focus of this research wasn't initially centered on recalibration, it became apparent that a service offering this capability could greatly benefit numerous individuals. And thus, here we are.": "이 연구의 주요 초점은 처음에는 재보정에 초점을 맞추지 않았지만, 이 기능을 제공하는 서비스가 많은 사람들에게 큰 혜택을 줄 수 있다는 것이 밝혀졌습니다. 그 결과 여기 있습니다.",
     "Does the calibration remain effective during gameplay on PS4/PS5?": "PS4/PS5에서 게임 플레이 중에도 캘리브레이션이 가능한가요?",
-    "Yes, if you tick the checkbox \"Write changes permanently in the controller\". In that case, the calibration is flashed directly in the controller firmware. This ensures that it remains in place regardless of the console it's connected to.": "예, "컨트롤러에 변경 사항을 영구적으로 기록" 확인란을 선택합니다. 이 경우 캘리브레이션이 컨트롤러 펌웨어에 직접 플래시됩니다. 이렇게 하면 연결된 콘솔에 관계없이 그 자리에 그대로 유지됩니다.",
+    "Yes, if you tick the checkbox \"Write changes permanently in the controller\". In that case, the calibration is flashed directly in the controller firmware. This ensures that it remains in place regardless of the console it's connected to.": "예, <컨트롤러에 변경 사항을 영구적으로 기록> 확인란을 선택합니다. 이 경우 캘리브레이션이 컨트롤러 펌웨어에 직접 플래시됩니다. 이렇게 하면 연결된 콘솔에 관계없이 그 자리에 그대로 유지됩니다.",
     "Is this an officially endorsed service?": "공식적으로 승인된 서비스인가요?",
     "No, this service is simply a creation by a DualShock enthusiast.": "아니요, 이 서비스는 단순히 DualShock 애호가들이 만든 서비스입니다.",
     "Does this website detects if a controller is a clone?": "이 웹 사이트는 컨트롤러가 복제되었는지 여부를 감지합니까?",
@@ -150,7 +150,7 @@
     "Consider making a": "다음 사항을 고려하십시오.",
     "donation": "후원",
     "to support my late-night caffeine-fueled reverse-engineering efforts.": "밤늦게까지 카페인으로 지탱된 리버스 엔지니어링 작업을 지원하기 위해.",
-    "Ship me a controller you would love to add (send me an email for organization).": "추가하고 싶은 컨트롤러를 보내주세요 (조직을 위해 이메일을 보내주세요)." , "Translate this website in your language": "이 웹사이트를 당신의 언어로 번역하세요".",
+    "Ship me a controller you would love to add (send me an email for organization).": "추가하고 싶은 컨트롤러를 보내주세요 (조직을 위해 이메일을 보내주세요)." , "Translate this website in your language": "이 웹사이트를 당신의 언어로 번역하세요",
     ", to help more people like you!": "당신과 같은 많은 사람들을 돕기 위해!",
     "This website uses analytics to improve the service.": "이 웹사이트는 서비스 개선을 위해 분석을 사용하고 있습니다.",
 

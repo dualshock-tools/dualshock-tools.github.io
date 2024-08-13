@@ -54,6 +54,8 @@ function ds5_hw_to_bm(hw_ver) {
         return "BDM-030";
     } else if(a == 0x06) {
         return "BDM-040";
+    } else if(a == 0x07) {
+        return "BDM-050";
     } else {
         return l("Unknown");
     }

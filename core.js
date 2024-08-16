@@ -21,15 +21,15 @@ var available_langs = {
     "fr_fr": { "name": "Français", "file": "fr_fr.json"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
     "it_it": { "name": "Italiano", "file": "it_it.json"},
-    "ko_kr": { "name": "한국어", "file": "ko_kr.json"},
     "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
+    "ko_kr": { "name": "한국어", "file": "ko_kr.json"},
+    "nl_nl": { "name": "Nederlands", "file": "nl_nl.json"},
     "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
     "pt_br": { "name": "Português do Brasil", "file": "pt_br.json"},
     "ru_ru": { "name": "Русский", "file": "ru_ru.json"},
     "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
     "zh_cn": { "name": "中文", "file": "zh_cn.json"},
-    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json"},
-    "nl_nl": { "name": "Nederlands", "file": "nl_nl.json"}
+    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json"}
 };
 
 function buf2hex(buffer) {

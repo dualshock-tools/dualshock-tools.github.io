@@ -167,5 +167,21 @@
     "Err L:": "Err Sx:", 
     "Check circularity": "Controlla circolarità",
 
+    "Can I reset a permanent calibration to previous calibration?": "Posso annullare una calibrazione permanente?",
+    "No.": "No.",
+    "Can you overwrite a permanent calibration?": "Posso sovrascrivere una calibrazione permanente?",
+    "Yes. Simply do another permanent calibration.": "Sì. Semplicemente, fai un'altra calibrazione permanente.",
+    "Does this software resolve stickdrift?": "Questo software risolve lo stick drift?",
+    "Stickdrift is caused by a physical defect; namely dirt, worn potentiometer or in some cases a worn spring.": "Lo stick drift è causato da difetti fisici; ad esempio polvere, potenziometri consumati o in alcuni casi una molla consumata.",
+    "This software will not fix stick drift on its own if you already experience that. What it will help with, is ensuring the new joystick(s) will function properly after replacing the old one(s) to work well with.": "Questo software non sistemerà lo stick drift magicamente se hai già problemi, ma assicura che nuovi joystick analogici possano funzionare correttamente dopo averli sostituiti.",
+    "I have noticed some controllers out of the box have worse factory calibration than if I would recalibrate them. Especially true for circularity of SCUF controllers with a unique shell.": "Alcuni controller comunque hanno una calibrazione di fabbrica peggiore di quella che puoi ottenere con questo sito. Particolarmente vero per alcuni controller SCUF con scocca unica.",
+    "(Dualsense) Will updating the firmware reset calibration?": "(Dualsense) Aggiornare il firmware annulla la calibrazione?",
+    "After range calibration, joysticks always go in corners.": "Dopo la calibrazione del range, i joystick vanno sempre all'angolo.",
+    "This issue happens because you have clicked \"Done\" immediately after starting a range calibration.": "Questo succede perché hai cliccato \"Fatto\" subito dopo aver avviato la calibrazione del range.",
+    "Please read the instructions.": "Leggi le istruzioni.",
+    "You have to rotate the joysticks before you press \"Done\".": "Devi ruotare i joystick prima di premere \"Fatto\".",
+    "Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.": "Assicurati di ruotare gli analogici fino a toccare i bordi, preferibilmente in ogni direzione - senso orario e antiorario.",
+    "Only after you have done that, you click on \"Done\".": "Solo dopo che hai fatto questo, clicca \"Fatto\".",
+
     "": ""
 }

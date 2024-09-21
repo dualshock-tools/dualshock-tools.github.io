@@ -167,5 +167,20 @@
   "Err L:": "Err L:",
   "Check circularity": "Controleer de circulariteit",
 
+  "Can I reset a permanent calibration to previous calibration?": "",
+  "No.": "",
+  "Can you overwrite a permanent calibration?": "",
+  "Yes. Simply do another permanent calibration.": "",
+  "Does this software resolve stickdrift?": "",
+  "Stickdrift is caused by a physical defect; namely dirt, worn potentiometer or in some cases a worn spring.": "",
+  "This software will not fix stick drift on its own if you already experience that. What it will help with, is ensuring the new joystick(s) will function properly after replacing the old one(s) to work well with.": "",
+  "I have noticed some controllers out of the box have worse factory calibration than if I would recalibrate them. Especially true for circularity of SCUF controllers with a unique shell.": "",
+  "(Dualsense) Will updating the firmware reset calibration?": "",
+  "After range calibration, joysticks always go in corners.": "",
+  "This issue happens because you have clicked \"Done\" immediately after starting a range calibration.": "",
+  "Please read the instructions.": "",
+  "You have to rotate the joysticks before you press \"Done\".": "",
+  "Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.": "",
+  "Only after you have done that, you click on \"Done\".": "",
   "": ""
 }

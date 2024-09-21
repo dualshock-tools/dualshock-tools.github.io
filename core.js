@@ -6,6 +6,9 @@ var mode = 0;
 var disable_btn = 0;
 var last_disable_btn = 0;
 
+// 1 if there is any change that can be stored permanently
+var has_changes_to_write = 0;
+
 var lang_orig_text = {};
 var lang_cur = {};
 var lang_disabled = true;
@@ -143,7 +146,8 @@ async function ds4_info() {
                     '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
             append_info(l("Board Model:"), ds4_hw_to_bm(hw_ver_minor) + b_info);
 
-            // All ok, safe to query NVS Status and BD Addr
+            // All ok, safe to lock NVS, query it and get BD Addr
+            await ds4_nvlock();
             await ds4_nvstatus();
             await ds4_getbdaddr();
 
@@ -156,6 +160,31 @@ async function ds4_info() {
         disable_btn |= 1;
     }
     return true;
+}
+
+async function ds4_flash() {
+    la("ds4_flash");
+    try {
+        await ds4_nvunlock();
+        await ds4_nvlock();
+
+        show_popup(l("Changes saved successfully"));
+
+    } catch(error) {
+        show_popup(l("Error while saving changes:") + " " + str(error));
+    }
+}
+
+async function ds5_flash() {
+    la("ds5_flash");
+    try {
+        await ds5_nvunlock();
+        await ds5_nvlock();
+
+        show_popup(l("Changes saved successfully"));
+    } catch(error) {
+        show_popup(l("Error while saving changes: ") + str(error));
+    }
 }
 
 async function ds4_reset() {
@@ -174,19 +203,10 @@ async function ds5_reset() {
     }
 }
 
-async function ds4_calibrate_range_begin(perm_ch) {
-    la("ds4_calibrate_range_begin", {"p": perm_ch});
+async function ds4_calibrate_range_begin() {
+    la("ds4_calibrate_range_begin");
     var err = l("Range calibration failed: ");
     try {
-        if(perm_ch) {
-            await ds4_nvunlock();
-            if(await ds4_nvstatus() != 0) {
-                la("ds4_calibrate_range_begin_failed", {"r": "nvunlock"});
-                close_calibrate_window();
-                return show_popup(err + l("Cannot unlock NVS"));
-            }
-        }
-    
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,2]))
     
@@ -208,8 +228,8 @@ async function ds4_calibrate_range_begin(perm_ch) {
     }
 }
 
-async function ds4_calibrate_range_end(perm_ch) {
-    la("ds4_calibrate_range_end", {"p": perm_ch});
+async function ds4_calibrate_range_end() {
+    la("ds4_calibrate_range_end");
     var err = l("Range calibration failed: ");
     try {
         // Write
@@ -225,15 +245,7 @@ async function ds4_calibrate_range_end(perm_ch) {
             return show_popup(err + l("Error 3"));
         }
     
-        if(perm_ch) {
-            await ds4_nvlock();
-            if(await ds4_nvstatus() != 1) {
-                la("ds4_calibrate_range_end_failed", {"r": "nvlock"});
-                close_calibrate_window();
-                return show_popup(err + l("Cannot relock NVS"));
-            }
-        }
-    
+        update_nvs_changes_status(1);
         close_calibrate_window();
         show_popup(l("Range calibration completed"));
     } catch(e) {
@@ -244,19 +256,10 @@ async function ds4_calibrate_range_end(perm_ch) {
     }
 }
 
-async function ds4_calibrate_sticks_begin(has_perm_changes) {
-    la("ds4_calibrate_sticks_begin", {"p": has_perm_changes});
+async function ds4_calibrate_sticks_begin() {
+    la("ds4_calibrate_sticks_begin");
     var err = l("Stick calibration failed: ");
     try {
-        if(has_perm_changes) {
-            await ds4_nvunlock();
-            if(await ds4_nvstatus() != 0) {
-                la("ds4_calibrate_sticks_begin_failed", {"r": "nvunlock"});
-                show_popup(err + l("Cannot unlock NVS"));
-                return false;
-            }
-        }
-
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
 
@@ -306,8 +309,8 @@ async function ds4_calibrate_sticks_sample() {
     }
 }
 
-async function ds4_calibrate_sticks_end(has_perm_changes) {
-    la("ds4_calibrate_sticks_end", {"p": has_perm_changes});
+async function ds4_calibrate_sticks_end() {
+    la("ds4_calibrate_sticks_end");
     var err = l("Stick calibration failed: ");
     try {
         // Write
@@ -320,15 +323,7 @@ async function ds4_calibrate_sticks_end(has_perm_changes) {
             return false;
         }
 
-        if(has_perm_changes) {
-            await ds4_nvlock();
-            if(await ds4_nvstatus() != 1) {
-                la("ds4_calibrate_sticks_end_failed", {"r": "nvlock"});
-                show_popup(err + l("Cannot relock NVS"));
-                return false;
-            }
-        }
-
+        update_nvs_changes_status(1);
         return true;
     } catch(e) {
         la("ds4_calibrate_sticks_end_failed", {"r": e});
@@ -444,7 +439,7 @@ async function ds4_getbdaddr() {
         out = ""
         for(i=0;i<6;i++) {
             if(i >= 1) out += ":";
-            out += dec2hex8(data.getUint8(i, false));
+            out += dec2hex8(data.getUint8(6-i, false));
         }
         $("#d-bdaddr").text(out);
         return out;
@@ -528,6 +523,7 @@ async function ds5_info() {
             return true;
         }
 
+        await ds5_nvlock();
         await ds5_nvstatus();
         await ds5_getbdaddr();
     } catch(e) {
@@ -538,18 +534,10 @@ async function ds5_info() {
     return true;
 }
 
-async function ds5_calibrate_sticks_begin(has_perm_changes) {
-    la("ds5_calibrate_sticks_begin", {"p": has_perm_changes});
+async function ds5_calibrate_sticks_begin() {
+    la("ds5_calibrate_sticks_begin");
     var err = l("Range calibration failed: ");
     try {
-        if(has_perm_changes) {
-            await ds5_nvunlock();
-            if(await ds5_nvstatus() != 0) {
-                la("ds5_calibrate_sticks_begin_failed", {"r": "nvunlock"});
-                show_popup(err + l("Cannot unlock NVS"));
-                return false;
-            }
-        }
         // Begin
         await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,1]))
     
@@ -594,8 +582,8 @@ async function ds5_calibrate_sticks_sample() {
     }
 }
 
-async function ds5_calibrate_sticks_end(has_perm_changes) {
-    la("ds5_calibrate_sticks_end", {"p": has_perm_changes});
+async function ds5_calibrate_sticks_end() {
+    la("ds5_calibrate_sticks_end");
     var err = l("Stick calibration failed: ");
     try {
         // Write
@@ -609,14 +597,7 @@ async function ds5_calibrate_sticks_end(has_perm_changes) {
             return false;
         }
 
-        if(has_perm_changes) {
-            await ds5_nvlock();
-            if(await ds5_nvstatus() != 1) {
-                la("ds5_calibrate_sticks_end_failed", {"r": "nvlock"});
-                show_popup(err + l("Cannot relock NVS"));
-                return false;
-            }
-        }
+        update_nvs_changes_status(1);
         return true;
     } catch(e) {
         la("ds5_calibrate_sticks_end_failed", {"r": e});
@@ -680,6 +661,7 @@ async function ds5_calibrate_sticks() {
         }
     
         set_progress(100);
+        update_nvs_changes_status(1);
         
         await new Promise(r => setTimeout(r, 500));
         close_calibrate_window()
@@ -693,19 +675,10 @@ async function ds5_calibrate_sticks() {
     }
 }
 
-async function ds5_calibrate_range_begin(perm_ch) {
-    la("ds5_calibrate_range_begin", {"p": perm_ch});
+async function ds5_calibrate_range_begin() {
+    la("ds5_calibrate_range_begin");
     var err = l("Range calibration failed: ");
     try {
-        if(perm_ch) {
-            await ds5_nvunlock();
-            if(await ds5_nvstatus() != 0) {
-                la("ds5_calibrate_range_begin_failed", {"r": "nvunlock"});
-                close_calibrate_window();
-                return show_popup(err + l("Cannot unlock NVS"));
-            }
-        }
-    
         // Begin
         await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,2]))
     
@@ -725,8 +698,8 @@ async function ds5_calibrate_range_begin(perm_ch) {
     }
 }
 
-async function ds5_calibrate_range_end(perm_ch) {
-    la("ds5_calibrate_range_end", {"p": perm_ch});
+async function ds5_calibrate_range_end() {
+    la("ds5_calibrate_range_end");
     var err = l("Range calibration failed: ");
     try {
         // Write
@@ -741,15 +714,7 @@ async function ds5_calibrate_range_end(perm_ch) {
             return show_popup(err + l("Error 1") + " (" + d1 + ").");
         }
     
-        if(perm_ch) {
-            await ds5_nvlock();
-            if(await ds5_nvstatus() != 1) {
-                la("ds5_calibrate_range_end_failed", {"r": "nvlock"});
-                close_calibrate_window();
-                return show_popup(err + l("Cannot relock NVS"));
-            }
-        }
-    
+        update_nvs_changes_status(1);
         close_calibrate_window();
         show_popup(l("Range calibration completed"));
     } catch(e) {
@@ -789,6 +754,7 @@ async function disconnect() {
     if(device == null)
         return;
     gj = 0;
+    update_nvs_changes_status(0);
     mode = 0;
     device.close();
     device = null;
@@ -1156,6 +1122,20 @@ function bat_percent_to_text(bat_charge, is_charging, is_error) {
     return bat_txt;
 }
 
+function update_nvs_changes_status(new_value) {
+    if (new_value == has_changes_to_write)
+        return;
+
+    if (new_value == 1) {
+        has_changes_to_write = 1;
+        $("#savechanges").prop("disabled", false);
+        $("#savechanges").addClass("btn-success").removeClass("btn-outline-secondary");
+    } else {
+        $("#savechanges").prop("disabled", true);
+        $("#savechanges").removeClass("btn-success").addClass("btn-outline-secondary");
+    }
+}
+
 function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {
     var bat_txt = bat_percent_to_text(bat_capacity, is_charging);
     var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error);
@@ -1223,7 +1203,6 @@ function process_ds4_input(data) {
 
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
-
 
 function process_ds_input(data) {
     var lx = data.data.getUint8(0);
@@ -1378,6 +1357,11 @@ function update_disable_btn() {
 
 async function connect() {
     gj = crypto.randomUUID();
+
+    // This trigger default disable
+    has_changes_to_write = -1;
+    update_nvs_changes_status(0);
+
     reset_circularity();
     la("begin");
     last_bat_txt = "";
@@ -1427,6 +1411,14 @@ async function connect() {
 
 var curModal = null
 
+async function multi_flash() {
+    if(mode == 1) 
+        ds4_flash();
+    else
+        ds5_flash();
+    update_nvs_changes_status(0);
+}
+
 async function multi_reset() {
     if(mode == 1) 
         ds4_reset();
@@ -1468,18 +1460,18 @@ async function multi_nvslock() {
     }
 }
 
-async function multi_calib_sticks_begin(pc) {
+async function multi_calib_sticks_begin() {
     if(mode == 1) 
-        return ds4_calibrate_sticks_begin(pc);
+        return ds4_calibrate_sticks_begin();
     else
-        return ds5_calibrate_sticks_begin(pc);
+        return ds5_calibrate_sticks_begin();
 }
 
-async function multi_calib_sticks_end(pc) {
+async function multi_calib_sticks_end() {
     if(mode == 1) 
-        await ds4_calibrate_sticks_end(pc);
+        await ds4_calibrate_sticks_end();
     else
-        await ds5_calibrate_sticks_end(pc);
+        await ds5_calibrate_sticks_end();
     on_circ_check_change();
 }
 
@@ -1490,8 +1482,7 @@ async function multi_calib_sticks_sample() {
         return ds5_calibrate_sticks_sample();
 }
 
-var last_perm_ch = 0
-async function multi_calibrate_range(perm_ch) {
+async function multi_calibrate_range() {
     if(mode == 0) 
         return;
 
@@ -1499,21 +1490,19 @@ async function multi_calibrate_range(perm_ch) {
     curModal = new bootstrap.Modal(document.getElementById('rangeModal'), {})
     curModal.show();
 
-    last_perm_ch = perm_ch
-
     await new Promise(r => setTimeout(r, 1000));
 
     if(mode == 1) 
-        ds4_calibrate_range_begin(perm_ch);
+        ds4_calibrate_range_begin();
     else
-        ds5_calibrate_range_begin(perm_ch);
+        ds5_calibrate_range_begin();
 }
 
 async function multi_calibrate_range_on_close() {
     if(mode == 1) 
-        await ds4_calibrate_range_end(last_perm_ch);
+        await ds4_calibrate_range_end();
     else
-        await ds5_calibrate_range_end(last_perm_ch);
+        await ds5_calibrate_range_end();
     on_circ_check_change();
 }
 
@@ -1591,12 +1580,6 @@ function board_model_info() {
     show_popup(l3 + "<br><br>" + l1 + " " + l2, true);
 }
 
-function calib_perm_changes() { return $("#calibPermanentChanges").is(':checked') }
-
-function reset_calib_perm_changes() { 
-    $("#calibPermanentChanges").prop("checked", false).parent().removeClass('active');
-}
-
 function close_new_calib() {
     $("#calibCenterModal").modal("hide");
     cur_calib = 0;
@@ -1606,7 +1589,6 @@ async function calib_step(i) {
     la("calib_step", {"i": i})
     if(i < 1 || i > 7) return;
 
-    var pc = calib_perm_changes();
     var ret = true;
     if(i >= 2 && i <= 6) {
         $("#btnSpinner").show();
@@ -1616,7 +1598,7 @@ async function calib_step(i) {
     if(i == 2) {
         $("#calibNextText").text(l("Initializing..."));
         await new Promise(r => setTimeout(r, 100));
-        ret = await multi_calib_sticks_begin(pc);
+        ret = await multi_calib_sticks_begin();
     } else if(i == 6) {
         $("#calibNextText").text(l("Sampling..."));
         await new Promise(r => setTimeout(r, 100));
@@ -1624,7 +1606,7 @@ async function calib_step(i) {
         await new Promise(r => setTimeout(r, 100));
         $("#calibNextText").text(l("Storing calibration..."));
         await new Promise(r => setTimeout(r, 100));
-        ret = await multi_calib_sticks_end(pc);
+        ret = await multi_calib_sticks_end();
     } else if(i > 2 && i < 6){
         $("#calibNextText").text(l("Sampling..."));
         await new Promise(r => setTimeout(r, 100));
@@ -1672,7 +1654,6 @@ var cur_calib = 0;
 async function calib_open() {
     la("calib_open");
     cur_calib = 0;
-    reset_calib_perm_changes();
     await calib_next();
     new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
 }

@@ -8,9 +8,7 @@
     "Disconnect": "Trennen",
     "Firmware Info": "Firmware-Info",
     "Calibrate stick center": "Analog-Stick-Mitte kalibrieren",
-    "Calibrate stick range (permanent)": "Kalibrieren Sie den Stick-Bereich (permanent)",
-    "Calibrate stick range (temporary)": "Kalibrieren Sie den Stick-Bereich (temporär)",
-    "Reset controller": "Controller zurücksetzen",
+    "Calibrate stick range": "Kalibrieren Sie den Stick-Bereich",
     "Sections below are not useful, just some debug infos or manual commands": "Die untenstehenden Abschnitte sind nicht nützlich, nur einige Debug-Infos oder manuelle Befehle",
     "NVS Status": "NVS-Status",
     "Unknown": "Unbekannt",
@@ -31,11 +29,6 @@
     "Welcome to the stick center-calibration wizard!": "Willkommen im Analog-Stick-Mitte-Kalibrierungsassistenten!",
     "This tool will guide you in re-centering the analog sticks of your controller. It consists in four steps: you will be asked to move both sticks in a direction and release them.": "Dieses Tool wird Sie beim Zurücksetzen der Analog-Sticks Ihres Controllers in die Mitte führen. Es besteht aus vier Schritten: Sie werden aufgefordert, beide Sticks in eine Richtung zu bewegen und loszulassen.",
     "Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.": "Bitte beachten Sie, dass die Kalibrierung, sobald sie läuft, nicht abgebrochen werden kann. Schließen Sie diese Seite nicht und trennen Sie Ihren Controller nicht, bis sie abgeschlossen ist.",
-    "Calibration storage": "Kalibrierungsspeicherung",
-    "By default the calibration is only saved in a volatile storage, so that if you (or this tool) mess something up, a reset of the controller is enough to make it work again.": "Standardmäßig wird die Kalibrierung nur im flüchtigen Speicher gespeichert, so dass bei einer Fehlfunktion (oder durch dieses Tool) ein Controller-Reset ausreicht, um ihn wieder zum Laufen zu bringen.",
-    "If you wish to store the calibration permanently in the controller, tick the checkbox below:": "Wenn Sie die Kalibrierung dauerhaft im Controller speichern möchten, aktivieren Sie das Kontrollkästchen unten:",
-    "Write changes permanently in the controller": "Änderungen dauerhaft im Controller speichern",
-    "<small>Warning: <font color=\"red\">Do not store the calibration permanently if the controller battery is low or disconnected. It will damage your controller.</font></small>": "<small>Warnung: <font color=\"red\">Speichern Sie die Kalibrierung nicht dauerhaft, wenn die Controller-Batterie schwach ist oder getrennt wurde. Dies beschädigt Ihren Controller.</font></small>",
     "Press <b>Start</b> to begin calibration.": "Drücken Sie <b>Start</b>, um mit der Kalibrierung zu beginnen.",
     "Please move both sticks to the <b>top-left corner</b> and release them.": "Bewegen Sie bitte beide Sticks in die <b>obere linke Ecke</b> und lassen Sie sie los.",
     "When the sticks are back in the center, press <b>Continue</b>.": "Wenn die Sticks wieder in der Mitte sind, drücken Sie <b>Weiter</b>.",
@@ -182,5 +175,10 @@
     "You have to rotate the joysticks before you press \"Done\".": "",
     "Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.": "",
     "Only after you have done that, you click on \"Done\".": "",
+
+    "Changes saved successfully": "",
+    "Error while saving changes:": "",
+    "Save changes permanently": "",
+    "Reboot controller": "",
     "": ""
 }

@@ -126,12 +126,10 @@
 
     <div class="col-md-6 col-sm-12" style="min-width: 330px;">
         <div class="vstack gap-2 p-2">
-            <button id="btnmcs2" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
-            <div class="hstack gap-2">
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range(true)">Calibrate stick range (permanent)</button>
-                <button type="button" class="ms-auto btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range(false)">Calibrate stick range (temporary)</button>
-            </div>
-            <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reset controller</button>
+            <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
+            <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range()">Calibrate stick range</button>
+            <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_flash()" id="resetBtn">Save changes permanently</button>
+            <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reboot controller</button>
 
             <div class="card text-bg-light" >
                 <div class="card-header ds-i18n">Joystick Info</div>
@@ -211,7 +209,6 @@
                 <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
                 <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
             </div>
-            <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_getbdaddr()">Get BDAddr</button>
             <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
         </div>
         </div>
@@ -274,21 +271,7 @@
 
                     <p class="ds-i18n">Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.</p>
 
-                    <h5 class="ds-i18n">Calibration storage</h5>
-
-                    <p class="ds-i18n">By default the calibration is only saved in a volatile storage, so that if you (or this tool) mess something up, a reset of the controller is enough to make it work again.</p>
-
-                    <p class="ds-i18n">If you wish to store the calibration permanently in the controller, tick the checkbox below:</p>
-
-                    <input class="form-check-input" type="checkbox" value="" id="calibPermanentChanges">
-                    <label class="form-check-label ds-i18n" for="calibPermanentChanges">Write changes permanently in the controller</label>
-
-                    <br>
-
-                    <p class="ds-i18n"><small>Warning: <font color="red">Do not store the calibration permanently if the controller battery is low or disconnected. It will damage your controller.</font></small></p>
-
                     <p class="ds-i18n">Press <b>Start</b> to begin calibration.</p>
-
                 </div>
                 <div class="container" style="display: none;" id="list-2">
                     <p class="ds-i18n">Please move both sticks to the <b>top-left corner</b> and release them.</p>
@@ -583,7 +566,7 @@
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-      <p><span class="ds-i18n">Version</span> 1.5 (2024-09-21) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+      <p><span class="ds-i18n">Version</span> 1.6 (2024-09-21) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

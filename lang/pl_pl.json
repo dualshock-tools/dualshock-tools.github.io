@@ -8,8 +8,7 @@
     "Disconnect": "Rozłącz",
     "Firmware Info": "Informacje o Firmware",
     "Calibrate stick center": "Skalibruj centralny punkt drążków",
-    "Calibrate stick range (permanent)": "Skalibruj maksymalny zasięg drążków (stale)",
-    "Calibrate stick range (temporary)": "Skalibruj maksymalny zasięg drążków (chwilowo)",
+    "Calibrate stick range": "Skalibruj maksymalny zasięg drążków",
     "Reset controller": "Zresetuj kontroler",
     "Sections below are not useful, just some debug infos or manual commands": "Poniższe sekcje nie są przydatne, zawierają jedynie informacje dotyczące debugowania lub ręcznych poleceń",
     "NVS Status": "Status NVS",
@@ -19,7 +18,6 @@
     "Query NVS status": "Zapytanie o status NVS",
     "NVS unlock": "Odblokuj NVS",
     "NVS lock": "Zablokuj NVS",
-    "Get BDAddr": "Zdobądź BDAddr",
     "Fast calibrate stick center (OLD)": "Szybka kalibracja punktu drążków (stara wersja)",
     "Stick center calibration": "Kalibracja centralna drążków",
     "Welcome": "Witamy",
@@ -31,11 +29,6 @@
     "Welcome to the stick center-calibration wizard!": "Witamy w narzędziu kalibracyjnym centralnego punktu drążków!",
     "This tool will guide you in re-centering the analog sticks of your controller. It consists in four steps: you will be asked to move both sticks in a direction and release them.": "To narzędzie pomoże Ci w ponownym wycentrowaniu drążków kontrolera. Składa się z czterech kroków: zostaniesz poproszony o przesunięcie obu drążków w określonych kierunkach, a następnie w ich puszczeniu.",
     "Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.": "Prosimy pamiętać, żeby po rozpoczęciu kalibracji nie anulować całej procedury. Nie zamykaj tej strony ani nie odłączaj kontrolera do czasu zakończenia.",
-    "Calibration storage": "Magazyn kalibracji",
-    "By default the calibration is only saved in a volatile storage, so that if you (or this tool) mess something up, a reset of the controller is enough to make it work again.": "Domyślnie kalibracja zapisana jest jedynie w pamięci tymczasowej, więc w przypadku awarii (lub spowodowanej przez to narzędzie) wystarczy zresetować sterownik, aby ponownie zaczął działać.",
-    "If you wish to store the calibration permanently in the controller, tick the checkbox below:": "Jeżeli chcesz trwale zapisać kalibrację w sterowniku zaznacz pole poniżej:",
-    "Write changes permanently in the controller": "Zapisz zmiany na stałe w kontrolerze",
-    "<small>Warning: <font color=\"red\">Do not store the calibration permanently if the controller battery is low or disconnected. It will damage your controller.</font></small>": "<small>Uwaga: <font color=\"red\">Nie zapisuj trwale kalibracji, jeśli bateria kontrolera jest słaba lub została odłączona. W przeciwnym wypadku kontroler ulegnie całkowitemu uszkodzeniu.</font></small>",
     "Press <b>Start</b> to begin calibration.": "Naciśnij <b>Start</b>, żeby rozpocząć kalibrację.",
     "Please move both sticks to the <b>top-left corner</b> and release them.": "Proszę przesuń oba drążki maksymalnie do <b>Lewego górnego rogu</b> a następnie je puść.",
     "When the sticks are back in the center, press <b>Continue</b>.": "Gdy drążki znajdą się z powrotem na środku, naciśnij <b>Kontynuuj</b>.",
@@ -185,6 +178,9 @@
     "Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.": "",
     "Only after you have done that, you click on \"Done\".": "",
 
-
+    "Changes saved successfully": "",
+    "Error while saving changes:": "",
+    "Save changes permanently": "",
+    "Reboot controller": "",
     "": ""
 }

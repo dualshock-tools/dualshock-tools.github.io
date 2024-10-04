@@ -171,7 +171,7 @@
     "This software will not fix stick drift on its own if you already experience that. What it will help with, is ensuring the new joystick(s) will function properly after replacing the old one(s) to work well with.": "To oprogramowanie nie naprawi dryfu drążka samodzielnie, jeśli już tego doświadczyłeś. Pomoże w zapewnieniu, że nowy(e) drążek(i) będzie(ą) działał(y) prawidłowo po wymianie starego(ych), aby dobrze współpracował(y).",
     "I have noticed some controllers out of the box have worse factory calibration than if I would recalibrate them. Especially true for circularity of SCUF controllers with a unique shell.": "Zauważyłem, że niektóre kontrolery po wyjęciu z pudełka mają gorszą kalibrację fabryczną niż gdybym je skalibrował. Dotyczy to zwłaszcza cykliczności kontrolerów SCUF z unikalną powłoką.",
     "(Dualsense) Will updating the firmware reset calibration?": "(Dualsense) Czy aktualizacja firmware'ru spowoduje zresetowanie kalibracji?",
-    "After range calibration, joysticks always go in corners.": "Po kalibracji zakresu, drążki zawsze wchodzą w zakręty”.",
+    "After range calibration, joysticks always go in corners.": "Po kalibracji zakresu, drążki wchodzą tylko w zakręty.",
     "This issue happens because you have clicked \"Done\" immediately after starting a range calibration.": "Problem ten występuje, ponieważ kliknąłeś \"Gotowe\" zaraz po rozpoczęciu kalibracji zakresu.",
     "Please read the instructions.": "Proszę przeczytaj instrukcję.",
     "You have to rotate the joysticks before you press \"Done\".": "Musisz zacząć obracać drążki zanim naciśniesz \"Gotowe\".",
@@ -180,7 +180,7 @@
 
     "Changes saved successfully": "Zmiany zostały zapisane pomyślnie",
     "Error while saving changes:": "Wystąpił błąd podczas zapisywania zmian",
-    "Save changes permanently": "Zmiany zostały zapisane permanentnie",
+    "Save changes permanently": "Zapisz zmiany permanentnie",
     "Reboot controller": "Uruchom ponownie kontroler",
     "": ""
 }

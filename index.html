@@ -26,6 +26,12 @@
 
 <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
 <script src="core.js"></script>
+
+<style>
+dl.row dt { font-weight: normal; }
+dl.row dd { font-family: monospace; }
+</style>
+
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
@@ -117,9 +123,11 @@
 <div class="row">
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-            <div class="card-header ds-i18n">Firmware Info</div>
-
-            <div class="vstack p-2" id="fwinfo"> </div>
+            <div class="card-header"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></div>
+            <dl class="row px-3 py-2" id="fwinfo"></dl>
+            <span id="infoshowall" class="pb-4 px-4 row">
+            <button class="btn btn-outline-secondary" onclick="show_info_modal()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show All</span></button>
+            </span>
         </div>
         <br>
     </div>
@@ -132,7 +140,7 @@
             <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reboot controller</button>
 
             <div class="card text-bg-light" >
-                <div class="card-header ds-i18n">Joystick Info</div>
+                <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
                 <div class="vstack px-2">
                     <center>
                         <canvas id="stickCanvas" width="300" height="150"></canvas>
@@ -191,10 +199,9 @@
 <div class="row">
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-            <div class="card-header">Debug info</div>
+            <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
             <div class="vstack p-2">
                 <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
-                <div class="hstack"><p class="ds-i18n">BD Addr</p><p class="ms-auto ds-i18n" id="d-bdaddr">Unknown</p></div>
             </div>
         </div>
         <br>
@@ -202,7 +209,7 @@
 
     <div class="col-md-6 col-sm-12">
         <div class="card text-bg-light" >
-        <div class="card-header ds-i18n">Debug buttons</div>
+        <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
         <div class="vstack gap-2 p-2">
             <div class="hstack gap-2">
                 <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
@@ -308,6 +315,39 @@
   </div>
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-fullscreen-md-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="infoModalLabel"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+      <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-12 col-xl-6 py-3">
+                <div class="card">
+                    <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;Software</h5>
+                    <div class="card-body">
+                        <dl class="row" id="fwinfoextra-fw"></dl>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12 col-xl-6 py-3">
+                <div class="card">
+                    <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;Hardware</h5>
+                    <div class="card-body">
+                        <dl class="row" id="fwinfoextra-hw"></dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Modal -->
 <div class="modal fade" id="calibrateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -566,7 +606,7 @@
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-      <p><span class="ds-i18n">Version</span> 1.6 (2024-09-21) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+      <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 1.7</a> (2024-10-18) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

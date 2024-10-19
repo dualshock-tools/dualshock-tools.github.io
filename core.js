@@ -80,7 +80,7 @@ function ds4_hw_to_bm(hw_ver) {
         return "JDM-040";
     } else if((a > 0x80 && a < 0x84) || a == 0x93) {
         return "JDM-020";
-    } else if(a == 0xa4) {
+    } else if(a == 0xa4 || a == 0x90) {
         return "JDM-050";
     } else if(a == 0xb0) {
         return "JDM-055 (Scuf?)";
@@ -96,7 +96,7 @@ function ds4_hw_to_bm(hw_ver) {
 function is_rare(hw_ver) {
     a = hw_ver >> 8;
     b = a >> 4;
-    return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93) || a == 0xa0);
+    return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93 && a != 0x90) || a == 0xa0);
 }
 
 async function ds4_info() {
@@ -137,19 +137,20 @@ async function ds4_info() {
         }
 
         clear_info();
-        append_info(l("Build Date:"), k1 + " " + k2);
-        append_info(l("HW Version:"), "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
-        append_info(l("SW Version:"), dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
-        append_info(l("Device Type:"), ooc);
+        append_info(l("Build Date"), k1 + " " + k2);
+        append_info(l("HW Version"), "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor));
+        append_info(l("SW Version"), dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
+        append_info(l("Device Type"), ooc);
         if(!is_clone) {
             b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
                     '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
-            append_info(l("Board Model:"), ds4_hw_to_bm(hw_ver_minor) + b_info);
+            append_info(l("Board Model"), ds4_hw_to_bm(hw_ver_minor) + b_info);
 
             // All ok, safe to lock NVS, query it and get BD Addr
             await ds4_nvlock();
             await ds4_nvstatus();
-            await ds4_getbdaddr();
+            bd_addr = await ds4_getbdaddr();
+            append_info(l("Bluetooth Address"), bd_addr);
 
             if(is_rare(hw_ver_minor)) {
                 show_popup("Wow, this is a rare/weird controller! Please write me an email at ds4@the.al or contact me on Discord (the_al)");
@@ -441,10 +442,8 @@ async function ds4_getbdaddr() {
             if(i >= 1) out += ":";
             out += dec2hex8(data.getUint8(6-i, false));
         }
-        $("#d-bdaddr").text(out);
         return out;
     } catch(e) {
-        $("#d-bdaddr").html("<font color='red'>" + l("error") + "</font>");
         return "error";
     }
 }
@@ -458,10 +457,8 @@ async function ds5_getbdaddr() {
             if(i >= 1) out += ":";
             out += dec2hex8(data.getUint8(4 + 5 - i, false));
         }
-        $("#d-bdaddr").text(out);
         return out;
     } catch(e) {
-        $("#d-bdaddr").html("<font color='red'>" + l("error") + "</font>");
         return "error";
     }
 }
@@ -474,6 +471,21 @@ async function ds4_nvlock() {
 async function ds4_nvunlock() {
     la("ds4_nvunlock");
     await device.sendFeatureReport(0xa0, alloc_req(0xa0, [10,2,0x3e,0x71,0x7f,0x89]))
+}
+
+async function ds5_system_info(base, num, length, decode = true) {
+    await device.sendFeatureReport(128, alloc_req(128, [base,num]))
+    var pcba_id = lf("ds5_pcba_id", await device.receiveFeatureReport(129));
+    console.log(pcba_id);
+    if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
+        return l("error");
+    } else {
+        if(decode)
+            return new TextDecoder().decode(pcba_id.buffer.slice(4, 4+length));
+        else
+            return buf2hex(pcba_id.buffer.slice(4, 4+length));
+    }
+    return l("Unknown");
 }
 
 async function ds5_info() {
@@ -494,27 +506,38 @@ async function ds5_info() {
 
         var deviceinfo = new TextDecoder().decode(view.buffer.slice(32, 32+12));
         var updversion = view.getUint16(44, true);
-        var unk        = view.getUint16(46, true);
+        var unk        = view.getUint8(46, true);
 
-        var fwversion1 = view.getUint32(50, true);
-        var fwversion2 = view.getUint32(54, true);
-        var fwversion3 = view.getUint32(58, true);
+        var fwversion1 = view.getUint32(48, true);
+        var fwversion2 = view.getUint32(52, true);
+        var fwversion3 = view.getUint32(56, true);
 
         clear_info();
 
-        append_info(l("Build Date:"), build_date + " " + build_time);
-        append_info(l("Firmware Type:"), "0x" + dec2hex(fwtype));
-        append_info(l("SW Series:"), "0x" + dec2hex(swseries));
-        append_info(l("HW Info:"), "0x" + dec2hex32(hwinfo));
-        append_info(l("SW Version:"), "0x" + dec2hex32(fwversion));
-        append_info(l("UPD Version:"), "0x" + dec2hex(updversion));
-        append_info(l("FW Version1:"), "0x" + dec2hex32(fwversion1));
-        append_info(l("FW Version2:"), "0x" + dec2hex32(fwversion2));
-        append_info(l("FW Version3:"), "0x" + dec2hex32(fwversion3));
-
         b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
                 '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
-        append_info(l("Board Model:"), ds5_hw_to_bm(hwinfo) + b_info);
+
+        append_info(l("Serial Number"), await ds5_system_info(1, 19, 17), "hw");
+        append_info_extra(l("MCU Unique ID"), await ds5_system_info(1, 9, 9, false), "hw");
+        append_info_extra(l("PCBA ID"), await ds5_system_info(1, 17, 14), "hw");
+        append_info_extra(l("Battery Barcode"), await ds5_system_info(1, 24, 23), "hw");
+        append_info_extra(l("VCM Left Barcode"), await ds5_system_info(1, 26, 16), "hw");
+        append_info_extra(l("VCM Right Barcode"), await ds5_system_info(1, 28, 16), "hw");
+        append_info(l("Board Model"), ds5_hw_to_bm(hwinfo) + b_info, "hw");
+
+        append_info(l("FW Build Date"), build_date + " " + build_time, "fw");
+        append_info_extra(l("FW Type"), "0x" + dec2hex(fwtype), "fw");
+        append_info_extra(l("FW Series"), "0x" + dec2hex(swseries), "fw");
+        append_info_extra(l("HW Model"), "0x" + dec2hex32(hwinfo), "hw");
+        append_info(l("FW Version"), "0x" + dec2hex32(fwversion), "fw");
+        append_info(l("FW Update"), "0x" + dec2hex(updversion), "fw");
+        append_info_extra(l("FW Update Info"), "0x" + dec2hex8(unk), "fw");
+        append_info_extra(l("SBL FW Version"), "0x" + dec2hex32(fwversion1), "fw");
+        append_info_extra(l("Venom FW Version"), "0x" + dec2hex32(fwversion2), "fw");
+        append_info_extra(l("Spider FW Version"), "0x" + dec2hex32(fwversion3), "fw");
+
+        append_info_extra(l("Touchpad ID"), await ds5_system_info(5, 2, 8, false), "hw");
+        append_info_extra(l("Touchpad FW Version"), await ds5_system_info(5, 4, 8, false), "fw");
 
         old_controller = build_date.search(/ 2020| 2021/);
         if(old_controller != -1) {
@@ -525,7 +548,8 @@ async function ds5_info() {
 
         await ds5_nvlock();
         await ds5_nvstatus();
-        await ds5_getbdaddr();
+        bd_addr = await ds5_getbdaddr();
+        append_info(l("Bluetooth Address"), bd_addr, "hw");
     } catch(e) {
         la("ds5_info_error", {"r": e})
         show_popup(l("Cannot read controller information"));
@@ -821,6 +845,7 @@ function welcome_accepted() {
 
 function gboot() {
     gu = crypto.randomUUID();
+    $("#infoshowall").hide();
     window.addEventListener('DOMContentLoaded', function() {
         lang_init();
         welcome_modal();
@@ -1266,6 +1291,7 @@ async function continue_connection(report) {
         }
 
         if(device.productId == 0x05c4) {
+            $("#infoshowall").hide();
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1273,6 +1299,7 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x09cc) {
+            $("#infoshowall").hide();
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1280,6 +1307,7 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x0ce6) {
+            $("#infoshowall").show();
             if(await ds5_info()) {
                 connected = true;
                 mode = 2;
@@ -1287,6 +1315,7 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds_input;
             }
         } else if(device.productId == 0x0df2) {
+            $("#infoshowall").hide();
             if(await ds5_info()) {
                 connected = true;
                 mode = 0;
@@ -1426,13 +1455,6 @@ async function multi_reset() {
         ds5_reset();
 }
 
-async function multi_getbdaddr() {
-    if(mode == 1) 
-        ds4_getbdaddr();
-    else
-        ds5_getbdaddr();
-}
-
 async function multi_nvstatus() {
     if(mode == 1) 
         ds4_nvstatus();
@@ -1540,12 +1562,22 @@ function set_progress(i) {
 
 function clear_info() {
     $("#fwinfo").html("");
+    $("#fwinfoextra-hw").html("");
+    $("#fwinfoextra-fw").html("");
 }
 
-function append_info(key, value) {
+function append_info_extra(key, value, cat) {
     // TODO escape html
-    var s = '<div class="hstack"><p>' + key + '</p><p class="ms-auto">' + value + '</p></div>';
+    var s = '<dt class="text-muted col-sm-4 col-md-6 col-xl-5">' + key + '</dt><dd class="col-sm-8 col-md-6 col-xl-7" style="text-align: right;">' + value + '</dd>';
+    $("#fwinfoextra-" + cat).html($("#fwinfoextra-" + cat).html() + s);
+}
+
+
+function append_info(key, value, cat) {
+    // TODO escape html
+    var s = '<dt class="text-muted col-6">' + key + '</dt><dd class="col-6" style="text-align: right;">' + value + '</dd>';
     $("#fwinfo").html($("#fwinfo").html() + s);
+    append_info_extra(key, value, cat);
 }
 
 function show_popup(text, is_html = false) {
@@ -1565,6 +1597,11 @@ function show_faq_modal() {
 function show_donate_modal() {
     la("donate_modal");
     new bootstrap.Modal(document.getElementById('donateModal'), {}).show()
+}
+
+function show_info_modal() {
+    la("info_modal");
+    new bootstrap.Modal(document.getElementById('infoModal'), {}).show()
 }
 
 function discord_popup() { 

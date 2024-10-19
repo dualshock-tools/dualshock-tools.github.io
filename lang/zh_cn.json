@@ -1,5 +1,5 @@
 {
-    ".authorMsg": "- 中文翻译由 <a href='https://github.com/Yyiyun'>Eythavon</a> <a href='https://space.bilibili.com/7173897'>坩埚钳特大号</a> 提供",
+    ".authorMsg": "- 中文翻译由 <a href='https://github.com/Yyiyun'>Eythavon</a>  <a href='https://space.bilibili.com/7173897'>坩埚钳特大号</a> 提供",
     "DualShock Calibration GUI": "手柄校准界面",
     "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "浏览器不支持。请使用支持 WebHID 的浏览器 (例如 Chrome)。",
     "Connect a DualShock 4 or a DualSense controller to your computer and press Connect.": "将 DualShock 4 或 DualSense 手柄连接到您的计算机，然后按下连接。",
@@ -198,7 +198,7 @@
     "HW Model": "硬件模型",
     "Touchpad ID": "触摸板ID",
     "Bluetooth Address": "蓝牙地址",
-    "Show all": "显示全部",
+    "Show all": "显示全部信息",
 
     "": ""
 }

@@ -1,5 +1,5 @@
 {
-    ".authorMsg": "한국어 번역 (제타)",
+    ".authorMsg": "한국어 번역 (제타/NGC224K)",
     "DualShock Calibration GUI": "듀얼쇼크 보정 GUI",
     "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "지원되지 않는 브라우저입니다. WebHID를 지원하는 웹 브라우저(예: Chrome)를 사용하십시오",
     "Connect a DualShock 4 or a DualSense controller to your computer and press Connect.": "듀얼쇼크4 또는 듀얼센스 컨트롤러를 컴퓨터에 연결하고 [연결] 버튼을 누릅니다",
@@ -162,7 +162,7 @@
     "After range calibration, joysticks always go in corners.": "범위 보정 후 조이스틱은 항상 모서리로 이동합니다.",
     "This issue happens because you have clicked \"Done\" immediately after starting a range calibration.": "이 문제는 범위 보정을 시작한 직후에 완료를 클릭했기 때문에 발생합니다.",
     "Please read the instructions.": "지침을 읽어주세요.",
-    "You have to rotate the joysticks before you press \"Done\".": ""완료를 누르기 전에 조이스틱을 회전해야 합니다.",
+    "You have to rotate the joysticks before you press \"Done\".": "완료를 누르기 전에 조이스틱을 회전해야 합니다.",
     "Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.": "조이스틱 프레임의 가장자리를 터치하고 시계 방향과 시계 반대 방향으로 천천히 회전하는 것이 좋습니다.",
     "Only after you have done that, you click on \"Done\".": "작업이 마무리된 후에 반드시 완료를 클릭합니다.",
 

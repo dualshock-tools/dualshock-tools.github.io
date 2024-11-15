@@ -1152,13 +1152,14 @@ function update_nvs_changes_status(new_value) {
         return;
 
     if (new_value == 1) {
-        has_changes_to_write = 1;
         $("#savechanges").prop("disabled", false);
         $("#savechanges").addClass("btn-success").removeClass("btn-outline-secondary");
     } else {
         $("#savechanges").prop("disabled", true);
         $("#savechanges").removeClass("btn-success").addClass("btn-outline-secondary");
     }
+
+    has_changes_to_write = new_value;
 }
 
 function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {

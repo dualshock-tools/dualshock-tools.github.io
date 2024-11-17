@@ -12,27 +12,29 @@ var has_changes_to_write = 0;
 var lang_orig_text = {};
 var lang_cur = {};
 var lang_disabled = true;
+var lang_cur_direction = "ltr";
 var gj = 0;
 var gu = 0;
 
 // Alphabetical order
 var available_langs = {
-    "bg_bg": { "name": "Български", "file": "bg_bg.json"},
-    "cz_cz": { "name": "Čeština", "file": "cz_cz.json"},
-    "de_de": { "name": "Deutsch", "file": "de_de.json"},
-    "es_es": { "name": "Español", "file": "es_es.json"},
-    "fr_fr": { "name": "Français", "file": "fr_fr.json"},
-    "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
-    "it_it": { "name": "Italiano", "file": "it_it.json"},
-    "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
-    "ko_kr": { "name": "한국어", "file": "ko_kr.json"},
-    "nl_nl": { "name": "Nederlands", "file": "nl_nl.json"},
-    "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
-    "pt_br": { "name": "Português do Brasil", "file": "pt_br.json"},
-    "ru_ru": { "name": "Русский", "file": "ru_ru.json"},
-    "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
-    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
-    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json"}
+    "ar_ar": { "name": "العربية", "file": "ar_ar.json", "direction": "rtl"},
+    "bg_bg": { "name": "Български", "file": "bg_bg.json", "direction": "ltr"},
+    "cz_cz": { "name": "Čeština", "file": "cz_cz.json", "direction": "ltr"},
+    "de_de": { "name": "Deutsch", "file": "de_de.json", "direction": "ltr"},
+    "es_es": { "name": "Español", "file": "es_es.json", "direction": "ltr"},
+    "fr_fr": { "name": "Français", "file": "fr_fr.json", "direction": "ltr"},
+    "hu_hu": { "name": "Magyar", "file": "hu_hu.json", "direction": "ltr"},
+    "it_it": { "name": "Italiano", "file": "it_it.json", "direction": "ltr"},
+    "jp_jp": { "name": "日本語", "file": "jp_jp.json", "direction": "ltr"},
+    "ko_kr": { "name": "한국어", "file": "ko_kr.json", "direction": "ltr"},
+    "nl_nl": { "name": "Nederlands", "file": "nl_nl.json", "direction": "ltr"},
+    "pl_pl": { "name": "Polski", "file": "pl_pl.json", "direction": "ltr"},
+    "pt_br": { "name": "Português do Brasil", "file": "pt_br.json", "direction": "ltr"},
+    "ru_ru": { "name": "Русский", "file": "ru_ru.json", "direction": "ltr"},
+    "tr_tr": { "name": "Türkçe", "file": "tr_tr.json", "direction": "ltr"},
+    "zh_cn": { "name": "中文", "file": "zh_cn.json", "direction": "ltr"},
+    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json", "direction": "ltr"}
 };
 
 function buf2hex(buffer) {
@@ -1738,7 +1740,7 @@ function lang_init() {
         var ljson = available_langs[nlang];
         if(ljson !== undefined) {
             la("lang_init", {"l": nlang});
-            lang_translate(ljson["file"], nlang);
+            lang_translate(ljson["file"], nlang, ljson["direction"]);
         }
     }
 
@@ -1761,7 +1763,8 @@ function lang_set(l, skip_modal=false) {
         lang_reset_page();
     } else {
         var file = available_langs[l]["file"];
-        lang_translate(file, l);
+        var direction = available_langs[l]["direction"];
+        lang_translate(file, l, direction);
     }
 
     createCookie("force_lang", l);
@@ -1772,6 +1775,7 @@ function lang_set(l, skip_modal=false) {
 }
 
 function lang_reset_page() {
+    lang_set_direction("ltr", "en_us");
     var items = document.getElementsByClassName('ds-i18n');
     for(i=0; i<items.length; i++) { 
         var item = items[i];
@@ -1780,6 +1784,24 @@ function lang_reset_page() {
     $("#authorMsg").html("");
     $("#curLang").html("English");
     document.title = lang_orig_text[".title"];
+}
+
+function lang_set_direction(new_direction, lang_name) {
+    var lang_prefix = lang_name.split("_")[0]
+    $("html").attr("lang", lang_prefix);
+
+    if(new_direction == lang_cur_direction)
+        return;
+
+    if(new_direction == "rtl") {
+        $('#bootstrap-css').attr('integrity', 'sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb');
+        $('#bootstrap-css').attr('href', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css');
+    } else {
+        $('#bootstrap-css').attr('integrity', 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH');
+        $('#bootstrap-css').attr('href', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
+    }
+    $("html").attr("dir", new_direction);
+    lang_cur_direction = new_direction;
 }
 
 function l(text) {
@@ -1795,9 +1817,10 @@ function l(text) {
     return text;
 }
 
-function lang_translate(target_file, target_lang) {
+function lang_translate(target_file, target_lang, target_direction) {
     lang_cur = {}
     $.getJSON("lang/" + target_file, function(data) {
+        lang_set_direction(target_direction, target_lang);
         $.each( data, function( key, val ) {
              if(lang_cur[key] !== undefined) {
                  console.log("Warn: already exists " + key);

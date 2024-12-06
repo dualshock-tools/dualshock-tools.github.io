@@ -31,9 +31,9 @@ var available_langs = {
     "nl_nl": { "name": "Nederlands", "file": "nl_nl.json", "direction": "ltr"},
     "pl_pl": { "name": "Polski", "file": "pl_pl.json", "direction": "ltr"},
     "pt_br": { "name": "Português do Brasil", "file": "pt_br.json", "direction": "ltr"},
-    "ua_ua": { "name": "Українська", "file": "ua_ua.json", "direction": "ltr"},
     "ru_ru": { "name": "Русский", "file": "ru_ru.json", "direction": "ltr"},
     "tr_tr": { "name": "Türkçe", "file": "tr_tr.json", "direction": "ltr"},
+    "ua_ua": { "name": "Українська", "file": "ua_ua.json", "direction": "ltr"},
     "zh_cn": { "name": "中文", "file": "zh_cn.json", "direction": "ltr"},
     "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json", "direction": "ltr"}
 };

@@ -150,8 +150,10 @@ async function ds4_info() {
             append_info(l("Board Model"), ds4_hw_to_bm(hw_ver_minor) + b_info);
 
             // All ok, safe to lock NVS, query it and get BD Addr
-            await ds4_nvlock();
-            await ds4_nvstatus();
+            nvstatus = await ds4_nvstatus();
+
+            if(nvstatus == 0)
+                await ds4_nvlock();
             bd_addr = await ds4_getbdaddr();
             append_info(l("Bluetooth Address"), bd_addr);
 
@@ -402,18 +404,28 @@ async function ds4_calibrate_sticks() {
 }
 
 async function ds4_nvstatus() {
-    await device.sendFeatureReport(0x08, alloc_req(0x08, [0xff,0, 12]))
-    data = lf("ds4_nvstatus", await device.receiveFeatureReport(0x11))
-    // 1: temporary, 0: permanent
-    ret = data.getUint8(1, false);
-    if(ret == 1) {
-        $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
-    } else if(ret == 0) {
-        $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
-    } else {
-        $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
+    try {
+        await device.sendFeatureReport(0x08, alloc_req(0x08, [0xff,0, 12]))
+        data = lf("ds4_nvstatus", await device.receiveFeatureReport(0x11))
+        // 1: temporary, 0: permanent
+        ret = data.getUint8(1, false);
+        if(ret == 1) {
+            $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
+            return 1;
+        } else if(ret == 0) {
+            $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
+            return 0;
+        } else {
+            $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
+            if(ret == 0 || ret == 1)
+                return 2;
+            return ret;
+        }
+        return ret;
+    } catch(e) {
+        $("#d-nvstatus").html("<font color='red'>" + l("error") + "</font>");
+        return 2; // error
     }
-    return ret;
 }
 
 async function ds5_nvstatus() {
@@ -429,6 +441,8 @@ async function ds5_nvstatus() {
             return 0; // permanent
         } else {
             $("#d-nvstatus").html("<font color='purple'>unk " + dec2hex32(ret) + "</font>");
+            if(ret == 0 || ret == 1)
+                return 2;
             return ret; // unknown
         }
     } catch(e) {
@@ -479,7 +493,6 @@ async function ds4_nvunlock() {
 async function ds5_system_info(base, num, length, decode = true) {
     await device.sendFeatureReport(128, alloc_req(128, [base,num]))
     var pcba_id = lf("ds5_pcba_id", await device.receiveFeatureReport(129));
-    console.log(pcba_id);
     if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
         return l("error");
     } else {
@@ -549,8 +562,9 @@ async function ds5_info() {
             return true;
         }
 
-        await ds5_nvlock();
-        await ds5_nvstatus();
+        nvstatus = await ds5_nvstatus();
+        if(nvstatus == 0)
+            await ds5_nvlock();
         bd_addr = await ds5_getbdaddr();
         append_info(l("Bluetooth Address"), bd_addr, "hw");
     } catch(e) {

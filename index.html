@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DualShock Calibration GUI</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+<link id="bootstrap-css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet" 
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous">
@@ -19,6 +19,7 @@
       href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css"
       integrity="sha384-h/hnnw1Bi4nbpD6kE7nYfCXzovi622sY5WBxww8ARKwpdLj5kUWjRuyiXaD1U2JT"
       crossorigin="anonymous">
+
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
@@ -136,6 +137,8 @@ dl.row dd { font-family: monospace; }
         <div class="vstack gap-2 p-2">
             <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
             <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range()">Calibrate stick range</button>
+            <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
+            <hr>
             <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_flash()" id="resetBtn">Save changes permanently</button>
             <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reboot controller</button>
 
@@ -222,6 +225,130 @@ dl.row dd { font-family: monospace; }
     </div>
 </div>
 
+</div>
+
+<!-- Finetune Modal -->
+<div class="modal fade" id="finetuneModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="finetuneModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="finetuneModalLabel">Finetune stick calibration</h1>
+        <button type="button" class="btn-close" aria-label="Close" onclick="finetune_cancel()"></button>
+      </div>
+      <div class="modal-body">
+        <p class="ds-i18n">This screen allows to finetune raw calibration data on your controller</p>
+        <div style="width: 100%; display: flex; justify-content: center;">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col col-lg-6 col-12">
+
+                <div class="card text-bg-light" >
+                  <div class="card-header"><span class="ds-i18n">Left stick</span></div>
+                  <div class="card-body">
+                    <div class="container-fluid">
+                      <div class="row">
+                        <table>
+                          <tr><td></td><td style="text-align: center;">
+                              <input id="finetuneLT" type="number" class="form-control" min="0" max="65535" value="0">
+                            </td><td></td></tr>
+                            <tr>
+                              <td height="160px" style="vertical-align: middle; align: right;">
+                                <input id="finetuneLL" type="number" class="form-control" min="0" max="65535" value="0">
+                              </td>
+                              <td><canvas id="finetuneStickCanvasL" width="150" height="150"></canvas></td>
+                              <td height="160px" style="vertical-align: middle; align: left;">
+                                <input id="finetuneLR" type="number" class="form-control" min="0" max="65535" value="0">
+                              </td>
+                            </tr>
+                            <tr><td></td><td style="text-align: center;">
+                                <input id="finetuneLB" type="number" class="form-control" min="0" max="65535" value="0">
+                              </td><td></td></tr>
+                        </table>
+                      </div>
+                      <div class="row">
+                        <div class="col"></div>
+                        <div class="col col-auto">
+                          <label for="finetuneLX" class="col-form-label ds-i18n">Center X</label>
+                        </div>
+                        <div class="col col-auto">
+                          <input id="finetuneLX" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="col"></div>
+                      </div>
+                      <div class="row">
+                        <div class="col"></div>
+                        <div class="col-auto">
+                          <label for="finetuneLY" class="col-form-label ds-i18n">Center Y</label>
+                        </div>
+                        <div class="col-auto">
+                          <input id="finetuneLY" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="col"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div> <!-- col -->
+              <div class="col col-lg-6 col-12">
+                <div class="card text-bg-light" >
+                  <div class="card-header"><span class="ds-i18n">Right stick</span></div>
+                  <div class="card-body">
+                    <div class="container-fluid">
+                      <div class="row">
+                        <table>
+                          <tr><td></td><td style="text-align: center;">
+                              <input id="finetuneRT" type="number" class="form-control" min="0" max="65535" value="0">
+                            </td><td></td></tr>
+                            <tr>
+                              <td height="160px" style="vertical-align: middle; align: right;">
+                                <input id="finetuneRL" type="number" class="form-control" min="0" max="65535" value="0">
+                              </td>
+                              <td><canvas id="finetuneStickCanvasR" width="150" height="150"></canvas></td>
+                              <td height="160px" style="vertical-align: middle; align: left;">
+                                <input id="finetuneRR" type="number" class="form-control" min="0" max="65535" value="0">
+                              </td>
+                            </tr>
+                            <tr><td></td><td style="text-align: center;">
+                                <input id="finetuneRB" type="number" class="form-control" min="0" max="65535" value="0">
+                              </td><td></td></tr>
+                        </table>
+                      </div>
+                      <div class="row">
+                        <div class="col"></div>
+                        <div class="col col-auto">
+                          <label for="finetuneRX" class="col-form-label ds-i18n">Center X</label>
+                        </div>
+                        <div class="col col-auto">
+                          <input id="finetuneRX" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="col"></div>
+                      </div>
+                      <div class="row">
+                        <div class="col"></div>
+                        <div class="col-auto">
+                          <label for="finetuneRY" class="col-form-label ds-i18n">Center Y</label>
+                        </div>
+                        <div class="col-auto">
+                          <input id="finetuneRY" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="col"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div> <!-- col -->
+            </div> <!-- row -->
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button direction="button" class="btn btn-secondary ds-i18n" onclick="finetune_cancel()">Cancel</button>
+        <button type="button" class="btn btn-primary ds-i18n" onclick="finetune_save()">Save</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Welcome Modal -->
@@ -382,6 +509,30 @@ dl.row dd { font-family: monospace; }
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary ds-i18n" onclick="multi_calibrate_range_on_close()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="edgeModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title ds-i18n">Dualsense Edge Compatibility</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4" id="donateBody">
+        <p class="ds-i18n">The DualShock Calibration GUI does not currently support the DualSense Edge.</p>
+        <p class="ds-i18n">I'm actively working on adding compatibility, the primary challenge lies in storing data into the stick modules.</p>
+        <p><span class="ds-i18n">If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a</span>
+        <a href="https://paypal.me/alaincarlucci" target="_blank" class="text-body-secondary ds-i18n">donation</a>.</p>
+        <p class="ds-i18n">Thank you for your generosity and support!</p>
+      </div>
+      <div class="modal-footer">
+        <button onclick="window.open('https://paypal.me/alaincarlucci')" type="button" class="btn btn-success" data-bs-dismiss="modal">
+          <svg class="bi" width="18" height="18"><use xlink:href="#paypal"/></svg>&nbsp;&nbsp;<span class="ds-i18n">Support this project</span>
+        </button>
       </div>
     </div>
   </div>
@@ -606,7 +757,7 @@ dl.row dd { font-family: monospace; }
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-      <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 1.7</a> (2024-10-18) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+      <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.0</a> (2025-01-18) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

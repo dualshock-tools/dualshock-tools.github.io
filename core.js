@@ -12,27 +12,37 @@ var has_changes_to_write = 0;
 var lang_orig_text = {};
 var lang_cur = {};
 var lang_disabled = true;
+var lang_cur_direction = "ltr";
 var gj = 0;
 var gu = 0;
 
+// DS5 finetuning
+var finetune_original_data = []
+var last_written_finetune_data = []
+var finetune_visible = false
+var on_finetune_updating = false
+
+
 // Alphabetical order
 var available_langs = {
-    "bg_bg": { "name": "Български", "file": "bg_bg.json"},
-    "cz_cz": { "name": "Čeština", "file": "cz_cz.json"},
-    "de_de": { "name": "Deutsch", "file": "de_de.json"},
-    "es_es": { "name": "Español", "file": "es_es.json"},
-    "fr_fr": { "name": "Français", "file": "fr_fr.json"},
-    "hu_hu": { "name": "Magyar", "file": "hu_hu.json"},
-    "it_it": { "name": "Italiano", "file": "it_it.json"},
-    "jp_jp": { "name": "日本語", "file": "jp_jp.json"},
-    "ko_kr": { "name": "한국어", "file": "ko_kr.json"},
-    "nl_nl": { "name": "Nederlands", "file": "nl_nl.json"},
-    "pl_pl": { "name": "Polski", "file": "pl_pl.json"},
-    "pt_br": { "name": "Português do Brasil", "file": "pt_br.json"},
-    "ru_ru": { "name": "Русский", "file": "ru_ru.json"},
-    "tr_tr": { "name": "Türkçe", "file": "tr_tr.json"},
-    "zh_cn": { "name": "中文", "file": "zh_cn.json"},
-    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json"}
+    "ar_ar": { "name": "العربية", "file": "ar_ar.json", "direction": "rtl"},
+    "bg_bg": { "name": "Български", "file": "bg_bg.json", "direction": "ltr"},
+    "cz_cz": { "name": "Čeština", "file": "cz_cz.json", "direction": "ltr"},
+    "de_de": { "name": "Deutsch", "file": "de_de.json", "direction": "ltr"},
+    "es_es": { "name": "Español", "file": "es_es.json", "direction": "ltr"},
+    "fr_fr": { "name": "Français", "file": "fr_fr.json", "direction": "ltr"},
+    "hu_hu": { "name": "Magyar", "file": "hu_hu.json", "direction": "ltr"},
+    "it_it": { "name": "Italiano", "file": "it_it.json", "direction": "ltr"},
+    "jp_jp": { "name": "日本語", "file": "jp_jp.json", "direction": "ltr"},
+    "ko_kr": { "name": "한국어", "file": "ko_kr.json", "direction": "ltr"},
+    "nl_nl": { "name": "Nederlands", "file": "nl_nl.json", "direction": "ltr"},
+    "pl_pl": { "name": "Polski", "file": "pl_pl.json", "direction": "ltr"},
+    "pt_br": { "name": "Português do Brasil", "file": "pt_br.json", "direction": "ltr"},
+    "ru_ru": { "name": "Русский", "file": "ru_ru.json", "direction": "ltr"},
+    "tr_tr": { "name": "Türkçe", "file": "tr_tr.json", "direction": "ltr"},
+    "ua_ua": { "name": "Українська", "file": "ua_ua.json", "direction": "ltr"},
+    "zh_cn": { "name": "中文", "file": "zh_cn.json", "direction": "ltr"},
+    "zh_tw": { "name": "中文(繁)", "file": "zh_tw.json", "direction": "ltr"}
 };
 
 function buf2hex(buffer) {
@@ -147,8 +157,10 @@ async function ds4_info() {
             append_info(l("Board Model"), ds4_hw_to_bm(hw_ver_minor) + b_info);
 
             // All ok, safe to lock NVS, query it and get BD Addr
-            await ds4_nvlock();
-            await ds4_nvstatus();
+            nvstatus = await ds4_nvstatus();
+
+            if(nvstatus == 0)
+                await ds4_nvlock();
             bd_addr = await ds4_getbdaddr();
             append_info(l("Bluetooth Address"), bd_addr);
 
@@ -399,18 +411,28 @@ async function ds4_calibrate_sticks() {
 }
 
 async function ds4_nvstatus() {
-    await device.sendFeatureReport(0x08, alloc_req(0x08, [0xff,0, 12]))
-    data = lf("ds4_nvstatus", await device.receiveFeatureReport(0x11))
-    // 1: temporary, 0: permanent
-    ret = data.getUint8(1, false);
-    if(ret == 1) {
-        $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
-    } else if(ret == 0) {
-        $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
-    } else {
-        $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
+    try {
+        await device.sendFeatureReport(0x08, alloc_req(0x08, [0xff,0, 12]))
+        data = lf("ds4_nvstatus", await device.receiveFeatureReport(0x11))
+        // 1: temporary, 0: permanent
+        ret = data.getUint8(1, false);
+        if(ret == 1) {
+            $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
+            return 1;
+        } else if(ret == 0) {
+            $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
+            return 0;
+        } else {
+            $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
+            if(ret == 0 || ret == 1)
+                return 2;
+            return ret;
+        }
+        return ret;
+    } catch(e) {
+        $("#d-nvstatus").html("<font color='red'>" + l("error") + "</font>");
+        return 2; // error
     }
-    return ret;
 }
 
 async function ds5_nvstatus() {
@@ -426,6 +448,8 @@ async function ds5_nvstatus() {
             return 0; // permanent
         } else {
             $("#d-nvstatus").html("<font color='purple'>unk " + dec2hex32(ret) + "</font>");
+            if(ret == 0 || ret == 1)
+                return 2;
             return ret; // unknown
         }
     } catch(e) {
@@ -476,7 +500,6 @@ async function ds4_nvunlock() {
 async function ds5_system_info(base, num, length, decode = true) {
     await device.sendFeatureReport(128, alloc_req(128, [base,num]))
     var pcba_id = lf("ds5_pcba_id", await device.receiveFeatureReport(129));
-    console.log(pcba_id);
     if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
         return l("error");
     } else {
@@ -546,8 +569,9 @@ async function ds5_info() {
             return true;
         }
 
-        await ds5_nvlock();
-        await ds5_nvstatus();
+        nvstatus = await ds5_nvstatus();
+        if(nvstatus == 0)
+            await ds5_nvlock();
         bd_addr = await ds5_getbdaddr();
         append_info(l("Bluetooth Address"), bd_addr, "hw");
     } catch(e) {
@@ -879,6 +903,169 @@ function alloc_req(id, data=[]) {
     return out;
 }
 
+async function on_finetune_change(x) {
+    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    
+    out=[]
+    for(i=0;i<12;i++) {
+        v = $("#finetune" + list[i]).val()
+        out.push(parseInt(v))
+    }
+    await write_finetune_data(out)
+}
+
+async function ds5_finetune() {
+    // Lock NVS before
+    nvs = await ds5_nvstatus();
+    if(nvs == 0) {
+        await ds5_nvlock();
+        nvs = await ds5_nvstatus();
+        if(nvs != 1) {
+            show_popup("ERROR: Cannot lock NVS (" + nvs + ")");
+            return;
+        }
+    } else if(nvs != 1) {
+        show_popup("ERROR: Cannot read NVS status. Finetuning is not safe on this device.");
+    }
+
+    data = await read_finetune_data();
+    if (data == null)
+        return;
+
+    curModal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
+    curModal.show();
+
+    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    for(i=0;i<12;i++) {
+        $("#finetune" + list[i]).attr("value", data[i])
+        $("#finetune" + list[i]).on('change', on_finetune_change)
+    }
+
+    finetune_original_data = data
+    finetune_visible = true
+
+    refresh_finetune()
+}
+
+async function read_finetune_data() {
+    await device.sendFeatureReport(0x80, alloc_req(0x80, [12,2]))
+    var data = await device.receiveFeatureReport(0x81)
+    var cmd = data.getUint8(0, true);
+    var p1 = data.getUint8(1, true);
+    var p2 = data.getUint8(2, true);
+    var p3 = data.getUint8(3, true);
+    if(cmd != 129 || p1 != 12 || p2 != 2 || p3 != 2)
+    {
+        finetune_close();
+        show_popup("ERROR: Cannot read calibration data");
+        return null;
+    }
+    var out = []
+    for(i=0;i<12;i++)
+        out.push(data.getUint16(4+i*2, true))
+    last_written_finetune_data = out
+    return out;
+}
+
+async function write_finetune_data(data) {
+    if (data.length != 12) {
+        return;
+    }
+    if (data == last_written_finetune_data) {
+        return;
+    }
+
+    last_written_finetune_data = data
+    pkg = [12,1]
+    for(i=0;i<data.length;i++) {
+        x = data[i]
+        pkg.push(x & 0xff)
+        pkg.push(x >> 8)
+    }
+    await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
+}
+
+function refresh_finetune() {
+    if (!finetune_visible)
+        return;
+    if (on_finetune_updating)
+        return;
+
+    on_finetune_updating = true
+    setTimeout(ds5_finetune_update_all, 10);
+}
+
+function ds5_finetune_update_all() {
+    ds5_finetune_update("finetuneStickCanvasL", last_lx, last_ly)
+    ds5_finetune_update("finetuneStickCanvasR", last_rx, last_ry)
+}
+
+function ds5_finetune_update(name, plx, ply) {
+    on_finetune_updating = false
+    var c = document.getElementById(name);
+    var ctx = c.getContext("2d");
+    var sz = 60;
+    var hb = 20 + sz;
+    var yb = 15 + sz;
+    var w = c.width;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#000000';
+
+    // Left circle
+    ctx.beginPath();
+    ctx.arc(hb, yb, sz, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#aaaaaa';
+    ctx.beginPath();
+    ctx.moveTo(hb-sz, yb);
+    ctx.lineTo(hb+sz, yb);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hb, yb-sz);
+    ctx.lineTo(hb, yb+sz);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(hb+plx*sz,yb+ply*sz,4, 0, 2*Math.PI);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(hb, yb);
+    ctx.lineTo(hb+plx*sz, yb+ply*sz);
+    ctx.stroke();
+}
+
+function finetune_close() {
+    $("#finetuneModal").modal("hide");
+    finetune_visible = false
+
+    finetune_original_data = []
+}
+
+function finetune_save() {
+    finetune_close();
+
+    // Unlock button
+    update_nvs_changes_status(1);
+}
+
+async function finetune_cancel() {
+    if(finetune_original_data.length == 12)
+        await write_finetune_data(finetune_original_data)
+
+    finetune_close();
+}
+
 var last_lx = 0, last_ly = 0, last_rx = 0, last_ry = 0;
 var ll_updated = false;
 
@@ -1152,13 +1339,14 @@ function update_nvs_changes_status(new_value) {
         return;
 
     if (new_value == 1) {
-        has_changes_to_write = 1;
         $("#savechanges").prop("disabled", false);
         $("#savechanges").addClass("btn-success").removeClass("btn-outline-secondary");
     } else {
         $("#savechanges").prop("disabled", true);
         $("#savechanges").removeClass("btn-success").addClass("btn-outline-secondary");
     }
+
+    has_changes_to_write = new_value;
 }
 
 function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {
@@ -1247,6 +1435,7 @@ function process_ds_input(data) {
         last_ry = new_ry;
         ll_updated = true;
         refresh_sticks();
+        refresh_finetune();
     }
 
     var bat = data.data.getUint8(52);
@@ -1291,7 +1480,8 @@ async function continue_connection(report) {
         }
 
         if(device.productId == 0x05c4) {
-            $("#infoshowall").hide();
+            $("#infoshowall").hide()
+            $("#ds5finetune").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1299,7 +1489,8 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x09cc) {
-            $("#infoshowall").hide();
+            $("#infoshowall").hide()
+            $("#ds5finetune").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1307,7 +1498,8 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x0ce6) {
-            $("#infoshowall").show();
+            $("#infoshowall").show()
+            $("#ds5finetune").show()
             if(await ds5_info()) {
                 connected = true;
                 mode = 2;
@@ -1315,7 +1507,8 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds_input;
             }
         } else if(device.productId == 0x0df2) {
-            $("#infoshowall").hide();
+            $("#infoshowall").hide()
+            $("#ds5finetune").hide()
             if(await ds5_info()) {
                 connected = true;
                 mode = 0;
@@ -1377,7 +1570,7 @@ function update_disable_btn() {
     } else if(disable_btn & 2 && !(last_disable_btn & 2)) {
         show_popup(l("This DualSense controller has outdated firmware.") + "<br>" + l("Please update the firmware and try again."), true);
     } else if(disable_btn & 8 && !(last_disable_btn & 8)) {
-        show_popup(l("Calibration of the DualSense Edge is not currently supported."));
+        show_edge_modal();
     } else if(disable_btn & 4 && !(last_disable_btn & 4)) {
         show_popup(l("Please charge controller battery over 30% to use this tool."));
     }
@@ -1599,6 +1792,11 @@ function show_donate_modal() {
     new bootstrap.Modal(document.getElementById('donateModal'), {}).show()
 }
 
+function show_edge_modal() {
+    la("edge_modal");
+    new bootstrap.Modal(document.getElementById('edgeModal'), {}).show()
+}
+
 function show_info_modal() {
     la("info_modal");
     new bootstrap.Modal(document.getElementById('infoModal'), {}).show()
@@ -1737,7 +1935,7 @@ function lang_init() {
         var ljson = available_langs[nlang];
         if(ljson !== undefined) {
             la("lang_init", {"l": nlang});
-            lang_translate(ljson["file"], nlang);
+            lang_translate(ljson["file"], nlang, ljson["direction"]);
         }
     }
 
@@ -1760,7 +1958,8 @@ function lang_set(l, skip_modal=false) {
         lang_reset_page();
     } else {
         var file = available_langs[l]["file"];
-        lang_translate(file, l);
+        var direction = available_langs[l]["direction"];
+        lang_translate(file, l, direction);
     }
 
     createCookie("force_lang", l);
@@ -1771,6 +1970,7 @@ function lang_set(l, skip_modal=false) {
 }
 
 function lang_reset_page() {
+    lang_set_direction("ltr", "en_us");
     var items = document.getElementsByClassName('ds-i18n');
     for(i=0; i<items.length; i++) { 
         var item = items[i];
@@ -1779,6 +1979,24 @@ function lang_reset_page() {
     $("#authorMsg").html("");
     $("#curLang").html("English");
     document.title = lang_orig_text[".title"];
+}
+
+function lang_set_direction(new_direction, lang_name) {
+    var lang_prefix = lang_name.split("_")[0]
+    $("html").attr("lang", lang_prefix);
+
+    if(new_direction == lang_cur_direction)
+        return;
+
+    if(new_direction == "rtl") {
+        $('#bootstrap-css').attr('integrity', 'sha384-dpuaG1suU0eT09tx5plTaGMLBsfDLzUCCUXOY2j/LSvXYuG6Bqs43ALlhIqAJVRb');
+        $('#bootstrap-css').attr('href', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css');
+    } else {
+        $('#bootstrap-css').attr('integrity', 'sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH');
+        $('#bootstrap-css').attr('href', 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
+    }
+    $("html").attr("dir", new_direction);
+    lang_cur_direction = new_direction;
 }
 
 function l(text) {
@@ -1794,9 +2012,10 @@ function l(text) {
     return text;
 }
 
-function lang_translate(target_file, target_lang) {
+function lang_translate(target_file, target_lang, target_direction) {
     lang_cur = {}
     $.getJSON("lang/" + target_file, function(data) {
+        lang_set_direction(target_direction, target_lang);
         $.each( data, function( key, val ) {
              if(lang_cur[key] !== undefined) {
                  console.log("Warn: already exists " + key);

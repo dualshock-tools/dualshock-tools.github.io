@@ -199,5 +199,20 @@
     "Bluetooth Address": "",
     "Show all": "",
 
+    "Finetune stick calibration": "スティックの微調整キャリブレーション",
+    "(beta)": "（ベータ版）",
+    "This screen allows to finetune raw calibration data on your controller": "この画面ではコントローラーの生データを微調整できます。",
+    "Left stick": "左スティック",
+    "Right stick": "右スティック",
+    "Center X": "中心 X",
+    "Center Y": "中心 Y",
+    "Save": "保存",
+    "Cancel": "キャンセル",
+
+    "The DualShock Calibration GUI does not currently support the DualSense Edge.": "DualShockキャリブレーションGUIは現在、DualSense Edgeをサポートしていません。",
+    "I'm actively working on adding compatibility, the primary challenge lies in storing data into the stick modules.": "互換性を追加するために取り組んでいますが、主な課題はスティックモジュールへのデータ保存です。",
+    "If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a": "このツールが役に立った場合、またはDualSense Edgeのサポートを早く実現したい場合は、プロジェクトへの支援をご検討ください。",
+    "Thank you for your generosity and support!": "ご支援とご厚意に感謝します！",
+
     "": ""
 }

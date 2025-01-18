@@ -198,5 +198,20 @@
     "Bluetooth Address": "Indirizzo Bluetooth",
     "Show all": "Mostra tutto",
 
+    "Finetune stick calibration": "Affina calibrazione joystick",
+    "(beta)": "(beta)",
+    "This screen allows to finetune raw calibration data on your controller": "Questa schermata perfette di affinare i dati grezzi di calibrazione del controller.",
+    "Left stick": "Levetta sinistra",
+    "Right stick": "Levetta destra",
+    "Center X": "Centro X",
+    "Center Y": "Centro Y",
+    "Save": "Salva",
+    "Cancel": "Annulla",
+
+    "The DualShock Calibration GUI does not currently support the DualSense Edge.": "DualShock Calibration GUI non supporta ancora il DualSense Edge.",
+    "I'm actively working on adding compatibility, the primary challenge lies in storing data into the stick modules.": "Sto lavorando attivamente per renderlo compatibile, ma la sfida principale rimane salvare i dati nei moduli degli stick.",
+    "If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a": "Se questo strumento ti è stato utile o desideri che il supporto per il DualSense Edge arrivi più rapidamente, considera di supportare il progetto con una",
+    "Thank you for your generosity and support!": "Grazie per la tua generosità e per il supporto!",
+
     "": ""
 }

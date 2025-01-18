@@ -16,6 +16,13 @@ var lang_cur_direction = "ltr";
 var gj = 0;
 var gu = 0;
 
+// DS5 finetuning
+var finetune_original_data = []
+var last_written_finetune_data = []
+var finetune_visible = false
+var on_finetune_updating = false
+
+
 // Alphabetical order
 var available_langs = {
     "ar_ar": { "name": "العربية", "file": "ar_ar.json", "direction": "rtl"},
@@ -896,6 +903,169 @@ function alloc_req(id, data=[]) {
     return out;
 }
 
+async function on_finetune_change(x) {
+    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    
+    out=[]
+    for(i=0;i<12;i++) {
+        v = $("#finetune" + list[i]).val()
+        out.push(parseInt(v))
+    }
+    await write_finetune_data(out)
+}
+
+async function ds5_finetune() {
+    // Lock NVS before
+    nvs = await ds5_nvstatus();
+    if(nvs == 0) {
+        await ds5_nvlock();
+        nvs = await ds5_nvstatus();
+        if(nvs != 1) {
+            show_popup("ERROR: Cannot lock NVS (" + nvs + ")");
+            return;
+        }
+    } else if(nvs != 1) {
+        show_popup("ERROR: Cannot read NVS status. Finetuning is not safe on this device.");
+    }
+
+    data = await read_finetune_data();
+    if (data == null)
+        return;
+
+    curModal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
+    curModal.show();
+
+    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    for(i=0;i<12;i++) {
+        $("#finetune" + list[i]).attr("value", data[i])
+        $("#finetune" + list[i]).on('change', on_finetune_change)
+    }
+
+    finetune_original_data = data
+    finetune_visible = true
+
+    refresh_finetune()
+}
+
+async function read_finetune_data() {
+    await device.sendFeatureReport(0x80, alloc_req(0x80, [12,2]))
+    var data = await device.receiveFeatureReport(0x81)
+    var cmd = data.getUint8(0, true);
+    var p1 = data.getUint8(1, true);
+    var p2 = data.getUint8(2, true);
+    var p3 = data.getUint8(3, true);
+    if(cmd != 129 || p1 != 12 || p2 != 2 || p3 != 2)
+    {
+        finetune_close();
+        show_popup("ERROR: Cannot read calibration data");
+        return null;
+    }
+    var out = []
+    for(i=0;i<12;i++)
+        out.push(data.getUint16(4+i*2, true))
+    last_written_finetune_data = out
+    return out;
+}
+
+async function write_finetune_data(data) {
+    if (data.length != 12) {
+        return;
+    }
+    if (data == last_written_finetune_data) {
+        return;
+    }
+
+    last_written_finetune_data = data
+    pkg = [12,1]
+    for(i=0;i<data.length;i++) {
+        x = data[i]
+        pkg.push(x & 0xff)
+        pkg.push(x >> 8)
+    }
+    await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
+}
+
+function refresh_finetune() {
+    if (!finetune_visible)
+        return;
+    if (on_finetune_updating)
+        return;
+
+    on_finetune_updating = true
+    setTimeout(ds5_finetune_update_all, 10);
+}
+
+function ds5_finetune_update_all() {
+    ds5_finetune_update("finetuneStickCanvasL", last_lx, last_ly)
+    ds5_finetune_update("finetuneStickCanvasR", last_rx, last_ry)
+}
+
+function ds5_finetune_update(name, plx, ply) {
+    on_finetune_updating = false
+    var c = document.getElementById(name);
+    var ctx = c.getContext("2d");
+    var sz = 60;
+    var hb = 20 + sz;
+    var yb = 15 + sz;
+    var w = c.width;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#000000';
+
+    // Left circle
+    ctx.beginPath();
+    ctx.arc(hb, yb, sz, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#aaaaaa';
+    ctx.beginPath();
+    ctx.moveTo(hb-sz, yb);
+    ctx.lineTo(hb+sz, yb);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(hb, yb-sz);
+    ctx.lineTo(hb, yb+sz);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(hb+plx*sz,yb+ply*sz,4, 0, 2*Math.PI);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(hb, yb);
+    ctx.lineTo(hb+plx*sz, yb+ply*sz);
+    ctx.stroke();
+}
+
+function finetune_close() {
+    $("#finetuneModal").modal("hide");
+    finetune_visible = false
+
+    finetune_original_data = []
+}
+
+function finetune_save() {
+    finetune_close();
+
+    // Unlock button
+    update_nvs_changes_status(1);
+}
+
+async function finetune_cancel() {
+    if(finetune_original_data.length == 12)
+        await write_finetune_data(finetune_original_data)
+
+    finetune_close();
+}
+
 var last_lx = 0, last_ly = 0, last_rx = 0, last_ry = 0;
 var ll_updated = false;
 
@@ -1265,6 +1435,7 @@ function process_ds_input(data) {
         last_ry = new_ry;
         ll_updated = true;
         refresh_sticks();
+        refresh_finetune();
     }
 
     var bat = data.data.getUint8(52);
@@ -1309,7 +1480,8 @@ async function continue_connection(report) {
         }
 
         if(device.productId == 0x05c4) {
-            $("#infoshowall").hide();
+            $("#infoshowall").hide()
+            $("#ds5finetune").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1317,7 +1489,8 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x09cc) {
-            $("#infoshowall").hide();
+            $("#infoshowall").hide()
+            $("#ds5finetune").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1325,7 +1498,8 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds4_input;
             }
         } else if(device.productId == 0x0ce6) {
-            $("#infoshowall").show();
+            $("#infoshowall").show()
+            $("#ds5finetune").show()
             if(await ds5_info()) {
                 connected = true;
                 mode = 2;
@@ -1333,7 +1507,8 @@ async function continue_connection(report) {
                 device.oninputreport = process_ds_input;
             }
         } else if(device.productId == 0x0df2) {
-            $("#infoshowall").hide();
+            $("#infoshowall").hide()
+            $("#ds5finetune").hide()
             if(await ds5_info()) {
                 connected = true;
                 mode = 0;
@@ -1395,7 +1570,7 @@ function update_disable_btn() {
     } else if(disable_btn & 2 && !(last_disable_btn & 2)) {
         show_popup(l("This DualSense controller has outdated firmware.") + "<br>" + l("Please update the firmware and try again."), true);
     } else if(disable_btn & 8 && !(last_disable_btn & 8)) {
-        show_popup(l("Calibration of the DualSense Edge is not currently supported."));
+        show_edge_modal();
     } else if(disable_btn & 4 && !(last_disable_btn & 4)) {
         show_popup(l("Please charge controller battery over 30% to use this tool."));
     }
@@ -1615,6 +1790,11 @@ function show_faq_modal() {
 function show_donate_modal() {
     la("donate_modal");
     new bootstrap.Modal(document.getElementById('donateModal'), {}).show()
+}
+
+function show_edge_modal() {
+    la("edge_modal");
+    new bootstrap.Modal(document.getElementById('edgeModal'), {}).show()
 }
 
 function show_info_modal() {

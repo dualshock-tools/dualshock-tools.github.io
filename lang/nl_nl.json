@@ -198,5 +198,19 @@
   "Bluetooth Address": "",
   "Show all": "",
 
+  "Finetune stick calibration": "",
+  "(beta)": "",
+  "This screen allows to finetune raw calibration data on your controller": "",
+  "Left stick": "",
+  "Right stick": "",
+  "Center X": "",
+  "Center Y": "",
+  "Save": "",
+  "Cancel": "",
+
+  "The DualShock Calibration GUI does not currently support the DualSense Edge.": "",
+  "I'm actively working on adding compatibility, the primary challenge lies in storing data into the stick modules.": "",
+  "If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a": "",
+  "Thank you for your generosity and support!": "",
   "": ""
 }

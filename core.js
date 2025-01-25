@@ -1043,6 +1043,9 @@ function ds5_finetune_update(name, plx, ply) {
     ctx.moveTo(hb, yb);
     ctx.lineTo(hb+plx*sz, yb+ply*sz);
     ctx.stroke();
+
+    $("#"+ name + "x-lbl").text(float_to_str(plx));
+    $("#"+ name + "y-lbl").text(float_to_str(ply));
 }
 
 function finetune_close() {

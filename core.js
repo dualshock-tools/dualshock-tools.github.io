@@ -1253,7 +1253,7 @@ function refresh_stick_pos() {
                 ofl += Math.pow(ll_data[i] - 1, 2);
             }
         for (i=0;i<rr_data.length;i++) {
-            if(ll_data[i] > 0.2) {
+            if(rr_data[i] > 0.2) {
                 rcounter += 1;
                 ofr += Math.pow(rr_data[i] - 1, 2);
             }

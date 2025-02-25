@@ -33,6 +33,7 @@ var available_langs = {
     "fr_fr": { "name": "Français", "file": "fr_fr.json", "direction": "ltr"},
     "hu_hu": { "name": "Magyar", "file": "hu_hu.json", "direction": "ltr"},
     "it_it": { "name": "Italiano", "file": "it_it.json", "direction": "ltr"},
+    "rs_rs": { "name": "Srpski", "file": "rs_rs.json", "direction": "ltr"},
     "jp_jp": { "name": "日本語", "file": "jp_jp.json", "direction": "ltr"},
     "ko_kr": { "name": "한국어", "file": "ko_kr.json", "direction": "ltr"},
     "nl_nl": { "name": "Nederlands", "file": "nl_nl.json", "direction": "ltr"},

@@ -867,7 +867,15 @@ async function ds5_edge_flash_modules() {
         modal.show();
 
         if(device != null) {
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 1, 1]))
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 0, 11]))
+            await new Promise(r => setTimeout(r, 200));
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 0]))
+            await new Promise(r => setTimeout(r, 200));
+
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 1, 11]))
+            await new Promise(r => setTimeout(r, 200));
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 1]))
+            await new Promise(r => setTimeout(r, 200));
         }
         await new Promise(r => setTimeout(r, 500));
         if(device != null) {

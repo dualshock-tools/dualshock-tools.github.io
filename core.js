@@ -1624,6 +1624,7 @@ async function continue_connection(report) {
                 mode = 3;
                 devname = l("Sony DualSense Edge");
             }
+
             n = await ds5_nvstatus();
             if(n == 4) {
                 // dualsense edge with pending reboot
@@ -1633,6 +1634,8 @@ async function continue_connection(report) {
                 show_popup(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
                 return;
             }
+
+            device.oninputreport = process_ds_input;
         } else {
             $("#btnconnect").prop("disabled", false);
             $("#connectspinner").hide();

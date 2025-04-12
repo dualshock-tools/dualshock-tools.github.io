@@ -867,7 +867,15 @@ async function ds5_edge_flash_modules() {
         modal.show();
 
         if(device != null) {
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 1, 1]))
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 0, 11]))
+            await new Promise(r => setTimeout(r, 200));
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 0]))
+            await new Promise(r => setTimeout(r, 200));
+
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 1, 11]))
+            await new Promise(r => setTimeout(r, 200));
+            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 1]))
+            await new Promise(r => setTimeout(r, 200));
         }
         await new Promise(r => setTimeout(r, 500));
         if(device != null) {
@@ -1616,6 +1624,7 @@ async function continue_connection(report) {
                 mode = 3;
                 devname = l("Sony DualSense Edge");
             }
+
             n = await ds5_nvstatus();
             if(n == 4) {
                 // dualsense edge with pending reboot
@@ -1625,6 +1634,8 @@ async function continue_connection(report) {
                 show_popup(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
                 return;
             }
+
+            device.oninputreport = process_ds_input;
         } else {
             $("#btnconnect").prop("disabled", false);
             $("#connectspinner").hide();

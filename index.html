@@ -110,7 +110,7 @@ dl.row dd { font-family: monospace; }
 </div>
 
 <div id="offlinebar" class="vstack p-2" style="display: none;">
-<p class="ds-i18n">Connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.</p>
+<p class="ds-i18n">Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.</p>
 <button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">
     <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
     <span class="ds-i18n">Connect</span>
@@ -559,46 +559,47 @@ dl.row dd { font-family: monospace; }
   <div class="modal-dialog  modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5 ds-i18n" id="edgeProgressLabel">Storing calibration</h1>
+        <h1 class="modal-title fs-5 ds-i18n" id="edgeProgressLabel">Storing calibration...</h1>
       </div>
       <div class="modal-body">
-        <p class="ds-i18n">Calibration is being stored in the stick modules...</p>
-        <p class="ds-i18n">Please wait.</p>
+        <p class="ds-i18n">Calibration is being stored in the stick modules.</p>
+        <p class="ds-i18n">Please do not close this window and do not disconnect your controller. </p>
       </div>
     </div>
   </div>
 </div>
 
 <div class="modal fade" id="edgeModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title ds-i18n">DualSense Edge Calibration (Experimental)</h5>
+        <h5 class="modal-title ds-i18n">DualSense Edge Calibration</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body p-4" id="donateBody">
-          <p>Support for calibrating DualSense Edge stick modules is now available as an <b>experimental feature</b>.</p>
-          <p>Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.</p>
-          <p>To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required. This involves temporarily disabling write protection by applying <b>+1.8V</b> to a specific test point on each module.</p>
+          <p class="ds-i18n">Support for calibrating DualSense Edge stick modules is now available as an <b>experimental feature</b>.</p>
+          <p class="ds-i18n">Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.</p>
+          <p class="ds-i18n">To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.</p>
+          <p class="ds-i18n">This involves temporarily disabling write protection by applying <b>+1.8V</b> to a specific test point on each module.</p>
           <p></p>
 
-          <p>You can do this in two ways:
-          <ul><li><b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP, as shown here</li>
-
-              <li><b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller</li>
-            </ul>
+          <p><span class="ds-i18n">You can do this in two ways:</span>
+          <ul>
+            <li class="ds-i18n"><b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.</li>
+            <li class="ds-i18n"><b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.</li>
+          </ul>
         </p>
 
-        <p><b>This is only for advanced users. If you're not sure what you're doing, please don’t attempt it.</b></p>
-        <p>More details and images <a href="https://github.com/lewy20041/Dualsense_Edge_Modules_Callibration">here</a>.</p>
+        <p><b><span class="ds-i18n">This is only for advanced users. If you're not sure what you're doing, please do not attempt it.</span></b></p>
+        <p><span class="ds-i18n">More details and images</span>&nbsp;<a href="https://github.com/lewy20041/Dualsense_Edge_Modules_Callibration">here</a>.</p>
 
-        <p>We are not responsible for any damage caused by attempting this modification.</p>
-        <p>For more info or help, feel free to reach out on Discord.</p>
+        <p class="ds-i18n">We are not responsible for any damage caused by attempting this modification.</p>
+        <p class="ds-i18n">For more info or help, feel free to reach out on Discord.</p>
 
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary ds-i18n" onclick="welcome_accepted();">Understood</button>
+        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Understood</button>
       </div>
     </div>
   </div>
@@ -823,7 +824,7 @@ dl.row dd { font-family: monospace; }
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.2<i>beta</i></a> (2025-04-06) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.3</a> (2025-04-10) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

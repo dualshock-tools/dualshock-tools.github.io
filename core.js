@@ -38,6 +38,7 @@ var available_langs = {
     "nl_nl": { "name": "Nederlands", "file": "nl_nl.json", "direction": "ltr"},
     "pl_pl": { "name": "Polski", "file": "pl_pl.json", "direction": "ltr"},
     "pt_br": { "name": "Português do Brasil", "file": "pt_br.json", "direction": "ltr"},
+    "pt_pt": { "name": "Português", "file": "pt_pt.json", "direction": "ltr"},
     "rs_rs": { "name": "Srpski", "file": "rs_rs.json", "direction": "ltr"},
     "ru_ru": { "name": "Русский", "file": "ru_ru.json", "direction": "ltr"},
     "tr_tr": { "name": "Türkçe", "file": "tr_tr.json", "direction": "ltr"},

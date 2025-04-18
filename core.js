@@ -1462,7 +1462,7 @@ function update_nvs_changes_status(new_value) {
 
 function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {
     var bat_txt = bat_percent_to_text(bat_capacity, is_charging);
-    var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error);
+    var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
 
     if(bat_txt != last_bat_txt) {
         $("#d-bat").html(bat_txt);
@@ -1561,7 +1561,7 @@ function process_ds_input(data) {
     if(bat_status == 0) {
         bat_capacity = Math.min(bat_charge * 10 + 5, 100);
     } else if(bat_status == 1) {
-        bat_capacity = Math.max(bat_charge * 10 + 5, 100);
+        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
         is_charging = true;
         cable_connected = true;
     } else if(bat_status == 2) {

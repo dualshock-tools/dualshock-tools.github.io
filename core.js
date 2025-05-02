@@ -342,7 +342,10 @@ async function ds4_calibrate_sticks_end() {
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
-        if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
+
+        data = await device.receiveFeatureReport(0x91);
+        data2 = await device.receiveFeatureReport(0x92);
+        if(data.getUint32(0, false) != 0x91010102 || data2.getUint32(0, false) != 0x92010101) {
             d1 = dec2hex32(data.getUint32(0, false));
             d2 = dec2hex32(data2.getUint32(0, false));
             la("ds4_calibrate_sticks_end_failed", {"d1": d1, "d2": d2});

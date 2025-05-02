@@ -92,7 +92,7 @@ function ds4_hw_to_bm(hw_ver) {
         return "JDM-040";
     } else if((a > 0x80 && a < 0x84) || a == 0x93) {
         return "JDM-020";
-    } else if(a == 0xa4 || a == 0x90) {
+    } else if(a == 0xa4 || a == 0x90 || a == 0xa0) {
         return "JDM-050";
     } else if(a == 0xb0) {
         return "JDM-055 (Scuf?)";
@@ -108,7 +108,7 @@ function ds4_hw_to_bm(hw_ver) {
 function is_rare(hw_ver) {
     a = hw_ver >> 8;
     b = a >> 4;
-    return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93 && a != 0x90) || a == 0xa0);
+    return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93 && a != 0x90));
 }
 
 async function ds4_info() {
@@ -1462,7 +1462,7 @@ function update_nvs_changes_status(new_value) {
 
 function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {
     var bat_txt = bat_percent_to_text(bat_capacity, is_charging);
-    var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error);
+    var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
 
     if(bat_txt != last_bat_txt) {
         $("#d-bat").html(bat_txt);
@@ -1561,7 +1561,7 @@ function process_ds_input(data) {
     if(bat_status == 0) {
         bat_capacity = Math.min(bat_charge * 10 + 5, 100);
     } else if(bat_status == 1) {
-        bat_capacity = Math.max(bat_charge * 10 + 5, 100);
+        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
         is_charging = true;
         cable_connected = true;
     } else if(bat_status == 2) {

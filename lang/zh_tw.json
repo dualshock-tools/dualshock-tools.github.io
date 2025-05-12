@@ -1,5 +1,5 @@
 {
-    ".authorMsg": "- 中文(繁體)翻譯由 JEFF 提供",
+    ".authorMsg": "- 中文(繁體)翻譯由 JEFF  <a href='https://space.bilibili.com/185181540'>修手柄的小丁</a> 提供",
     "DualShock Calibration GUI": "手把校準界面",
     "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "不支持的瀏覽器。請使用支持 WebHID 的瀏覽器 (例如 Chrome)。",
     "Connect": "連結",
@@ -161,7 +161,7 @@
     "Save changes permanently": "永久保存更改",
     "Reboot controller": "重啟手把",
     "(beta)": "測試版本",
-    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller": "<b>外部方式</b>：直接將 +1.8V 電壓施加到可見的測試點，無需打開手把",
+    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.": "<b>外部方式</b>：直接將 +1.8V 電壓施加到可見的測試點，無需打開手把",
     "<b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.": "<b>內部方式</b>：從 +1.8V 電源點焊接一條導線至寫入保護測試點（TP）",
     "Battery Barcode": "",
     "Bluetooth Address": "",
@@ -190,7 +190,8 @@
     "More details and images": "更多詳情與圖片",
     "PCBA ID": "PCBA ID",
     "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "請將 DualShock 4、DualSense 或 DualSense Edge 手把連接到您的電腦，然後按下「連接」。",
-    "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "請注意：DS Edge 的搖桿模組<b>無法僅透過軟體進行校正</b>。若要將自訂校正資料儲存到搖桿的內部記憶體中，則需要進行<b>硬體修改</b>。",
+    "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "請註意：DS Edge上的搖桿模塊<b>無法僅通過軟件進行校準</b>。",
+    "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "要在搖桿的內部存儲器上存儲自定義校準，需要進行<b>硬件修改</b>。",
     "Right stick": "右搖桿電壓(mV)",
     "SBL FW Version": "SBL韌體版本",
     "Save": "儲存",
@@ -211,6 +212,8 @@
     "Venom FW Version": "",
     "We are not responsible for any damage caused by attempting this modification.": "我們不對嘗試此修改所造成的任何損壞負責。",
     "You can do this in two ways:": "您可以透過兩種方式來完成這項操作：",
-    "here": "",
+    "here": "這裏",
+    "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "如果校準沒有永久生效，請檢查硬件模塊的接線。",
+    "Please disconnect and reconnect the controller.": "請斷開並重新連接手把。",
     "": ""
 }

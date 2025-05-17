@@ -212,5 +212,7 @@
     "We are not responsible for any damage caused by attempting this modification.": "Nem vállalunk felelősséget az ezen módosítás megkísérlése által okozott károkért.",
     "You can do this in two ways:": "Ezt kétféleképpen teheted meg:",
     "here": "itt",
+    "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "",
+    "Please disconnect and reconnect the controller.": "",
     "": ""
 }

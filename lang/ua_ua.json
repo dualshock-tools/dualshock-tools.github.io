@@ -212,5 +212,7 @@
     "We are not responsible for any damage caused by attempting this modification.": "Ми не несемо відповідальності за будь-які пошкодження, спричинені спробами цієї модифікації.",
     "You can do this in two ways:": "Ви можете зробити це двома способами:",
     "here": "тут",
+    "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "",
+    "Please disconnect and reconnect the controller.": "",
     "": ""
 }

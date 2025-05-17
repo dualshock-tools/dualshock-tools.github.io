@@ -210,9 +210,17 @@
     "We are not responsible for any damage caused by attempting this modification.": "Não nos responsabilizamos por quaisquer dano causado ​​ao tentar usar esta modificação.",
     "You can do this in two ways:": "Pode fazer isto de duas formas",
     "here": "Aqui",
+    "Cannot lock": "",
+    "Cannot store data into": "",
+    "Cannot unlock": "",
+    "Color": "",
+    "Color detection thanks to": "",
     "FW Series": "",
     "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "",
+    "Left Module Barcode": "",
     "PCBA ID": "",
-    "Please disconnect and reconnect the controller.": "",
+    "Right Module Barcode": "",
+    "left module": "",
+    "right module": "",
     "": ""
 }

@@ -213,7 +213,15 @@
     "We are not responsible for any damage caused by attempting this modification.": "Non siamo responsabili per eventuali danni causati dal tentativo di questa modifica.",
     "You can do this in two ways:": "Puoi farlo in due modi:",
     "here": "qui",
-    "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "",
-    "Please disconnect and reconnect the controller.": "",
+    "Cannot lock": "Non riesco a bloccare il",
+    "Cannot store data into": "Non riesco a salvare i dati nel",
+    "Cannot unlock": "Non riesco a sbloccare il",
+    "Color": "Colore",
+    "Color detection thanks to": "Riconoscimento colore grazie a",
+    "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "Se la calibrazione non è salvata permanentemente, controlla i cablaggi della mod hardware.",
+    "Left Module Barcode": "Codice modulo sinistro",
+    "Right Module Barcode": "Codice modulo destro",
+    "left module": "modulo sinistro",
+    "right module": "modulo destro",
     "": ""
 }

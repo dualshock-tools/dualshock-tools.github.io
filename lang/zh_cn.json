@@ -214,6 +214,14 @@
     "You can do this in two ways:": "你可以用两种方式来做",
     "here": "这里",
     "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "如果校准没有永久生效，请检查硬件模块的接线。",
-    "Please disconnect and reconnect the controller.": "请断开并重新连接手柄。",
+    "Cannot lock": "",
+    "Cannot store data into": "",
+    "Cannot unlock": "",
+    "Color": "",
+    "Color detection thanks to": "",
+    "Left Module Barcode": "",
+    "Right Module Barcode": "",
+    "left module": "",
+    "right module": "",
     "": ""
 }

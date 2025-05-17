@@ -205,10 +205,10 @@ async function ds5_flash() {
 async function ds5_edge_flash() {
     la("ds5_edge_flash");
     try {
-        await ds5_edge_flash_modules();
-        await ds5_reset();
-        show_popup("<b>" + l("Changes saved successfully") + "</b>.<br><br>" + l("If the calibration is not stored permanently, please double-check the wirings of the hardware mod.") + "<br>" + l("Please disconnect and reconnect the controller."), true);
-        await disconnect();
+        ret = await ds5_edge_flash_modules();
+        if(ret) {
+            show_popup("<b>" + l("Changes saved successfully") + "</b>.<br><br>" + l("If the calibration is not stored permanently, please double-check the wirings of the hardware mod."), true);
+        }
     } catch(error) {
         show_popup(l("Error while saving changes: ") + toString(error));
     }
@@ -492,6 +492,22 @@ async function ds4_getbdaddr() {
     }
 }
 
+async function ds5_edge_get_barcode() {
+    try {
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21,34]));
+        await new Promise(r => setTimeout(r, 100));
+
+        data = lf("ds5_edge_get_barcode", await device.receiveFeatureReport(0x81));
+        td = new TextDecoder()
+
+        r_bc = td.decode(data.buffer.slice(21, 21+17));
+        l_bc = td.decode(data.buffer.slice(40, 40+17));
+        return [r_bc, l_bc];
+    } catch(e) {
+        return "error";
+    }
+}
+
 async function ds5_getbdaddr() {
     try {
         await device.sendFeatureReport(0x80, alloc_req(0x80, [9,2]));
@@ -531,7 +547,30 @@ async function ds5_system_info(base, num, length, decode = true) {
     return l("Unknown");
 }
 
-async function ds5_info() {
+function ds5_edge_color(x) {
+    const colorMap = {
+        '00' : 'White',
+        '01' : 'Black',
+        '02' : 'Cosmic Red',
+        '03' : 'Nova Pink',
+        '04' : 'Galactic Purple',
+        '05' : 'Starlight Blue',
+        '06' : 'Gray Camo',
+        '07' : 'Volcanic Red',
+        '08' : 'Sterling Silver',
+        '09' : 'Chroma Indigo',
+        '30' : '30Th Anniversary',
+        'Z1' : 'God of War Ragnarok',
+        'Z3' : 'Astro Bot'
+    };
+
+    const colorCode = x.slice(4, 6);
+    const colorName = colorMap[colorCode] || 'Unknown';
+    return colorName;
+}
+
+
+async function ds5_info(is_edge) {
     try {
         const view = lf("ds5_info", await device.receiveFeatureReport(0x20));
 
@@ -559,14 +598,23 @@ async function ds5_info() {
 
         b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
                 '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
+        c_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="edge_color_info()">' + 
+                 '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
 
-        append_info(l("Serial Number"), await ds5_system_info(1, 19, 17), "hw");
+        serial_number = await ds5_system_info(1, 19, 17);
+        append_info(l("Serial Number"), serial_number, "hw");
         append_info_extra(l("MCU Unique ID"), await ds5_system_info(1, 9, 9, false), "hw");
         append_info_extra(l("PCBA ID"), await ds5_system_info(1, 17, 14), "hw");
         append_info_extra(l("Battery Barcode"), await ds5_system_info(1, 24, 23), "hw");
         append_info_extra(l("VCM Left Barcode"), await ds5_system_info(1, 26, 16), "hw");
         append_info_extra(l("VCM Right Barcode"), await ds5_system_info(1, 28, 16), "hw");
-        append_info(l("Board Model"), ds5_hw_to_bm(hwinfo) + b_info, "hw");
+
+        if(is_edge) {
+            color = ds5_edge_color(serial_number);
+            append_info(l("Color"), color + c_info, "hw");
+        } else {
+            append_info(l("Board Model"), ds5_hw_to_bm(hwinfo) + b_info, "hw");
+        }
 
         append_info(l("FW Build Date"), build_date + " " + build_time, "fw");
         append_info_extra(l("FW Type"), "0x" + dec2hex(fwtype), "fw");
@@ -592,6 +640,7 @@ async function ds5_info() {
         nvstatus = await ds5_nvstatus();
         if(nvstatus == 0)
             await ds5_nvlock();
+
         bd_addr = await ds5_getbdaddr();
         append_info(l("Bluetooth Address"), bd_addr, "hw");
     } catch(e) {
@@ -600,6 +649,18 @@ async function ds5_info() {
         return false;
     }
     return true;
+}
+
+async function ds5_load_modules_info() {
+    empty = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    // DS Edge
+    sticks_barcode = await ds5_edge_get_barcode();
+    for(i=0;i<2;i++) {
+        if(sticks_barcode[i] == empty)
+            sticks_barcode[i] = l("Unknown")
+    }
+    append_info(l("Left Module Barcode"), sticks_barcode[1], "fw");
+    append_info(l("Right Module Barcode"), sticks_barcode[0], "fw");
 }
 
 async function ds5_calibrate_sticks_begin() {
@@ -863,36 +924,124 @@ async function ds5_nvlock() {
     }
 }
 
+async function wait_until_written(expected) {
+    for(it=0;it<10;it++) {
+        data = await device.receiveFeatureReport(0x81)
+
+        again = false
+        for(i=0;i<expected.length;i++)
+            if(data.getUint8(1+i, true) != expected[i]) {
+                again = true;
+                break;
+            }
+        if(!again) {
+            return true;
+        }
+        await new Promise(r => setTimeout(r, 50));
+    }
+    return false;
+}
+
+function set_edge_progress(score) {
+    $("#dsedge-progress").css({ "width": score + "%" })
+}
+
 async function ds5_edge_flash_modules() {
     la("ds5_edge_flash_modules");
     var modal = null;
+
+    if (device == null)
+        return;
+
     try {
         modal = new bootstrap.Modal(document.getElementById('edgeProgressModal'), {})
         modal.show();
+        set_edge_progress(0);
 
-        if(device != null) {
-            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 0, 11]))
-            await new Promise(r => setTimeout(r, 200));
-            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 0]))
-            await new Promise(r => setTimeout(r, 200));
+        // Reload data, this ensures correctly writing data in the controller
+        await ds5_nvunlock()
+        await new Promise(r => setTimeout(r, 50));
+        set_edge_progress(5);
 
-            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 1, 11]))
-            await new Promise(r => setTimeout(r, 200));
-            await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 1]))
-            await new Promise(r => setTimeout(r, 200));
+        data = await ds5_get_inmemory_module_data()
+        await new Promise(r => setTimeout(r, 50));
+        set_edge_progress(10);
+        await write_finetune_data(data)
+
+        await new Promise(r => setTimeout(r, 100));
+        set_edge_progress(15);
+
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 0]))
+        await new Promise(r => setTimeout(r, 200));
+        ret = await wait_until_written([21, 6, 2])
+        if(!ret) {
+            throw new Error(l("Cannot unlock") + " " + l("left module"));
         }
-        await new Promise(r => setTimeout(r, 500));
-        if(device != null) {
-        data = await device.receiveFeatureReport(0x81)
+
+        await new Promise(r => setTimeout(r, 100));
+
+        set_edge_progress(30);
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 0]))
+        await new Promise(r => setTimeout(r, 200));
+        ret = await wait_until_written([21, 5, 2])
+        if(!ret) {
+            throw new Error(l("Cannot store data into") + " " + l("left module"));
         }
-        await new Promise(r => setTimeout(r, 1000));
+
+        await new Promise(r => setTimeout(r, 100));
+
+        set_edge_progress(45);
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 1]))
+        await new Promise(r => setTimeout(r, 200));
+        ret = await wait_until_written([21, 6, 2])
+        if(!ret) {
+            throw new Error(l("Cannot unlock") + " " + l("right module"));
+        }
+
+        await new Promise(r => setTimeout(r, 100));
+        set_edge_progress(60);
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 1]))
+        await new Promise(r => setTimeout(r, 200));
+        ret = await wait_until_written([21, 5, 2])
+        if(!ret) {
+            throw new Error(l("Cannot store data into") + " " + l("right module"));
+        }
+
+        set_edge_progress(75);
+
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 4, 0, 0]))
+        await new Promise(r => setTimeout(r, 200));
+        ret = await wait_until_written([21, 4, 2])
+        if(!ret) {
+            throw new Error(l("Cannot lock") + " " + l("left module"));
+        }
+
+        set_edge_progress(90);
+
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 4, 1, 0]))
+        await new Promise(r => setTimeout(r, 200));
+        ret = await wait_until_written([21, 4, 2])
+        if(!ret) {
+            throw new Error(l("Cannot lock") + " " + l("right module"));
+        }
+
+        set_edge_progress(100);
+
+        await new Promise(r => setTimeout(r, 100));
+        await ds5_nvlock()
+
+        await new Promise(r => setTimeout(r, 250));
         modal.hide();
-        await ds5_reset();
+        modal = null;
+        await new Promise(r => setTimeout(r, 300));
+
+        return true;
     } catch(e) {
         modal.hide();
-
+        modal = null;
         await new Promise(r => setTimeout(r, 500));
-        return show_popup(l("NVS Unlock failed: ") + e);
+        show_popup("Error: " + e);
+        return false;
     }
 }
 
@@ -1058,30 +1207,46 @@ async function ds5_finetune() {
     refresh_finetune()
 }
 
-async function read_finetune_data() {
-    await device.sendFeatureReport(0x80, alloc_req(0x80, [12,2]))
+async function ds5_get_inmemory_module_data() {
+    if (mode == 2) {
+        // DualSense
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [12, 2]))
+    } else if(mode == 3) {
+        // DualSense Edge
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [12, 4]))
+    }
     var data = await device.receiveFeatureReport(0x81)
     var cmd = data.getUint8(0, true);
     var p1 = data.getUint8(1, true);
     var p2 = data.getUint8(2, true);
     var p3 = data.getUint8(3, true);
-    if(cmd != 129 || p1 != 12 || p2 != 2 || p3 != 2)
-    {
+
+    if(cmd != 129 || p1 != 12 || (p2 != 2 && p2 != 4) || p3 != 2)
+        return null;
+
+    var out = []
+    for(i=0;i<12;i++)
+        out.push(data.getUint16(4+i*2, true))
+    return out;
+}
+
+async function read_finetune_data() {
+    data = ds5_get_inmemory_module_data();
+    if(data == null) {
         finetune_close();
         show_popup("ERROR: Cannot read calibration data");
         return null;
     }
-    var out = []
-    for(i=0;i<12;i++)
-        out.push(data.getUint16(4+i*2, true))
-    last_written_finetune_data = out
-    return out;
+
+    last_written_finetune_data = data;
+    return data;
 }
 
 async function write_finetune_data(data) {
     if (data.length != 12) {
         return;
     }
+
     if (data == last_written_finetune_data) {
         return;
     }
@@ -1614,20 +1779,23 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0ce6) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
-            if(await ds5_info()) {
+            if(await ds5_info(false)) {
                 connected = true;
                 mode = 2;
                 devname = l("Sony DualSense");
                 device.oninputreport = process_ds_input;
             }
         } else if(device.productId == 0x0df2) {
-            $("#infoshowall").hide()
-            $("#ds5finetune").hide()
-            if(await ds5_info()) {
+            $("#infoshowall").show()
+            $("#ds5finetune").show()
+            if(await ds5_info(true)) {
                 connected = true;
                 mode = 3;
                 devname = l("Sony DualSense Edge");
+                device.oninputreport = process_ds_input;
+                await ds5_load_modules_info();
             }
+
 
             n = await ds5_nvstatus();
             if(n == 4) {
@@ -1638,8 +1806,6 @@ async function continue_connection(report) {
                 show_popup(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
                 return;
             }
-
-            device.oninputreport = process_ds_input;
         } else {
             $("#btnconnect").prop("disabled", false);
             $("#connectspinner").hide();
@@ -1664,8 +1830,9 @@ async function continue_connection(report) {
             return;
         }
 
-        if(mode == 3)
+        if(mode == 3) {
             show_edge_modal();
+        }
 
         if(disable_btn != 0)
             update_disable_btn();
@@ -1797,7 +1964,7 @@ async function multi_nvslock() {
     if(mode == 1) {
         await ds4_nvlock();
         await ds4_nvstatus();
-    } else {
+    } else if (mode == 2) {
         await ds5_nvlock();
         await ds5_nvstatus();
     }
@@ -1933,6 +2100,12 @@ function show_info_modal() {
 function discord_popup() { 
     la("discord_popup");
     show_popup(l("My handle on discord is: the_al"));
+}
+
+function edge_color_info() {
+    la("cm_info");
+    text = l("Color detection thanks to") + ' romek77 from Poland.';
+    show_popup(text, true);
 }
 
 function board_model_info() {

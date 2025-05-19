@@ -929,11 +929,12 @@ async function wait_until_written(expected) {
         data = await device.receiveFeatureReport(0x81)
 
         again = false
-        for(i=0;i<expected.length;i++)
+        for(i=0;i<expected.length;i++) {
             if(data.getUint8(1+i, true) != expected[i]) {
                 again = true;
                 break;
             }
+        }
         if(!again) {
             return true;
         }
@@ -945,6 +946,40 @@ async function wait_until_written(expected) {
 function set_edge_progress(score) {
     $("#dsedge-progress").css({ "width": score + "%" })
 }
+
+async function ds5_edge_unlock_module(i) {
+    m_name = i == 0 ? "left module" : "right module";
+
+    await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, i, 11]))
+    await new Promise(r => setTimeout(r, 200));
+    ret = await wait_until_written([21, 6, 2])
+    if(!ret) {
+        throw new Error(l("Cannot unlock") + " " + l(m_name));
+    }
+}
+
+async function ds5_edge_lock_module(i) {
+    m_name = i == 0 ? "left module" : "right module";
+
+    await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 4, i, 8]))
+    await new Promise(r => setTimeout(r, 200));
+    ret = await wait_until_written([21, 4, 2])
+    if(!ret) {
+        throw new Error(l("Cannot lock") + " " + l(m_name));
+    }
+}
+
+async function ds5_edge_store_data_into(i) {
+    m_name = i == 0 ? "left module" : "right module";
+
+    await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, i]))
+    await new Promise(r => setTimeout(r, 200));
+    ret = await wait_until_written([21, 5, 2])
+    if(!ret) {
+        throw new Error(l("Cannot store data into") + " " + l(m_name));
+    }
+}
+
 
 async function ds5_edge_flash_modules() {
     la("ds5_edge_flash_modules");
@@ -959,74 +994,36 @@ async function ds5_edge_flash_modules() {
         set_edge_progress(0);
 
         // Reload data, this ensures correctly writing data in the controller
+        await new Promise(r => setTimeout(r, 100));
+        set_edge_progress(10);
+
+        // Unlock modules
+        await ds5_edge_unlock_module(0);
+        set_edge_progress(15);
+        await ds5_edge_unlock_module(1);
+        set_edge_progress(30);
+
+        // Unlock NVS
         await ds5_nvunlock()
         await new Promise(r => setTimeout(r, 50));
-        set_edge_progress(5);
+        set_edge_progress(45);
 
+        // This should trigger write into modules
         data = await ds5_get_inmemory_module_data()
         await new Promise(r => setTimeout(r, 50));
-        set_edge_progress(10);
+        set_edge_progress(60);
         await write_finetune_data(data)
 
-        await new Promise(r => setTimeout(r, 100));
-        set_edge_progress(15);
-
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 0]))
-        await new Promise(r => setTimeout(r, 200));
-        ret = await wait_until_written([21, 6, 2])
-        if(!ret) {
-            throw new Error(l("Cannot unlock") + " " + l("left module"));
-        }
-
+        // Extra delay
         await new Promise(r => setTimeout(r, 100));
 
-        set_edge_progress(30);
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 0]))
-        await new Promise(r => setTimeout(r, 200));
-        ret = await wait_until_written([21, 5, 2])
-        if(!ret) {
-            throw new Error(l("Cannot store data into") + " " + l("left module"));
-        }
-
-        await new Promise(r => setTimeout(r, 100));
-
-        set_edge_progress(45);
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, 1]))
-        await new Promise(r => setTimeout(r, 200));
-        ret = await wait_until_written([21, 6, 2])
-        if(!ret) {
-            throw new Error(l("Cannot unlock") + " " + l("right module"));
-        }
-
-        await new Promise(r => setTimeout(r, 100));
-        set_edge_progress(60);
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, 1]))
-        await new Promise(r => setTimeout(r, 200));
-        ret = await wait_until_written([21, 5, 2])
-        if(!ret) {
-            throw new Error(l("Cannot store data into") + " " + l("right module"));
-        }
-
-        set_edge_progress(75);
-
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 4, 0, 0]))
-        await new Promise(r => setTimeout(r, 200));
-        ret = await wait_until_written([21, 4, 2])
-        if(!ret) {
-            throw new Error(l("Cannot lock") + " " + l("left module"));
-        }
-
-        set_edge_progress(90);
-
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 4, 1, 0]))
-        await new Promise(r => setTimeout(r, 200));
-        ret = await wait_until_written([21, 4, 2])
-        if(!ret) {
-            throw new Error(l("Cannot lock") + " " + l("right module"));
-        }
-
+        // Lock back modules
+        await ds5_edge_lock_module(0);
+        set_edge_progress(80);
+        await ds5_edge_lock_module(1);
         set_edge_progress(100);
 
+        // Lock back NVS
         await new Promise(r => setTimeout(r, 100));
         await ds5_nvlock()
 
@@ -1214,7 +1211,9 @@ async function ds5_get_inmemory_module_data() {
     } else if(mode == 3) {
         // DualSense Edge
         await device.sendFeatureReport(0x80, alloc_req(0x80, [12, 4]))
+
     }
+    await new Promise(r => setTimeout(r, 100));
     var data = await device.receiveFeatureReport(0x81)
     var cmd = data.getUint8(0, true);
     var p1 = data.getUint8(1, true);

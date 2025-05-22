@@ -547,7 +547,7 @@ async function ds5_system_info(base, num, length, decode = true) {
     return l("Unknown");
 }
 
-function ds5_edge_color(x) {
+function ds5_color(x) {
     const colorMap = {
         '00' : 'White',
         '01' : 'Black',
@@ -609,10 +609,10 @@ async function ds5_info(is_edge) {
         append_info_extra(l("VCM Left Barcode"), await ds5_system_info(1, 26, 16), "hw");
         append_info_extra(l("VCM Right Barcode"), await ds5_system_info(1, 28, 16), "hw");
 
-        if(is_edge) {
-            color = ds5_edge_color(serial_number);
-            append_info(l("Color"), color + c_info, "hw");
-        } else {
+        color = ds5_color(serial_number);
+        append_info(l("Color"), color + c_info, "hw");
+
+        if(!is_edge) {
             append_info(l("Board Model"), ds5_hw_to_bm(hwinfo) + b_info, "hw");
         }
 

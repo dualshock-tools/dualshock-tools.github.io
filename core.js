@@ -1695,7 +1695,19 @@ function process_ds4_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
+let x_prev_pressed = false;
+
 function process_ds_input(data) {
+    const x_pressed = (data.data.getUint8(7) & 0x20) !== 0;
+    const x_clicked = (!x_prev_pressed && x_pressed);
+    x_prev_pressed = x_pressed;
+    if(x_clicked) {
+        const active = document.activeElement;
+        if (active && active.tagName === 'BUTTON') {
+            active.click(); // click the focused dialog button
+        }
+    }
+
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
     var rx = data.data.getUint8(2);
@@ -2189,8 +2201,13 @@ var cur_calib = 0;
 async function calib_open() {
     la("calib_open");
     cur_calib = 0;
+    new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show();
+    // Wait for modal to be shown
+    await new Promise(resolve => {
+        document.getElementById('calibCenterModal').addEventListener('shown.bs.modal', resolve, { once: true });
+    });
+    // Now update UI and focus
     await calib_next();
-    new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
 }
 
 async function calib_next() {
@@ -2203,6 +2220,8 @@ async function calib_next() {
         cur_calib += 1;
         await calib_step(cur_calib);
     }
+    // Focus the button to allow triggering it from the DS controller
+    $("#calibNext").focus();
 }
 
 function la(k,v={}) {

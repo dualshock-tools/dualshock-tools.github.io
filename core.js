@@ -558,8 +558,8 @@ function ds5_color(x) {
         '06' : 'Gray Camo',
         '07' : 'Volcanic Red',
         '08' : 'Sterling Silver',
-        '09' : 'Chroma Indigo',
-        '30' : '30Th Anniversary',
+        '09' : 'Cobalt Blue',
+        '30' : '30th Anniversary',
         'Z1' : 'God of War Ragnarok',
         'Z3' : 'Astro Bot'
     };

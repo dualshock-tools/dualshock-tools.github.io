@@ -2017,8 +2017,9 @@ async function multi_calibrate_range() {
         return;
 
     set_progress(0);
-    curModal = new bootstrap.Modal(document.getElementById('rangeModal'), {})
-    curModal.show();
+    curModal = await show_modal('rangeModal');
+    // Focus the button to allow triggering it from the DS controller
+    $("#rangeModal .modal-footer button").focus();
 
     await new Promise(r => setTimeout(r, 1000));
 
@@ -2088,13 +2089,24 @@ function append_info(key, value, cat) {
     append_info_extra(key, value, cat);
 }
 
-function show_popup(text, is_html = false) {
+async function show_modal(modal_name) {
+    const modal = new bootstrap.Modal(document.getElementById(modal_name), {});
+    modal.show();
+
+    await new Promise(resolve => {
+        document.getElementById(modal_name).addEventListener('shown.bs.modal', resolve, { once: true });
+    });
+    return modal;
+}
+
+async function show_popup(text, is_html = false) {
     if(is_html) {
         $("#popupBody").html(text);
     } else {
         $("#popupBody").text(text);
     }
-    new bootstrap.Modal(document.getElementById('popupModal'), {}).show()
+    await show_modal('popupModal');
+    $('#popupModal .modal-footer button').focus();
 }
 
 function show_faq_modal() {
@@ -2225,12 +2237,7 @@ async function calib_open() {
     $("#list-1").show();
     $("#list-1-calib").addClass("active");
 
-    new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show();
-    // Wait for modal to be shown
-    await new Promise(resolve => {
-        document.getElementById('calibCenterModal').addEventListener('shown.bs.modal', resolve, { once: true });
-    });
-    // Now update UI and focus
+    await show_modal('calibCenterModal');
     await calib_next();
 }
 

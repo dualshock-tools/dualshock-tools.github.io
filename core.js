@@ -1695,13 +1695,18 @@ function process_ds4_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
-let x_prev_pressed = false;
+let button_was_pressed = false;
 
 function process_ds_input(data) {
-    const x_pressed = (data.data.getUint8(7) & 0x20) !== 0;
-    const x_clicked = (!x_prev_pressed && x_pressed);
-    x_prev_pressed = x_pressed;
-    if(x_clicked) {
+    const l1_pressed = (data.data.getUint8(8) & 0x01) !== 0;
+    const r1_pressed = (data.data.getUint8(8) & 0x02) !== 0;
+    const l2_pressed = data.data.getUint8(4) > 0;
+    const r2_pressed = data.data.getUint8(5) > 0;
+    const dpad_pressed = data.data.getUint8(7) !== 0b00001000;
+    const button_pressed = dpad_pressed || l1_pressed || l2_pressed || r1_pressed || r2_pressed;
+    const button_clicked = (!button_was_pressed && button_pressed);
+    button_was_pressed = button_pressed;
+    if(button_clicked) {
         const active = document.activeElement;
         if (active && active.tagName === 'BUTTON') {
             active.click(); // click the focused dialog button

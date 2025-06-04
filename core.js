@@ -1716,6 +1716,19 @@ function process_ds_input(data) {
         refresh_finetune();
     }
 
+    // Handle L2/R2 for haptic feedback
+    if ($('#hapticTestModal').is(':visible')) {
+        var l2 = data.data.getUint8(4);
+        var r2 = data.data.getUint8(5);
+        console.log(l2, r2);
+        if (l2 > 0) {
+            trigger_haptic_motors(l2, 0, 100);
+        }
+        if (r2 > 0) {
+            trigger_haptic_motors(0, r2, 100);
+        }
+    }
+
     var bat = data.data.getUint8(52);
     var bat_charge = bat & 0x0f;
     var bat_status = bat >> 4;
@@ -2349,4 +2362,40 @@ function lang_translate(target_file, target_lang, target_direction) {
         $("#curLang").html(available_langs[target_lang]["name"]);
     });
 
+}
+
+let haptic_timeout = undefined;
+async function trigger_haptic_motors(left_motor, right_motor, duration_ms = 1000) {
+    // la("trigger_rumble");
+
+    try {
+        if (mode == 1) { // DS4
+            const data = new Uint8Array([0x05, 0x07, right_motor, left_motor, 0, 0, 0, 0, 0]);
+            await device.sendReport(0x05, data);
+        } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+            const data = new Uint8Array([0x02, 0x01, right_motor, left_motor, 0, 0, 0, 0, 0]);
+            await device.sendReport(0x02, data);
+        }
+
+        // Stop rumble after duration
+        clearTimeout(haptic_timeout);
+        haptic_timeout = setTimeout(stop_haptic_motors, duration_ms);
+    } catch(e) {
+        show_popup(l("Error triggering rumble: ") + e);
+    }
+}
+
+async function stop_haptic_motors() {
+    if (mode == 1) { // DS4
+        const data = new Uint8Array([0x05, 0x07, 0, 0, 0, 0, 0, 0, 0]);
+        await device.sendReport(0x05, data);
+    } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+        const data = new Uint8Array([0x02, 0x01, 0, 0, 0, 0, 0, 0, 0]);
+        await device.sendReport(0x02, data);
+    }
+}
+
+function show_haptic_test_modal() {
+    la("haptic_test_modal");
+    new bootstrap.Modal(document.getElementById('hapticTestModal'), {}).show();
 }

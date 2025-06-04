@@ -1696,12 +1696,12 @@ function process_ds4_input(data) {
 }
 
 let button_was_pressed = false;
-function button_press_detected(data) {
-    const l1_pressed = (data.data.getUint8(8) & 0x01) !== 0;
-    const r1_pressed = (data.data.getUint8(8) & 0x02) !== 0;
-    const l2_pressed = data.data.getUint8(4) > 0;
-    const r2_pressed = data.data.getUint8(5) > 0;
-    const dpad_pressed = data.data.getUint8(7) !== 0b00001000;
+function button_press_detected({data}) {
+    const l1_pressed = (data.getUint8(8) & 0x01) !== 0;
+    const r1_pressed = (data.getUint8(8) & 0x02) !== 0;
+    const l2_pressed = data.getUint8(4) > 0;
+    const r2_pressed = data.getUint8(5) > 0;
+    const dpad_pressed = data.getUint8(7) !== 0b00001000;
     const button_pressed = dpad_pressed || l1_pressed || l2_pressed || r1_pressed || r2_pressed;
     const button_clicked = (!button_was_pressed && button_pressed);
     button_was_pressed = button_pressed;

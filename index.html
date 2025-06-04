@@ -141,6 +141,7 @@ dl.row dd { font-family: monospace; }
             </span>
         </div>
         <br>
+        <button type="button" class="btn btn-primary ds-btn" onclick="show_haptic_test_modal()">Test Haptic Motors</button>
     </div>
 
     <div class="col-md-6 col-sm-12" style="min-width: 330px;">
@@ -846,7 +847,6 @@ dl.row dd { font-family: monospace; }
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="hapticTestModalLabel">Haptic Motor Test</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Press L2 to test the left haptic motor</p>
@@ -854,15 +854,11 @@ dl.row dd { font-family: monospace; }
                 <p>The motor strength will match how hard you press the trigger</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
             </div>
         </div>
     </div>
 </div>
-
-<button type="button" class="btn btn-primary ds-btn" onclick="show_haptic_test_modal()">
-    <i class="fa-solid fa-vibrate"></i> Test Haptic Motors
-</button>
 
 </body>
 <!-- Google tag (gtag.js) -->

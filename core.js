@@ -1718,14 +1718,10 @@ function process_ds_input(data) {
 
     // Handle L2/R2 for haptic feedback
     if ($('#hapticTestModal').is(':visible')) {
-        var l2 = data.data.getUint8(4);
-        var r2 = data.data.getUint8(5);
-        console.log(l2, r2);
-        if (l2 > 0) {
-            trigger_haptic_motors(l2, 0, 100);
-        }
-        if (r2 > 0) {
-            trigger_haptic_motors(0, r2, 100);
+        const l2 = data.data.getUint8(4);
+        const r2 = data.data.getUint8(5);
+        if (l2 || r2) {
+            trigger_haptic_motors(l2, r2, 100);
         }
     }
 
@@ -2366,8 +2362,6 @@ function lang_translate(target_file, target_lang, target_direction) {
 
 let haptic_timeout = undefined;
 async function trigger_haptic_motors(left_motor, right_motor, duration_ms = 1000) {
-    // la("trigger_rumble");
-
     try {
         if (mode == 1) { // DS4
             const data = new Uint8Array([0x05, 0x07, right_motor, left_motor, 0, 0, 0, 0, 0]);
@@ -2396,6 +2390,6 @@ async function stop_haptic_motors() {
 }
 
 function show_haptic_test_modal() {
-    la("haptic_test_modal");
+    // la("haptic_test_modal");
     new bootstrap.Modal(document.getElementById('hapticTestModal'), {}).show();
 }

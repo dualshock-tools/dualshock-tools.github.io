@@ -2200,7 +2200,22 @@ async function calib_step(i) {
 var cur_calib = 0;
 async function calib_open() {
     la("calib_open");
+    // Reset all modal state
     cur_calib = 0;
+    $("#calibTitle").text(l("Stick center calibration"));
+    $("#calibNextText").text(l("Start"));
+    $("#calibCross").show();
+    $("#btnSpinner").hide();
+    $("#calibNext").prop("disabled", false);
+
+    // Reset all list items
+    for(j=1;j<7;j++) {
+        $("#list-" + j).hide();
+        $("#list-" + j + "-calib").removeClass("active");
+    }
+    $("#list-1").show();
+    $("#list-1-calib").addClass("active");
+
     new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show();
     // Wait for modal to be shown
     await new Promise(resolve => {

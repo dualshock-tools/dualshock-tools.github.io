@@ -1696,8 +1696,7 @@ function process_ds4_input(data) {
 }
 
 let button_was_pressed = false;
-
-function process_ds_input(data) {
+function button_press_detected(data) {
     const l1_pressed = (data.data.getUint8(8) & 0x01) !== 0;
     const r1_pressed = (data.data.getUint8(8) & 0x02) !== 0;
     const l2_pressed = data.data.getUint8(4) > 0;
@@ -1706,7 +1705,12 @@ function process_ds_input(data) {
     const button_pressed = dpad_pressed || l1_pressed || l2_pressed || r1_pressed || r2_pressed;
     const button_clicked = (!button_was_pressed && button_pressed);
     button_was_pressed = button_pressed;
-    if(button_clicked) {
+    return button_clicked;
+}
+
+function process_ds_input(data) {
+    const button_pressed = button_press_detected(data);
+    if(button_pressed) {
         const active = document.activeElement;
         if (active && active.tagName === 'BUTTON') {
             active.click(); // click the focused dialog button

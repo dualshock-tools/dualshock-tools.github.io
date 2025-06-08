@@ -1659,6 +1659,15 @@ function process_ds4_input(data) {
         refresh_sticks();
     }
 
+    // Handle L2/R2 for haptic feedback
+    if ($('#haptic-test-pane').is(':visible')) {
+        const l2 = data.data.getUint8(4);
+        const r2 = data.data.getUint8(5);
+        if (l2 || r2) {
+            trigger_haptic_motors(l2, r2, 100);
+        }
+    }
+
     // Read battery
     var bat = data.data.getUint8(29);
     var bat_data = bat & 0x0f;

@@ -2111,9 +2111,12 @@ function show_edge_modal() {
     new bootstrap.Modal(document.getElementById('edgeModal'), {}).show()
 }
 
-function show_info_modal() {
+function show_info_tab() {
     la("info_modal");
-    new bootstrap.Modal(document.getElementById('infoModal'), {}).show()
+    const infoTab = document.getElementById('info-tab');
+    if (infoTab) {
+        new bootstrap.Tab(infoTab).show();
+    }
 }
 
 function discord_popup() { 

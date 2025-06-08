@@ -147,11 +147,16 @@ dl.row dd { font-family: monospace; }
         <i class="fas fa-info-circle"></i>&nbsp;&nbsp;<span class="ds-i18n">Info</span>
       </button>
     </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="debug-tab" data-bs-toggle="tab" data-bs-target="#debug-content" type="button" role="tab" aria-controls="debug-content" aria-selected="false">
+        <i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug</span>
+      </button>
+    </li>
   </ul>
 
   <div class="tab-content" id="mainTabsContent">
     <div class="tab-pane show active" id="controller-content" role="tabpanel" aria-labelledby="controller-tab">
-      <!-- Main page content (controller info, calibration, joystick info, debug info/buttons) -->
+      <!-- Main page content (controller info, calibration, joystick info) -->
       <div class="row">
         <div class="col-md-6 col-sm-12">
           <div class="card text-bg-light" >
@@ -224,35 +229,6 @@ dl.row dd { font-family: monospace; }
           </div>
         </div>
       </div>
-
-      <div class="row">
-        <p class="ds-i18n">Sections below are not useful, just some debug infos or manual commands</p>
-      </div>
-      <div class="row">
-        <div class="col-md-6 col-sm-12">
-          <div class="card text-bg-light" >
-            <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
-            <div class="vstack p-2">
-              <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
-            </div>
-          </div>
-          <br>
-        </div>
-
-        <div class="col-md-6 col-sm-12">
-          <div class="card text-bg-light" >
-            <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
-            <div class="vstack gap-2 p-2">
-              <div class="hstack gap-2">
-                <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
-              </div>
-              <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     <div class="tab-pane" id="tests-content" role="tabpanel" aria-labelledby="tests-tab">
       <div class="card text-bg-light mt-3" style="min-height: 500px;">
@@ -303,6 +279,40 @@ dl.row dd { font-family: monospace; }
               <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;Hardware</h5>
               <div class="card-body">
                 <dl class="row" id="fwinfoextra-hw"></dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="debug-content" role="tabpanel" aria-labelledby="debug-tab">
+      <div class="container-fluid py-4">
+        <div class="row">
+          <p class="ds-i18n">Sections below are not generally useful, just some debug infos or manual commands</p>
+        </div>
+  
+        <div class="row">
+          <div class="col-md-6 col-sm-12">
+            <div class="card text-bg-light" >
+              <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
+              <div class="vstack p-2">
+                <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
+              </div>
+            </div>
+            <br>
+          </div>
+
+          <div class="col-md-6 col-sm-12">
+            <div class="card text-bg-light" >
+              <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
+              <div class="vstack gap-2 p-2">
+                <div class="hstack gap-2">
+                  <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
+                  <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
+                  <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
+                </div>
+                <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
               </div>
             </div>
           </div>

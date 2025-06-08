@@ -257,24 +257,25 @@ dl.row dd { font-family: monospace; }
         <div class="card-body">
           <div class="row">
             <div class="col-4">
-              <div class="list-group" id="tests-list">
-                <a class="list-group-item list-group-item-action active" id="haptic-test-list-item" onclick="showTestPane('haptic-test')">Haptic Motor Test</a>
-                <a class="list-group-item list-group-item-action" id="another-test-list-item" onclick="showTestPane('another-test')">Another test here</a>
+              <div class="list-group" id="tests-list" role="tablist">
+                <a class="list-group-item list-group-item-action active" id="haptic-test-tab" data-bs-toggle="list" href="#haptic-test-pane" role="tab" aria-controls="haptic-test-pane" aria-selected="true">Haptic Motor Test</a>
+                <a class="list-group-item list-group-item-action" id="another-test-tab" data-bs-toggle="list" href="#another-test-pane" role="tab" aria-controls="another-test-pane" aria-selected="false">Another test here</a>
                 <!-- Add more test items here if needed -->
               </div>
             </div>
             <div class="col-8">
               <div class="bg-white border rounded-3 p-4">
-                <div id="haptic-test-pane">
-                  <h5>Haptic Motor Test</h5>
-                  <p>Press L2 to test the left haptic motor</p>
-                  <p>Press R2 to test the right haptic motor</p>
-                  <p>The motor strength will match how hard you press the trigger</p>
-                </div>
-                <!-- Add more panes for other tests if needed -->
-                <div id="another-test-pane" style="display:none;">
-                  <h5>Another test</h5>
-                  <p>Some later test</p>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="haptic-test-pane" role="tabpanel" aria-labelledby="haptic-test-tab">
+                    <h5>Haptic Motor Test</h5>
+                    <p>Press L2 to test the left haptic motor</p>
+                    <p>Press R2 to test the right haptic motor</p>
+                    <p>The motor strength will match how hard you press the trigger</p>
+                  </div>
+                  <div class="tab-pane fade" id="another-test-pane" role="tabpanel" aria-labelledby="another-test-tab">
+                    <h5>Another test</h5>
+                    <p>Some later test</p>
+                  </div>
                 </div>
               </div>
             </div>

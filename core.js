@@ -2388,15 +2388,3 @@ async function stop_haptic_motors() {
         await device.sendReport(0x02, data);
     }
 }
-
-let currentTestId = 'haptic-test';
-
-function showTestPane(testId) {
-    document.getElementById(`${currentTestId}-pane`).style.display = 'none';
-    document.getElementById(`${currentTestId}-list-item`).classList.remove('active');
-
-    document.getElementById(`${testId}-pane`).style.display = '';
-    document.getElementById(`${testId}-list-item`).classList.add('active');
-
-    currentTestId = testId;
-}

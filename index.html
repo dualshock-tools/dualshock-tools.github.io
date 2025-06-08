@@ -250,14 +250,35 @@ dl.row dd { font-family: monospace; }
       </div>
     </div>
     <div class="tab-pane fade" id="tests-content" role="tabpanel" aria-labelledby="tests-tab">
-      <div class="card text-bg-light mt-3">
+      <div class="card text-bg-light mt-3" style="min-height: 500px;">
         <div class="card-header">
           <i class="fas fa-vial"></i>&nbsp;&nbsp;<span class="ds-i18n">Tests</span>
         </div>
         <div class="card-body">
-          <button type="button" class="btn btn-primary ds-i18n" onclick="show_haptic_test_modal()">
-            <i class="fas fa-vibrate"></i>&nbsp;&nbsp;<span class="ds-i18n">Test Haptic Motors</span>
-          </button>
+          <div class="row">
+            <div class="col-4">
+              <div class="list-group" id="tests-list">
+                <a class="list-group-item list-group-item-action active" id="haptic-test-list-item" onclick="showTestPane('haptic-test')">Haptic Motor Test</a>
+                <a class="list-group-item list-group-item-action" id="another-test-list-item" onclick="showTestPane('another-test')">Another test here</a>
+                <!-- Add more test items here if needed -->
+              </div>
+            </div>
+            <div class="col-8">
+              <div class="bg-white border rounded-3 p-4">
+                <div id="haptic-test-pane">
+                  <h5>Haptic Motor Test</h5>
+                  <p>Press L2 to test the left haptic motor</p>
+                  <p>Press R2 to test the right haptic motor</p>
+                  <p>The motor strength will match how hard you press the trigger</p>
+                </div>
+                <!-- Add more panes for other tests if needed -->
+                <div id="another-test-pane" style="display:none;">
+                  <h5>Another test</h5>
+                  <p>Some later test</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -866,24 +887,6 @@ dl.row dd { font-family: monospace; }
       </ul>
     </div>
   </footer>
-</div>
-
-<div class="modal fade" id="hapticTestModal" tabindex="-1" aria-labelledby="hapticTestModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="hapticTestModalLabel">Haptic Motor Test</h5>
-      </div>
-      <div class="modal-body">
-        <p>Press L2 to test the left haptic motor</p>
-        <p>Press R2 to test the right haptic motor</p>
-        <p>The motor strength will match how hard you press the trigger</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Done</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 </body>

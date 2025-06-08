@@ -1717,7 +1717,7 @@ function process_ds_input(data) {
     }
 
     // Handle L2/R2 for haptic feedback
-    if ($('#hapticTestModal').is(':visible')) {
+    if ($('#haptic-test-pane').is(':visible')) {
         const l2 = data.data.getUint8(4);
         const r2 = data.data.getUint8(5);
         if (l2 || r2) {
@@ -2389,7 +2389,14 @@ async function stop_haptic_motors() {
     }
 }
 
-function show_haptic_test_modal() {
-    // la("haptic_test_modal");
-    new bootstrap.Modal(document.getElementById('hapticTestModal'), {}).show();
+let currentTestId = 'haptic-test';
+
+function showTestPane(testId) {
+    document.getElementById(`${currentTestId}-pane`).style.display = 'none';
+    document.getElementById(`${currentTestId}-list-item`).classList.remove('active');
+
+    document.getElementById(`${testId}-pane`).style.display = '';
+    document.getElementById(`${testId}-list-item`).classList.add('active');
+
+    currentTestId = testId;
 }

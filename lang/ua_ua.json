@@ -212,6 +212,7 @@
     "We are not responsible for any damage caused by attempting this modification.": "Ми не несемо відповідальності за будь-які пошкодження, спричинені спробами цієї модифікації.",
     "You can do this in two ways:": "Ви можете зробити це двома способами:",
     "here": "тут",
+<<<<<<< test-haptic-motors
     "30th Anniversary": "",
     "Astro Bot": "",
     "Cannot lock": "",
@@ -241,5 +242,30 @@
     "Press L2 to test the left haptic motor": "Натисніть L2 для тестування лівого тактильного мотора",
     "Press R2 to test the right haptic motor": "Натисніть R2 для тестування правого тактильного мотора",
     "The motor strength will match how hard you press the trigger": "Сила мотора буде відповідати силі натискання на курок",
+=======
+    "30th Anniversary": "30-та річниця",
+    "Astro Bot": "Astro Bot",
+    "Cannot lock": "Не вдалося заблокувати",
+    "Cannot store data into": "Не вдалося зберегти дані в",
+    "Cannot unlock": "Не вдалося розблокувати",
+    "Cobalt Blue": "Кобальтово-синій",
+    "Color": "Колір",
+    "Color detection thanks to": "Розпізнавання кольору завдяки",
+    "Cosmic Red": "Космічний червоний",
+    "Galactic Purple": "Галактичний пурпуровий",
+    "God of War Ragnarok": "God of War: Ragnarok",
+    "Grey Camouflage": "Сірий камуфляж",
+    "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "Якщо калібрування не зберігається постійно, будь ласка, перевірте підключення апаратної модифікації.",
+    "Left Module Barcode": "Штрихкод лівого модуля",
+    "Midnight Black": "Чорна ніч",
+    "Nova Pink": "Рожевий «Нова зірка»",
+    "Right Module Barcode": "Штрихкод правого модуля",
+    "Starlight Blue": "Зоряний синій",
+    "Sterling Silver": "Монетний срібний",
+    "Volcanic Red": "Вулканічний червоний",
+    "White": "Білий",
+    "left module": "лівий модуль",
+    "right module": "правий модуль",
+>>>>>>> main
     "": ""
 }

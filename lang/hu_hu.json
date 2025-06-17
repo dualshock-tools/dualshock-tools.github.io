@@ -222,6 +222,7 @@
     "Right Module Barcode": "Jobb modul vonalkódja",
     "left module": "bal modul",
     "right module": "jobb modul",
+<<<<<<< test-haptic-motors
     "30th Anniversary": "",
     "Astro Bot": "",
     "Cobalt Blue": "",
@@ -241,5 +242,20 @@
     "Press L2 to test the left haptic motor": "Nyomja meg az L2-t a bal haptikus motor teszteléséhez",
     "Press R2 to test the right haptic motor": "Nyomja meg az R2-t a jobb haptikus motor teszteléséhez",
     "The motor strength will match how hard you press the trigger": "A motor erőssége megfelel a ravasz megnyomásának erősségének",
+=======
+    "30th Anniversary": "30th Anniversary",
+    "Astro Bot": "Astro Bot",
+    "Cobalt Blue": "Cobalt Blue",
+    "Cosmic Red": "Cosmic Red",
+    "Galactic Purple": "Galactic Purple",
+    "God of War Ragnarok": "God of War Ragnarok",
+    "Grey Camouflage": "Grey Camouflage",
+    "Midnight Black": "Midnight Black",
+    "Nova Pink": "Nova Pink",
+    "Starlight Blue": "Starlight Blue",
+    "Sterling Silver": "Sterling Silver",
+    "Volcanic Red": "Volcanic Red",
+    "White": "Fehér",
+>>>>>>> main
     "": ""
 }

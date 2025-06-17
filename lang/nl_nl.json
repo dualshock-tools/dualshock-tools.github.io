@@ -235,5 +235,11 @@
     "here": "",
     "left module": "",
     "right module": "",
+    "Tests": "Tests",
+    "Haptic Motors": "Haptische motoren",
+    "Test the Haptic Motors": "Test de haptische motoren",
+    "Press L2 to test the left haptic motor": "Druk op L2 om de linker haptische motor te testen",
+    "Press R2 to test the right haptic motor": "Druk op R2 om de rechter haptische motor te testen",
+    "The motor strength will match how hard you press the trigger": "De motorkracht komt overeen met hoe hard je de trigger indrukt",
     "": ""
 }

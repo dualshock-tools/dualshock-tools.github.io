@@ -235,5 +235,11 @@
     "here": "",
     "left module": "",
     "right module": "",
+    "Tests": "テスト",
+    "Haptic Motors": "触覚モーター",
+    "Test the Haptic Motors": "触覚モーターをテスト",
+    "Press L2 to test the left haptic motor": "L2を押して左の触覚モーターをテスト",
+    "Press R2 to test the right haptic motor": "R2を押して右の触覚モーターをテスト",
+    "The motor strength will match how hard you press the trigger": "モーターの強さはトリガーを押す強さに応じて変化します",
     "": ""
 }

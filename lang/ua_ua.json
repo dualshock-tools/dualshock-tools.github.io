@@ -235,5 +235,11 @@
     "White": "",
     "left module": "",
     "right module": "",
+    "Tests": "Тести",
+    "Haptic Motors": "Тактильні мотори",
+    "Test the Haptic Motors": "Протестувати тактильні мотори",
+    "Press L2 to test the left haptic motor": "Натисніть L2 для тестування лівого тактильного мотора",
+    "Press R2 to test the right haptic motor": "Натисніть R2 для тестування правого тактильного мотора",
+    "The motor strength will match how hard you press the trigger": "Сила мотора буде відповідати силі натискання на курок",
     "": ""
 }

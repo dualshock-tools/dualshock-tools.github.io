@@ -236,5 +236,11 @@
     "Sterling Silver": "Sterling Silver",
     "Volcanic Red": "Volcanic Red",
     "White": "Original White",
+    "Tests": "Test",
+    "Haptic Motors": "Motori aptici",
+    "Test the Haptic Motors": "Testa i motori aptici",
+    "Press L2 to test the left haptic motor": "Premi L2 per testare il motore aptico sinistro",
+    "Press R2 to test the right haptic motor": "Premi R2 per testare il motore aptico destro",
+    "The motor strength will match how hard you press the trigger": "La forza del motore corrisponderà alla forza con cui premi il grilletto",
     "": ""
 }

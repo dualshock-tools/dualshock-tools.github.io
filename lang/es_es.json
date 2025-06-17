@@ -235,5 +235,11 @@
     "here": "",
     "left module": "",
     "right module": "",
+    "Tests": "Pruebas",
+    "Haptic Motors": "Motores hápticos",
+    "Test the Haptic Motors": "Probar los motores hápticos",
+    "Press L2 to test the left haptic motor": "Presiona L2 para probar el motor háptico izquierdo",
+    "Press R2 to test the right haptic motor": "Presiona R2 para probar el motor háptico derecho",
+    "The motor strength will match how hard you press the trigger": "La fuerza del motor coincidirá con la fuerza con la que presiones el gatillo",
     "": ""
 }

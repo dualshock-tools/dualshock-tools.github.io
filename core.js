@@ -2375,7 +2375,15 @@ function lang_translate(target_file, target_lang, target_direction) {
 }
 
 let haptic_timeout = undefined;
+let haptic_last_trigger = 0;
 async function trigger_haptic_motors(left_motor, right_motor, duration_ms = 1000) {
+    const now = Date.now();
+    if (now - haptic_last_trigger < 200) {
+        return; // Rate limited - ignore calls within 200ms
+    }
+
+    haptic_last_trigger = now;
+
     try {
         if (mode == 1) { // DS4
             const data = new Uint8Array([0x05, 0x07, right_motor, left_motor, 0, 0, 0, 0, 0]);

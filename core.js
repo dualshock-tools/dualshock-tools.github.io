@@ -1711,7 +1711,28 @@ function process_ds4_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
+let button_was_pressed = false;
+function button_press_detected({data}) {
+    const l1_pressed = (data.getUint8(8) & 0x01) !== 0;
+    const r1_pressed = (data.getUint8(8) & 0x02) !== 0;
+    const l2_pressed = data.getUint8(4) > 0;
+    const r2_pressed = data.getUint8(5) > 0;
+    const dpad_pressed = data.getUint8(7) !== 0b00001000;
+    const button_pressed = dpad_pressed || l1_pressed || l2_pressed || r1_pressed || r2_pressed;
+    const button_clicked = (!button_was_pressed && button_pressed);
+    button_was_pressed = button_pressed;
+    return button_clicked;
+}
+
 function process_ds_input(data) {
+    const button_pressed = button_press_detected(data);
+    if(button_pressed) {
+        const active = document.activeElement;
+        if (active && active.tagName === 'BUTTON') {
+            active.click(); // click the focused dialog button
+        }
+    }
+
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
     var rx = data.data.getUint8(2);
@@ -2012,8 +2033,9 @@ async function multi_calibrate_range() {
         return;
 
     set_progress(0);
-    curModal = new bootstrap.Modal(document.getElementById('rangeModal'), {})
-    curModal.show();
+    curModal = await show_modal('rangeModal');
+    // Focus the button to allow triggering it from the DS controller
+    $("#rangeModal .modal-footer button").focus();
 
     await new Promise(r => setTimeout(r, 1000));
 
@@ -2083,13 +2105,24 @@ function append_info(key, value, cat) {
     append_info_extra(key, value, cat);
 }
 
-function show_popup(text, is_html = false) {
+async function show_modal(modal_name) {
+    const modal = new bootstrap.Modal(document.getElementById(modal_name), {});
+    modal.show();
+
+    await new Promise(resolve => {
+        document.getElementById(modal_name).addEventListener('shown.bs.modal', resolve, { once: true });
+    });
+    return modal;
+}
+
+async function show_popup(text, is_html = false) {
     if(is_html) {
         $("#popupBody").html(text);
     } else {
         $("#popupBody").text(text);
     }
-    new bootstrap.Modal(document.getElementById('popupModal'), {}).show()
+    await show_modal('popupModal');
+    $('#popupModal .modal-footer button').focus();
 }
 
 function show_faq_modal() {
@@ -2204,9 +2237,24 @@ async function calib_step(i) {
 var cur_calib = 0;
 async function calib_open() {
     la("calib_open");
+    // Reset all modal state
     cur_calib = 0;
+    $("#calibTitle").text(l("Stick center calibration"));
+    $("#calibNextText").text(l("Start"));
+    $("#calibCross").show();
+    $("#btnSpinner").hide();
+    $("#calibNext").prop("disabled", false);
+
+    // Reset all list items
+    for(j=1;j<7;j++) {
+        $("#list-" + j).hide();
+        $("#list-" + j + "-calib").removeClass("active");
+    }
+    $("#list-1").show();
+    $("#list-1-calib").addClass("active");
+
+    await show_modal('calibCenterModal');
     await calib_next();
-    new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
 }
 
 async function calib_next() {
@@ -2219,6 +2267,8 @@ async function calib_next() {
         cur_calib += 1;
         await calib_step(cur_calib);
     }
+    // Focus the button to allow triggering it from the DS controller
+    $("#calibNext").focus();
 }
 
 function la(k,v={}) {

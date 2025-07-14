@@ -1794,6 +1794,7 @@ async function continue_connection(report) {
         if(device.productId == 0x05c4) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            $("#info-tab").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1803,6 +1804,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x09cc) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            $("#info-tab").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1812,6 +1814,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0ce6) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            $("#info-tab").show()
             if(await ds5_info(false)) {
                 connected = true;
                 mode = 2;
@@ -1821,6 +1824,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0df2) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            $("#info-tab").show()
             if(await ds5_info(true)) {
                 connected = true;
                 mode = 3;
@@ -1855,6 +1859,11 @@ async function continue_connection(report) {
             $("#resetBtn").show();
             $("#d-nvstatus").text = l("Unknown");
             $("#d-bdaddr").text = l("Unknown");
+            // Always default to the Calibration tab
+            const calibTab = document.getElementById('controller-tab');
+            if (calibTab) {
+                new bootstrap.Tab(calibTab).show();
+            }
         } else {
             show_popup(l("Connected invalid device: ") + l("Error 1"));
             $("#btnconnect").prop("disabled", false);

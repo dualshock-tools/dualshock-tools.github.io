@@ -1675,8 +1675,8 @@ function process_ds4_input(data) {
 
     // Handle L2/R2 for haptic feedback
     if ($('#haptic-test-pane').is(':visible')) {
-        const l2 = data.data.getUint8(4);
-        const r2 = data.data.getUint8(5);
+        const l2 = data.data.getUint8(7);
+        const r2 = data.data.getUint8(8);
         if (l2 || r2) {
             trigger_haptic_motors(l2, r2, 100);
         }

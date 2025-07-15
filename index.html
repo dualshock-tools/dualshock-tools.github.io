@@ -131,20 +131,46 @@ dl.row dd { font-family: monospace; }
 </div>
 
 <div id="mainmenu" class="container" style="display: none;">
-<div class="row">
-    <div class="col-md-6 col-sm-12">
-        <div class="card text-bg-light" >
+  <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="controller-tab" data-bs-toggle="tab" data-bs-target="#controller-content" type="button" role="tab" aria-controls="controller-content" aria-selected="true">
+        <i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Calibration</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests-content" type="button" role="tab" aria-controls="tests-content" aria-selected="false">
+        <i class="fas fa-vial"></i>&nbsp;&nbsp;<span class="ds-i18n">Tests</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-content" type="button" role="tab" aria-controls="info-content" aria-selected="false">
+        <i class="fas fa-info-circle"></i>&nbsp;&nbsp;<span class="ds-i18n">Info</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="debug-tab" data-bs-toggle="tab" data-bs-target="#debug-content" type="button" role="tab" aria-controls="debug-content" aria-selected="false">
+        <i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content" id="mainTabsContent">
+    <div class="tab-pane show active" id="controller-content" role="tabpanel" aria-labelledby="controller-tab">
+      <!-- Main page content (controller info, calibration, joystick info) -->
+      <div class="row">
+        <div class="col-md-6 col-sm-12">
+          <div class="card text-bg-light" >
             <div class="card-header"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></div>
             <dl class="row px-3 py-2" id="fwinfo"></dl>
             <span id="infoshowall" class="pb-4 px-4 row">
-            <button class="btn btn-outline-secondary" onclick="show_info_modal()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
+              <button class="btn btn-outline-secondary" onclick="show_info_tab()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
             </span>
+          </div>
+          <br>
         </div>
-        <br>
-    </div>
 
-    <div class="col-md-6 col-sm-12" style="min-width: 330px;">
-        <div class="vstack gap-2 p-2">
+        <div class="col-md-6 col-sm-12" style="min-width: 330px;">
+          <div class="vstack gap-2 p-2">
             <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
             <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range()">Calibrate stick range</button>
             <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
@@ -153,88 +179,142 @@ dl.row dd { font-family: monospace; }
             <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reboot controller</button>
 
             <div class="card text-bg-light" >
-                <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
-                <div class="vstack px-2">
-                    <center>
-                        <canvas id="stickCanvas" width="300" height="150"></canvas>
-                    </center>
+              <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
+              <div class="vstack px-2">
+                <center>
+                  <canvas id="stickCanvas" width="300" height="150"></canvas>
+                </center>
+              </div>
+              <div class="px-2">
+                <div class="hstack">
+                  <div class="vstack" style="text-align: center;">
+                    <span>LX:</span>
+                    <pre id="lx-lbl" style="min-width: 80px;"></pre>
+                  </div>
+
+                  <div class="vstack" style="text-align: center;">
+                    <span>LY:</span>
+                    <pre id="ly-lbl" style="min-width: 80px;"></pre>
+                  </div>
+
+                  <div class="vstack" style="text-align: center;">
+                    <span>RX:</span>
+                    <pre id="rx-lbl" style="min-width: 80px;"></pre>
+                  </div>
+
+                  <div class="vstack" style="text-align: center;">
+                    <span>RY:</span>
+                    <pre id="ry-lbl" style="min-width: 80px;"></pre>
+                  </div>
                 </div>
-                <div class="px-2">
-                        <div class="hstack">
-                            <div class="vstack" style="text-align: center;">
-                                <span>LX:</span> 
-                                <pre id="lx-lbl" style="min-width: 80px;"></pre>
-                            </div>
+              </div>
+              <div class="px-2">
+                <center>
+                  <input class="form-check-input" type="checkbox" value="" id="checkCircularity">
+                  <label class="form-check-label ds-i18n" for="checkCircularity">Check circularity</label>
+                  <div class="hstack" id="circ-data">
+                    <div class="vstack" style="text-align: center;">
+                      <span class="ds-i18n">Err L:</span>
+                      <pre id="el-lbl" style="min-width: 80px;"></pre>
+                    </div>
 
-                            <div class="vstack" style="text-align: center;">
-                                <span>LY:</span> 
-                                <pre id="ly-lbl" style="min-width: 80px;"></pre>
-                            </div>
-
-                            <div class="vstack" style="text-align: center;">
-                                <span>RX:</span> 
-                                <pre id="rx-lbl" style="min-width: 80px;"></pre>
-                            </div>
-
-                            <div class="vstack" style="text-align: center;">
-                                <span>RY:</span> 
-                                <pre id="ry-lbl" style="min-width: 80px;"></pre>
-                            </div>
-                        </div>
-                </div>
-                <div class="px-2">
-                    <center>
-                        <input class="form-check-input" type="checkbox" value="" id="checkCircularity">
-                        <label class="form-check-label ds-i18n" for="checkCircularity">Check circularity</label>
-                        <div class="hstack" id="circ-data">
-                            <div class="vstack" style="text-align: center;">
-                                <span class="ds-i18n">Err L:</span> 
-                                <pre id="el-lbl" style="min-width: 80px;"></pre>
-                            </div>
-
-                            <div class="vstack" style="text-align: center;">
-                                <span class="ds-i18n">Err R:</span> 
-                                <pre id="er-lbl" style="min-width: 80px;"></pre>
-                            </div>
-                        </div>
-                    </center>
-                </div>
+                    <div class="vstack" style="text-align: center;">
+                      <span class="ds-i18n">Err R:</span>
+                      <pre id="er-lbl" style="min-width: 80px;"></pre>
+                    </div>
+                  </div>
+                </center>
+              </div>
             </div>
-
+          </div>
         </div>
+      </div>
+    </div>
+    <div class="tab-pane" id="tests-content" role="tabpanel" aria-labelledby="tests-tab">
+      <div class="card text-bg-light mt-3" style="min-height: 500px;">
+        <div class="card-header">
+          <i class="fas fa-vial"></i>&nbsp;&nbsp;<span class="ds-i18n">Tests</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-4">
+              <div class="list-group" id="tests-list" role="tablist">
+                <a class="list-group-item list-group-item-action active ds-i18n" id="haptic-test-tab" data-bs-toggle="list" href="#haptic-test-pane">Haptic Motors</a>
+              </div>
+            </div>
+            <div class="col-8">
+              <div class="bg-white border rounded-3 p-4">
+                <div class="tab-content">
+                  <div class="tab-pane show active" id="haptic-test-pane" role="tabpanel" aria-labelledby="haptic-test-tab">
+                    <h5 class="ds-i18n">Test the Haptic Motors</h5>
+                    <p class="ds-i18n">Press L2 to test the strong (left) haptic motor</p>
+                    <p class="ds-i18n">Press R2 to test the weak (right) haptic motor</p>
+                    <p class="ds-i18n">The motor strength will match how hard you press the trigger</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-pane" id="info-content" role="tabpanel" aria-labelledby="info-tab">
+      <div class="container-fluid py-4">
+        <div class="row">
+          <div class="col-lg-12 col-xl-6 py-3">
+            <div class="card">
+              <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;Software</h5>
+              <div class="card-body">
+                <dl class="row" id="fwinfoextra-fw"></dl>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12 col-xl-6 py-3">
+            <div class="card">
+              <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;Hardware</h5>
+              <div class="card-body">
+                <dl class="row" id="fwinfoextra-hw"></dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-</div>
-
-<div class="row">
-<p class="ds-i18n">Sections below are not useful, just some debug infos or manual commands</p>
-</div>
-<div class="row">
-    <div class="col-md-6 col-sm-12">
-        <div class="card text-bg-light" >
-            <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
-            <div class="vstack p-2">
+    <div class="tab-pane" id="debug-content" role="tabpanel" aria-labelledby="debug-tab">
+      <div class="container-fluid py-4">
+        <div class="row">
+          <p class="ds-i18n">Sections below are not generally useful, just some debug infos or manual commands</p>
+        </div>
+  
+        <div class="row">
+          <div class="col-md-6 col-sm-12">
+            <div class="card text-bg-light" >
+              <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
+              <div class="vstack p-2">
                 <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
+              </div>
             </div>
-        </div>
-        <br>
-    </div>
+            <br>
+          </div>
 
-    <div class="col-md-6 col-sm-12">
-        <div class="card text-bg-light" >
-        <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
-        <div class="vstack gap-2 p-2">
-            <div class="hstack gap-2">
-                <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
+          <div class="col-md-6 col-sm-12">
+            <div class="card text-bg-light" >
+              <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
+              <div class="vstack gap-2 p-2">
+                <div class="hstack gap-2">
+                  <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
+                  <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
+                  <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
+                </div>
+                <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
+              </div>
             </div>
-            <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
+          </div>
         </div>
-        </div>
+      </div>
     </div>
-</div>
-
+  </div>
 </div>
 
 <!-- Finetune Modal -->
@@ -477,40 +557,6 @@ dl.row dd { font-family: monospace; }
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="btnSpinner" style="display: none;"></span>
         <span id="calibNextText" class="ds-i18n">Next</span>
         </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-fullscreen-md-down">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="infoModalLabel"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-      <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-12 col-xl-6 py-3">
-                <div class="card">
-                    <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;Software</h5>
-                    <div class="card-body">
-                        <dl class="row" id="fwinfoextra-fw"></dl>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-12 col-xl-6 py-3">
-                <div class="card">
-                    <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;Hardware</h5>
-                    <div class="card-body">
-                        <dl class="row" id="fwinfoextra-hw"></dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </div>
       </div>
     </div>
   </div>

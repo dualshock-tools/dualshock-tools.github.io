@@ -1673,6 +1673,15 @@ function process_ds4_input(data) {
         refresh_sticks();
     }
 
+    // Handle L2/R2 for haptic feedback
+    if ($('#haptic-test-pane').is(':visible')) {
+        const l2 = data.data.getUint8(7);
+        const r2 = data.data.getUint8(8);
+        if (l2 || r2) {
+            trigger_haptic_motors(l2, r2);
+        }
+    }
+
     // Read battery
     var bat = data.data.getUint8(29);
     var bat_data = bat & 0x0f;
@@ -1732,6 +1741,15 @@ function process_ds_input(data) {
         refresh_finetune();
     }
 
+    // Handle L2/R2 for haptic feedback
+    if ($('#haptic-test-pane').is(':visible')) {
+        const l2 = data.data.getUint8(4);
+        const r2 = data.data.getUint8(5);
+        if (l2 || r2) {
+            trigger_haptic_motors(l2, r2);
+        }
+    }
+
     var bat = data.data.getUint8(52);
     var bat_charge = bat & 0x0f;
     var bat_status = bat >> 4;
@@ -1776,6 +1794,7 @@ async function continue_connection(report) {
         if(device.productId == 0x05c4) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            $("#info-tab").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1785,6 +1804,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x09cc) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            $("#info-tab").hide()
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1794,6 +1814,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0ce6) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            $("#info-tab").show()
             if(await ds5_info(false)) {
                 connected = true;
                 mode = 2;
@@ -1803,6 +1824,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0df2) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            $("#info-tab").show()
             if(await ds5_info(true)) {
                 connected = true;
                 mode = 3;
@@ -1837,6 +1859,11 @@ async function continue_connection(report) {
             $("#resetBtn").show();
             $("#d-nvstatus").text = l("Unknown");
             $("#d-bdaddr").text = l("Unknown");
+            // Always default to the Calibration tab
+            const calibTab = document.getElementById('controller-tab');
+            if (calibTab) {
+                new bootstrap.Tab(calibTab).show();
+            }
         } else {
             show_popup(l("Connected invalid device: ") + l("Error 1"));
             $("#btnconnect").prop("disabled", false);
@@ -2107,9 +2134,12 @@ function show_edge_modal() {
     new bootstrap.Modal(document.getElementById('edgeModal'), {}).show()
 }
 
-function show_info_modal() {
+function show_info_tab() {
     la("info_modal");
-    new bootstrap.Modal(document.getElementById('infoModal'), {}).show()
+    const infoTab = document.getElementById('info-tab');
+    if (infoTab) {
+        new bootstrap.Tab(infoTab).show();
+    }
 }
 
 function discord_popup() { 
@@ -2365,4 +2395,44 @@ function lang_translate(target_file, target_lang, target_direction) {
         $("#curLang").html(available_langs[target_lang]["name"]);
     });
 
+}
+
+let haptic_timeout = undefined;
+let haptic_last_trigger = 0;
+async function trigger_haptic_motors(strong_motor /*left*/, weak_motor /*right*/) {
+    // The DS4 contoller has a strong (left) and a weak (right) motor.
+    // The DS5 emulates the same behavior, but the left and right motors are the same.
+
+    const now = Date.now();
+    if (now - haptic_last_trigger < 200) {
+        return; // Rate limited - ignore calls within 200ms
+    }
+
+    haptic_last_trigger = now;
+
+    try {
+        if (mode == 1) { // DS4
+            const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
+            await device.sendReport(0x05, data);
+        } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+            const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
+            await device.sendReport(0x02, data);
+        }
+
+        // Stop rumble after duration
+        clearTimeout(haptic_timeout);
+        haptic_timeout = setTimeout(stop_haptic_motors, 250);
+    } catch(e) {
+        show_popup(l("Error triggering rumble: ") + e);
+    }
+}
+
+async function stop_haptic_motors() {
+    if (mode == 1) { // DS4
+        const data = new Uint8Array([0x05, 0x00, 0, 0, 0]);
+        await device.sendReport(0x05, data);
+    } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+        const data = new Uint8Array([0x02, 0x00, 0, 0]);
+        await device.sendReport(0x02, data);
+    }
 }

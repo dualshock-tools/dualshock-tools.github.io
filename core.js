@@ -2409,7 +2409,7 @@ async function trigger_haptic_motors(strong_motor /*left*/, weak_motor /*right*/
     }
 
     haptic_last_trigger = now;
-    console.log("trigger_haptic_motors", strong_motor, weak_motor);
+
     try {
         if (mode == 1) { // DS4
             const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);

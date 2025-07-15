@@ -245,8 +245,8 @@
     "Tests": "اختبارات",
     "Haptic Motors": "المحركات اللمسية",
     "Test the Haptic Motors": "اختبار المحركات اللمسية",
-    "Press L2 to test the left haptic motor": "اضغط L2 لاختبار المحرك اللمسي الأيسر",
-    "Press R2 to test the right haptic motor": "اضغط R2 لاختبار المحرك اللمسي الأيمن",
+    "Press L2 to test the strong (left) haptic motor": "اضغط L2 لاختبار المحرك اللمسي الأيسر",
+    "Press R2 to test the weak (right) haptic motor": "اضغط R2 لاختبار المحرك اللمسي الأيمن",
     "The motor strength will match how hard you press the trigger": "ستتطابق قوة المحرك مع قوة ضغطك على الزناد",
     "": ""
 }

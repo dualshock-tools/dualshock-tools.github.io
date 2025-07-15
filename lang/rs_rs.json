@@ -244,8 +244,8 @@
     "Tests": "Testovi",
     "Haptic Motors": "Haptički motori",
     "Test the Haptic Motors": "Testirajte haptičke motore",
-    "Press L2 to test the left haptic motor": "Pritisnite L2 za testiranje levog haptičkog motora",
-    "Press R2 to test the right haptic motor": "Pritisnite R2 za testiranje desnog haptičkog motora",
+    "Press L2 to test the strong (left) haptic motor": "Pritisnite L2 za testiranje levog haptičkog motora",
+    "Press R2 to test the weak (right) haptic motor": "Pritisnite R2 za testiranje desnog haptičkog motora",
     "The motor strength will match how hard you press the trigger": "Jačina motora će odgovarati jačini pritiska na okidač",
     "": ""
 }

@@ -245,8 +245,8 @@
     "Tests": "測試",
     "Haptic Motors": "觸覺馬達",
     "Test the Haptic Motors": "測試觸覺馬達",
-    "Press L2 to test the left haptic motor": "按L2測試左側觸覺馬達",
-    "Press R2 to test the right haptic motor": "按R2測試右側觸覺馬達",
+    "Press L2 to test the strong (left) haptic motor": "按L2測試左側觸覺馬達",
+    "Press R2 to test the weak (right) haptic motor": "按R2測試右側觸覺馬達",
     "The motor strength will match how hard you press the trigger": "馬達強度將與您按下扳機的力度相匹配",
     "": ""
 }

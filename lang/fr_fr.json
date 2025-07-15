@@ -244,8 +244,8 @@
     "Tests": "Tests",
     "Haptic Motors": "Moteurs haptiques",
     "Test the Haptic Motors": "Tester les moteurs haptiques",
-    "Press L2 to test the left haptic motor": "Appuyez sur L2 pour tester le moteur haptique gauche",
-    "Press R2 to test the right haptic motor": "Appuyez sur R2 pour tester le moteur haptique droit",
+    "Press L2 to test the strong (left) haptic motor": "Appuyez sur L2 pour tester le moteur haptique gauche",
+    "Press R2 to test the weak (right) haptic motor": "Appuyez sur R2 pour tester le moteur haptique droit",
     "The motor strength will match how hard you press the trigger": "La force du moteur correspondra à la force avec laquelle vous appuyez sur la gâchette",
     "": ""
 }

@@ -241,11 +241,5 @@
     "here": "",
     "left module": "",
     "right module": "",
-    "Tests": "Testler",
-    "Haptic Motors": "Dokunsal Motorlar",
-    "Test the Haptic Motors": "Dokunsal Motorları Test Et",
-    "Press L2 to test the strong (left) haptic motor": "Sol dokunsal motoru test etmek için L2'ye basın",
-    "Press R2 to test the weak (right) haptic motor": "Sağ dokunsal motoru test etmek için R2'ye basın",
-    "The motor strength will match how hard you press the trigger": "Motor gücü, tetiğe ne kadar sert bastığınıza göre değişecektir",
     "": ""
 }

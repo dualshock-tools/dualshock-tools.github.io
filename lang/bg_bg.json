@@ -241,11 +241,5 @@
     "here": "",
     "left module": "",
     "right module": "",
-    "Tests": "Тестове",
-    "Haptic Motors": "Хаптични мотори",
-    "Test the Haptic Motors": "Тестване на хаптичните мотори",
-    "Press L2 to test the strong (left) haptic motor": "Натиснете L2 за тестване на левия хаптичен мотор",
-    "Press R2 to test the weak (right) haptic motor": "Натиснете R2 за тестване на десния хаптичен мотор",
-    "The motor strength will match how hard you press the trigger": "Силата на мотора ще съответства на силата, с която натискате спусъка",
     "": ""
 }

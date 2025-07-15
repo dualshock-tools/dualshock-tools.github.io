@@ -241,11 +241,5 @@
     "here": "",
     "left module": "",
     "right module": "",
-    "Tests": "Testy",
-    "Haptic Motors": "Haptické motory",
-    "Test the Haptic Motors": "Otestujte haptické motory",
-    "Press L2 to test the strong (left) haptic motor": "Stiskněte L2 pro testování levého haptického motoru",
-    "Press R2 to test the weak (right) haptic motor": "Stiskněte R2 pro testování pravého haptického motoru",
-    "The motor strength will match how hard you press the trigger": "Síla motoru bude odpovídat síle stisku spouště",
     "": ""
 }

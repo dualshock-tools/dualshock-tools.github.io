@@ -22,6 +22,10 @@ var last_written_finetune_data = []
 var finetune_visible = false
 var on_finetune_updating = false
 
+// Global object to keep track of button states
+const ds_button_states = {
+    // e.g. 'square': false, 'cross': false, ...
+};
 
 // Alphabetical order
 var available_langs = {
@@ -1138,11 +1142,29 @@ function welcome_accepted() {
     $("#welcomeModal").modal("hide");
 }
 
+function init_svg_colors() {
+    const lightBlue = '#7ecbff';
+    const midBlue = '#3399cc';
+    const controller = document.getElementById('Controller');
+    set_svg_group_color(controller, lightBlue);
+
+    ['Button_outlines', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
+        const group = document.getElementById(id);
+        set_svg_group_color(group, midBlue);
+    });
+
+    ['Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
+        const group = document.getElementById(id);
+        set_svg_group_color(group, 'white');
+    });
+}
+
 function gboot() {
     gu = crypto.randomUUID();
     $("#infoshowall").hide();
     window.addEventListener('DOMContentLoaded', function() {
         lang_init();
+        init_svg_colors();
         welcome_modal();
         $("#checkCircularity").on('change', on_circ_check_change);
         on_circ_check_change();
@@ -1559,6 +1581,28 @@ function refresh_stick_pos() {
         $("#el-lbl").text(el);
         $("#er-lbl").text(er);
     }
+
+    // Move L3 and R3 SVG elements according to stick position
+    try {
+        // These values are tuned for the SVG's coordinate system and visual effect
+        const max_stick_offset = 25;
+        // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
+        const l3_cx = 295.63, l3_cy = 461.03;
+        // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
+        const r3_cx = 662.06, r3_cy = 419.78;
+
+        const l3_x = l3_cx + plx * max_stick_offset;
+        const l3_y = l3_cy + ply * max_stick_offset;
+        const l3_group = document.querySelector('g#L3');
+        l3_group?.setAttribute('transform', `translate(${l3_x - l3_cx},${l3_y - l3_cy}) scale(0.70)`);
+
+        const r3_x = r3_cx + prx * max_stick_offset;
+        const r3_y = r3_cy + pry * max_stick_offset;
+        const r3_group = document.querySelector('g#R3');
+        r3_group?.setAttribute('transform', `translate(${r3_x - r3_cx},${r3_y - r3_cy}) scale(0.70)`);
+    } catch (e) {
+        // Fail silently if SVG not present
+    }
 }
 
 function circ_checked() { return $("#checkCircularity").is(':checked') }
@@ -1653,6 +1697,177 @@ function update_battery_status(bat_capacity, cable_connected, is_charging, is_er
     }
 }
 
+const DS4_BUTTON_MAP = [
+    { name: 'up', byte: 4, mask: 0x0 }, // Dpad handled separately
+    { name: 'right', byte: 4, mask: 0x1 },
+    { name: 'down', byte: 4, mask: 0x2 },
+    { name: 'left', byte: 4, mask: 0x3 },
+    { name: 'square', byte: 4, mask: 0x10, svg: 'Square' },
+    { name: 'cross', byte: 4, mask: 0x20, svg: 'Cross' },
+    { name: 'circle', byte: 4, mask: 0x40, svg: 'Circle' },
+    { name: 'triangle', byte: 4, mask: 0x80, svg: 'Triangle' },
+    { name: 'l1', byte: 5, mask: 0x01, svg: 'L1' },
+    { name: 'l2', byte: 5, mask: 0x04, svg: 'L2' }, // analog handled separately
+    { name: 'r1', byte: 5, mask: 0x02, svg: 'R1' },
+    { name: 'r2', byte: 5, mask: 0x08, svg: 'R2' }, // analog handled separately
+    { name: 'share', byte: 5, mask: 0x10, svg: 'Create' },
+    { name: 'options', byte: 5, mask: 0x20, svg: 'Options' },
+    { name: 'l3', byte: 5, mask: 0x40, svg: 'L3' },
+    { name: 'r3', byte: 5, mask: 0x80, svg: 'R3' },
+    { name: 'ps', byte: 6, mask: 0x01, svg: 'PS' },
+    { name: 'touchpad', byte: 6, mask: 0x02, svg: 'Trackpad' },
+    // No mute button on DS4
+];
+
+const DS5_BUTTON_MAP = [
+    { name: 'up', byte: 7, mask: 0x0 }, // Dpad handled separately
+    { name: 'right', byte: 7, mask: 0x1 },
+    { name: 'down', byte: 7, mask: 0x2 },
+    { name: 'left', byte: 7, mask: 0x3 },
+    { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
+    { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
+    { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
+    { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
+    { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
+    { name: 'l2', byte: 4, mask: 0xff }, // analog handled separately
+    { name: 'r1', byte: 8, mask: 0x02, svg: 'R1' },
+    { name: 'r2', byte: 5, mask: 0xff }, // analog handled separately
+    { name: 'create', byte: 8, mask: 0x10, svg: 'Create' },
+    { name: 'options', byte: 8, mask: 0x20, svg: 'Options' },
+    { name: 'l3', byte: 8, mask: 0x40, svg: 'L3' },
+    { name: 'r3', byte: 8, mask: 0x80, svg: 'R3' },
+    { name: 'ps', byte: 9, mask: 0x01, svg: 'PS' },
+    { name: 'touchpad', byte: 9, mask: 0x02, svg: 'Trackpad' },
+    { name: 'mute', byte: 9, mask: 0x04, svg: 'Mute' },
+];
+
+// Generic button processing for DS4/DS5
+function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
+    if (!data || !data.data) return;
+
+    const pressedColor = '#1a237e'; // pleasing dark blue
+    // L2/R2 analog infill
+    [
+        ['l2', 'L2_infill', data.data.getUint8(l2_analog_byte)],
+        ['r2', 'R2_infill', data.data.getUint8(r2_analog_byte)]
+    ].forEach(([name, svg, val]) => {
+        // Fade between white and pressedColor based on analog value
+        const t = val / 255;
+        const color = lerp_color('#ffffff', pressedColor, t);
+        if(val != ds_button_states[name + '_analog']) {
+            ds_button_states[name + '_analog'] = val;
+            const infill = document.getElementById(svg);
+            set_svg_group_color(infill, color);
+        }
+    });
+
+    // Dpad is a 4-bit hat value
+    const hat = data.data.getUint8(dpad_byte) & 0x0F;
+    const dpad_map = {
+        up:    (hat === 0 || hat === 1 || hat === 7),
+        right: (hat === 1 || hat === 2 || hat === 3),
+        down:  (hat === 3 || hat === 4 || hat === 5),
+        left:  (hat === 5 || hat === 6 || hat === 7)
+    };
+    for (let dir of ['up', 'right', 'down', 'left']) {
+        const pressed = dpad_map[dir];
+        if (ds_button_states[dir] !== pressed) {
+            ds_button_states[dir] = pressed;
+            // Update SVG if present
+            const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
+            set_svg_group_color(group, pressed ? pressedColor : 'white');
+        }
+    }
+
+    // Other buttons
+    for (let btn of BUTTON_MAP) {
+        if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
+        const pressed = (data.data.getUint8(btn.byte) & btn.mask) !== 0;
+        if (ds_button_states[btn.name] !== pressed) {
+            ds_button_states[btn.name] = pressed;
+            if (btn.svg) {
+                const group = document.getElementById(btn.svg + '_infill');
+                set_svg_group_color(group, pressed ? pressedColor : 'white');
+            }
+        }
+    }
+}
+
+function set_svg_group_color(group, color) {
+    if (group) {
+        let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+        elements.forEach(el => {
+            // Set up a smooth transition for fill and stroke if not already set
+            if (!el.style.transition) {
+                el.style.transition = 'fill 0.10s, stroke 0.10s';
+            }
+            el.setAttribute('fill', color);
+            el.setAttribute('stroke', color);
+        });
+    }
+}
+
+// --- Touchpad overlay helpers ---
+function parse_touch_points(data, offset) {
+    // Returns array of up to 2 points: {active, id, x, y}
+    const points = [];
+    for (let i = 0; i < 2; i++) {
+        const base = offset + i * 4;
+        const arr = [];
+        for (let j = 0; j < 4; j++) arr.push(data.getUint8(base + j));
+        const b0 = data.getUint8(base);
+        const active = (b0 & 0x80) === 0; // 0 = finger down, 1 = up
+        const id = b0 & 0x7F;
+        const b1 = data.getUint8(base + 1);
+        const b2 = data.getUint8(base + 2);
+        const b3 = data.getUint8(base + 3);
+        // x: 12 bits, y: 12 bits
+        const x = ((b2 & 0x0F) << 8) | b1;
+        const y = (b3 << 4) | (b2 >> 4);
+        points.push({ active, id, x, y });
+    }
+    return points;
+}
+
+let hasActiveTouchPoints = false;
+let trackpadBbox = undefined;
+
+function update_touchpad_circles(points) {
+    const hasActivePointsNow = points.some(pt => pt.active);
+    if(!hasActivePointsNow && !hasActiveTouchPoints) return;
+
+    // Find the Trackpad_infill group in the SVG
+    const svg = document.getElementById('controller-svg');
+    const trackpad = svg?.querySelector('g#Trackpad_infill');
+    if (!trackpad) return;
+
+    // Remove the previous touch points, if any
+    trackpad.querySelectorAll('circle.ds-touch').forEach(c => c.remove());
+    hasActiveTouchPoints = hasActivePointsNow;
+    trackpadBbox = trackpadBbox ?? trackpad.querySelector('path')?.getBBox();
+
+    // Draw up to 2 circles
+    points.forEach((pt, idx) => {
+        if (!pt.active) return;
+        // Map raw x/y to SVG
+        // DS4/DS5 touchpad is 1920x943 units (raw values)
+        const RAW_W = 1920, RAW_H = 943;
+        const pointRadius = trackpadBbox.width * 0.05;
+        const cx = trackpadBbox.x + pointRadius + (pt.x / RAW_W) * (trackpadBbox.width - pointRadius*2);
+        const cy = trackpadBbox.y + pointRadius + (pt.y / RAW_H) * (trackpadBbox.height - pointRadius*2);
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('class', 'ds-touch');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', pointRadius);
+        circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
+        circle.setAttribute('fill-opacity', '0.5');
+        circle.setAttribute('stroke', '#3399cc');
+        circle.setAttribute('stroke-width', '4');
+        trackpad.appendChild(circle);
+    });
+}
+
 function process_ds4_input(data) {
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
@@ -1672,6 +1887,12 @@ function process_ds4_input(data) {
         ll_updated = true;
         refresh_sticks();
     }
+
+    // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
+    process_ds_buttons(data, DS4_BUTTON_MAP, 4, 7, 8);
+
+    const points = parse_touch_points(data.data, 34);
+    update_touchpad_circles(points);
 
     // Read battery
     var bat = data.data.getUint8(29);
@@ -1732,6 +1953,12 @@ function process_ds_input(data) {
         refresh_finetune();
     }
 
+    // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
+    process_ds_buttons(data, DS5_BUTTON_MAP, 7, 4, 5);
+
+    const points = parse_touch_points(data.data, 32);
+    update_touchpad_circles(points);
+
     var bat = data.data.getUint8(52);
     var bat_charge = bat & 0x0f;
     var bat_status = bat >> 4;
@@ -1757,6 +1984,13 @@ function process_ds_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
+function set_mute_visibility(show) {
+    const muteOutline = document.getElementById('Mute_outline');
+    const muteInfill = document.getElementById('Mute_infill');
+    if (muteOutline) muteOutline.style.display = show ? '' : 'none';
+    if (muteInfill) muteInfill.style.display = show ? '' : 'none';
+}
+
 async function continue_connection(report) {
     try {
         device.oninputreport = null;
@@ -1776,6 +2010,8 @@ async function continue_connection(report) {
         if(device.productId == 0x05c4) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            // Hide mute button for DS4
+            set_mute_visibility(false);
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1785,6 +2021,8 @@ async function continue_connection(report) {
         } else if(device.productId == 0x09cc) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            // Hide mute button for DS4
+            set_mute_visibility(false);
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1794,6 +2032,8 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0ce6) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            // Show mute button for DS5
+            set_mute_visibility(true);
             if(await ds5_info(false)) {
                 connected = true;
                 mode = 2;
@@ -1803,6 +2043,8 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0df2) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            // Show mute button for DS5 Edge
+            set_mute_visibility(true);
             if(await ds5_info(true)) {
                 connected = true;
                 mode = 3;
@@ -2365,4 +2607,25 @@ function lang_translate(target_file, target_lang, target_direction) {
         $("#curLang").html(available_langs[target_lang]["name"]);
     });
 
+}
+
+function lerp_color(a, b, t) {
+    // a, b: hex color strings, t: 0.0-1.0
+    function hex2rgb(hex) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+        const num = parseInt(hex, 16);
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+    function rgb2hex(r, g, b) {
+        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+    const c1 = hex2rgb(a);
+    const c2 = hex2rgb(b);
+    const c = [
+        Math.round(c1[0] + (c2[0] - c1[0]) * t),
+        Math.round(c1[1] + (c2[1] - c1[1]) * t),
+        Math.round(c1[2] + (c2[2] - c1[2]) * t)
+    ];
+    return rgb2hex(c[0], c[1], c[2]);
 }

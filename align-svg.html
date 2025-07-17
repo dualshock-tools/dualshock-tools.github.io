@@ -757,6 +757,12 @@
         let svg = wrapper.svg || wrapper.querySelector('svg');
         if (!svg) return;
         const g = document.createElementNS(svgNS, 'g');
+        // --- Add id based on file name ---
+        let fileName = wrapper.fileName || `part${idx+1}`;
+        // Remove extension, replace non-alphanum with underscores
+        let id = fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '_');
+        g.setAttribute('id', id);
+        // --- End id logic ---
         const base = svg._baseViewBox || { minX: 0, minY: 0, vbWidth: 300, vbHeight: 300 };
         const minXOffset = parseFloat(wrapper.sliders?.minX?.value || 0);
         const minYOffset = parseFloat(wrapper.sliders?.minY?.value || 0);

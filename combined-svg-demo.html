@@ -51,6 +51,12 @@
         svgSmall.innerHTML = '';
         svgMedium.innerHTML = '';
         svgLarge.innerHTML = '';
+        // Define a color map for demo (id: color)
+        const colorMap = {
+          // Example: 'Outline_1': '#1976D2',
+          // Add your part IDs and desired colors here
+          // 'Button_11': '#FF6B6B',
+        };
         // Insert SVG at three sizes
         [
           { container: svgSmall, width: 100 },
@@ -68,6 +74,23 @@
             svgClone.removeAttribute('height'); // Remove any height attribute
             svgClone.style.width = width + 'px';
             svgClone.style.height = 'auto';
+            // Style all parts black by default
+            svgClone.querySelectorAll('g').forEach(g => {
+              g.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon').forEach(el => {
+                el.setAttribute('stroke', 'black');
+                el.setAttribute('fill', 'black');
+              });
+            });
+            // Then apply color map overrides by ID
+            Object.entries(colorMap).forEach(([id, color]) => {
+              const g = svgClone.querySelector(`g#${id}`);
+              if (g) {
+                g.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon').forEach(el => {
+                  el.setAttribute('stroke', color);
+                  el.setAttribute('fill', color);
+                });
+              }
+            });
             container.appendChild(svgClone);
           } else {
             container.innerHTML = '<span style="color:#dc3545">Invalid SVG file.</span>';

@@ -256,7 +256,7 @@
             }));
             // Simulate file input change with saved files
             const event = { target: { files: files } };
-            await handleFiles(event);
+            await handleFiles(event, true);
             saveStatus.textContent = 'Previous state loaded!';
             saveStatus.style.color = '#007bff';
             setTimeout(() => {
@@ -273,18 +273,22 @@
     }
 
     // Handle file processing
-    async function handleFiles(event) {
+    async function handleFiles(event, replaceAll = false) {
       isLoading = true;
-      canvas.innerHTML = '';
-      individualControls.innerHTML = '';
-      loadedFiles = [];
-      attributeDisplay.style.display = 'none';
-      selectedWrapper = null;
-      selectedGroup = null;
-      selectedSliders = {};
+      if (replaceAll) {
+        canvas.innerHTML = '';
+        individualControls.innerHTML = '';
+        loadedFiles = [];
+        attributeDisplay.style.display = 'none';
+        selectedWrapper = null;
+        selectedGroup = null;
+        selectedSliders = {};
+      }
       const files = [...event.target.files];
 
-      for (const [index, file] of files.entries()) {
+      for (const [indexOffset, file] of files.entries()) {
+        // Calculate the index for color and ids based on loadedFiles length
+        const index = loadedFiles.length + indexOffset;
         let text, name, savedState;
         if (file.content && file.savedState) {
           // Loaded from localStorage
@@ -323,7 +327,7 @@
         const minYOffset = savedState.minYOffset !== undefined ? savedState.minYOffset : 0;
         const minXOffset = savedState.minXOffset !== undefined ? savedState.minXOffset : 0;
         const scale = savedState.scale !== undefined ? savedState.scale : 1;
-        const color = savedState.color || getContrastingColor(index);
+        const color = savedState.color || getContrastingColorByName(name);
 
         // Set initial viewBox
         function setViewBox(minX, minY, scale) {
@@ -376,6 +380,37 @@
           }
         });
         colorControls.appendChild(colorControl);
+        // --- Add delete button ---
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.style.background = '#dc3545';
+        deleteBtn.style.color = 'white';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.borderRadius = '4px';
+        deleteBtn.style.padding = '0.3rem 0.7rem';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.fontSize = '0.9rem';
+        deleteBtn.style.marginLeft = '0.5rem';
+        deleteBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          // Remove from loadedFiles using the current index in loadedFiles
+          const wrappers = Array.from(canvas.querySelectorAll('.svg-wrapper'));
+          const idx = wrappers.indexOf(wrapper);
+          if (idx !== -1) loadedFiles.splice(idx, 1);
+          // Remove SVG and controls
+          if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+          if (group.parentNode) group.parentNode.removeChild(group);
+          // If this was selected, clear selection
+          if (selectedWrapper === wrapper) {
+            selectedWrapper = null;
+            selectedGroup = null;
+            selectedSliders = {};
+            attributeDisplay.style.display = 'none';
+          }
+          autoSave();
+        });
+        colorControls.appendChild(deleteBtn);
+        // --- End delete button ---
         group.appendChild(colorControls);
 
         // Create controls for minY (top), minX (left), and scale
@@ -470,7 +505,15 @@
     }
 
     // Get contrasting color for different images
-    function getContrastingColor(index) {
+    function hashString(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
+      }
+      return Math.abs(hash);
+    }
+    function getContrastingColorByName(name) {
       const contrastingColors = [
         '#FF6B6B', // Red
         '#4ECDC4', // Teal
@@ -483,10 +526,11 @@
         '#BB8FCE', // Purple
         '#85C1E9'  // Light Blue
       ];
-      return contrastingColors[index % contrastingColors.length];
+      const idx = hashString(name) % contrastingColors.length;
+      return contrastingColors[idx];
     }
 
-    fileInput.addEventListener('change', handleFiles);
+    fileInput.addEventListener('change', (event) => handleFiles(event, false));
 
     // Keyboard controls
     document.addEventListener('keydown', (event) => {

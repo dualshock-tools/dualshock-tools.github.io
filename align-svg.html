@@ -308,8 +308,8 @@
 
         // Create controls for minY (top), minX (left), and scale
         const controlConfigs = [
-          { name: 'minY', label: 'top', min: minY - 200, max: minY + 200, value: baseMinY, unit: 'px' },
-          { name: 'minX', label: 'left', min: minX - 200, max: minX + 200, value: baseMinX, unit: 'px' },
+          { name: 'minY', label: 'top', min: minY - 200, max: minY + 200, value: baseMinY, step: 0.01, unit: 'px' },
+          { name: 'minX', label: 'left', min: minX - 200, max: minX + 200, value: baseMinX, step: 0.01, unit: 'px' },
           { name: 'scale', label: 'scale', min: 0.1, max: 10, value: scale, step: 0.001, unit: '' }
         ];
         const sliders = {};
@@ -397,13 +397,14 @@
     // Keyboard controls
     document.addEventListener('keydown', (event) => {
       if (!selectedWrapper || !selectedSliders) return;
-      const step = event.shiftKey ? 10 : 1;
+      const step = event.shiftKey ? 0.1 : 1;
       switch(event.key.toLowerCase()) {
         case 'w':
           event.preventDefault();
           const minYSlider = selectedSliders.minY;
           if (minYSlider) {
-            const newValue = Math.max(parseFloat(minYSlider.min), parseFloat(minYSlider.value) - step);
+            // Invert: W should move image up (increase minY)
+            const newValue = Math.min(parseFloat(minYSlider.max), parseFloat(minYSlider.value) + step);
             minYSlider.value = newValue;
             minYSlider.dispatchEvent(new Event('input'));
           }
@@ -411,7 +412,8 @@
         case 's':
           event.preventDefault();
           if (selectedSliders.minY) {
-            const newValue = Math.min(parseFloat(selectedSliders.minY.max), parseFloat(selectedSliders.minY.value) + step);
+            // Invert: S should move image down (decrease minY)
+            const newValue = Math.max(parseFloat(selectedSliders.minY.min), parseFloat(selectedSliders.minY.value) - step);
             selectedSliders.minY.value = newValue;
             selectedSliders.minY.dispatchEvent(new Event('input'));
           }
@@ -420,7 +422,8 @@
           event.preventDefault();
           const minXSlider = selectedSliders.minX;
           if (minXSlider) {
-            const newValue = Math.max(parseFloat(minXSlider.min), parseFloat(minXSlider.value) - step);
+            // Invert: A should move image left (increase minX)
+            const newValue = Math.min(parseFloat(minXSlider.max), parseFloat(minXSlider.value) + step);
             minXSlider.value = newValue;
             minXSlider.dispatchEvent(new Event('input'));
           }
@@ -428,7 +431,8 @@
         case 'd':
           event.preventDefault();
           if (selectedSliders.minX) {
-            const newValue = Math.min(parseFloat(selectedSliders.minX.max), parseFloat(selectedSliders.minX.value) + step);
+            // Invert: D should move image right (decrease minX)
+            const newValue = Math.max(parseFloat(selectedSliders.minX.min), parseFloat(selectedSliders.minX.value) - step);
             selectedSliders.minX.value = newValue;
             selectedSliders.minX.dispatchEvent(new Event('input'));
           }
@@ -437,7 +441,7 @@
           event.preventDefault();
           const scaleSlider = selectedSliders.scale;
           if (scaleSlider) {
-            const stepSize = event.shiftKey ? 0.1 : 0.01;
+            const stepSize = event.shiftKey ? 0.001 : 0.01;
             const newValue = Math.max(parseFloat(scaleSlider.min), parseFloat(scaleSlider.value) - stepSize);
             scaleSlider.value = newValue;
             scaleSlider.dispatchEvent(new Event('input'));
@@ -446,7 +450,7 @@
         case 'arrowright':
           event.preventDefault();
           if (selectedSliders.scale) {
-            const stepSize = event.shiftKey ? 0.1 : 0.01;
+            const stepSize = event.shiftKey ? 0.001 : 0.01;
             const newValue = Math.min(parseFloat(selectedSliders.scale.max), parseFloat(selectedSliders.scale.value) + stepSize);
             selectedSliders.scale.value = newValue;
             selectedSliders.scale.dispatchEvent(new Event('input'));

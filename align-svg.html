@@ -8,7 +8,7 @@
     body { font-family: sans-serif; padding: 1rem; }
     .main-container { display: flex; gap: 2rem; align-items: flex-start; }
     #canvas { position: relative; width: 640px; height: 480px; border: 1px solid #ccc; margin-top: 1rem; flex-shrink: 0; }
-    .svg-wrapper { position: absolute; box-sizing: border-box; cursor: pointer; }
+    .svg-wrapper { position: absolute; box-sizing: border-box; cursor: pointer; border: 2px dashed #888; }
     .svg-wrapper.selected { outline: 2px solid #007bff; }
     .svg-wrapper svg { display: block; max-width: 100%; height: auto; }
     .controls { margin-top: 1rem; min-width: 300px; }
@@ -51,6 +51,35 @@
     .save-controls button:hover {
       opacity: 0.8;
     }
+    .attribute-display {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+    .attribute-display h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      color: #495057;
+      font-size: 1rem;
+    }
+    .attribute-item {
+      margin-bottom: 0.25rem;
+      padding: 0.1rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .attribute-label {
+      font-weight: bold;
+      color: #495057;
+      display: inline-block;
+      min-width: 120px;
+    }
+    .attribute-value {
+      color: #6c757d;
+    }
   </style>
 </head>
 <body>
@@ -71,6 +100,12 @@
     <button class="clear" onclick="clearState()">Clear Saved State</button>
     <span id="saveStatus"></span>
   </div>
+  
+  <div id="attributeDisplay" class="attribute-display" style="display: none;">
+    <h3>Selected Image Attributes</h3>
+    <div id="attributeContent"></div>
+  </div>
+  
   <div class="keyboard-hint">
     <strong>Keyboard Controls:</strong> Click on an image to select it, then use W/S keys for vertical movement, A/D keys for horizontal movement, and Left/Right arrow keys for scaling.
   </div>
@@ -83,6 +118,8 @@
     const saveStatus = document.getElementById('saveStatus');
     const globalScaleSlider = document.getElementById('globalScale');
     const globalScaleValue = document.getElementById('globalScaleValue');
+    const attributeDisplay = document.getElementById('attributeDisplay');
+    const attributeContent = document.getElementById('attributeContent');
     
     let selectedWrapper = null;
     let selectedGroup = null;
@@ -177,6 +214,10 @@
       canvas.innerHTML = '';
       individualControls.innerHTML = '';
       loadedFiles = [];
+      attributeDisplay.style.display = 'none';
+      selectedWrapper = null;
+      selectedGroup = null;
+      selectedSliders = {};
       const files = [...event.target.files];
 
       for (const [index, file] of files.entries()) {
@@ -207,7 +248,7 @@
         if (svg) {
           if (!svg.getAttribute('width') && !svg.getAttribute('height')) {
             svg.setAttribute('width', '300');
-            svg.setAttribute('height', '300');
+            // svg.setAttribute('height', '300');
           }
           svg.style.display = 'block';
         }
@@ -255,6 +296,10 @@
         
         colorInput.addEventListener('input', () => {
           applyColor(colorInput.value);
+          // Update attribute display if this wrapper is selected
+          if (selectedWrapper === wrapper) {
+            updateAttributeDisplay();
+          }
         });
         
         colorControls.appendChild(colorControl);
@@ -291,6 +336,11 @@
             } else if (control.name === 'scale') {
               wrapper.style.transform = `scale(${value * globalScale}, ${value * globalScale})`;
             }
+            
+            // Update attribute display if this wrapper is selected
+            if (selectedWrapper === wrapper) {
+              updateAttributeDisplay();
+            }
           });
           
           const valueSpan = document.createElement('span');
@@ -309,6 +359,7 @@
         // Store sliders for this wrapper
         wrapper.sliders = sliders;
         wrapper.controlGroup = group;
+        wrapper.fileName = file.name;
 
         // Function to select this wrapper
         const selectWrapper = () => {
@@ -325,6 +376,56 @@
           
           wrapper.classList.add('selected');
           group.classList.add('selected');
+          
+          // Display the current attributes of the selected image
+          const individualScale = parseFloat(wrapper.sliders?.scale?.value || 1);
+          const effectiveScale = individualScale * globalScale;
+          const color = wrapper.querySelector('svg')?.querySelector('*')?.getAttribute('stroke') || 'N/A';
+          
+          attributeContent.innerHTML = `
+            <div class="attribute-item">
+              <span class="attribute-label">File name:</span>
+              <span class="attribute-value">${file.name}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Position:</span>
+              <span class="attribute-value">top: ${wrapper.style.top}, left: ${wrapper.style.left}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Transform:</span>
+              <span class="attribute-value">${wrapper.style.transform}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Transform origin:</span>
+              <span class="attribute-value">${wrapper.style.transformOrigin}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Global scale:</span>
+              <span class="attribute-value">${globalScale.toFixed(3)}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Individual scale:</span>
+              <span class="attribute-value">${individualScale.toFixed(3)}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Effective scale:</span>
+              <span class="attribute-value">${effectiveScale.toFixed(3)} (individual × global)</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Color:</span>
+              <span class="attribute-value">${color}</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Box model:</span>
+              <span class="attribute-value">width: ${wrapper.offsetWidth}px, height: ${wrapper.offsetHeight}px</span>
+            </div>
+            <div class="attribute-item">
+              <span class="attribute-label">Computed styles:</span>
+              <span class="attribute-value">position: ${getComputedStyle(wrapper).position}, display: ${getComputedStyle(wrapper).display}, z-index: ${getComputedStyle(wrapper).zIndex}</span>
+            </div>
+          `;
+          
+          attributeDisplay.style.display = 'block';
         };
 
         // Add click handler to select this wrapper
@@ -353,7 +454,7 @@
       const contrastingColors = [
         '#FF6B6B', // Red
         '#4ECDC4', // Teal
-        '#45B7D1', // Blue
+        '#1976D2', // Blue
         '#96CEB4', // Green
         '#FFEAA7', // Yellow
         '#DDA0DD', // Plum
@@ -430,6 +531,58 @@
       }
     });
 
+    // Function to update attribute display
+    function updateAttributeDisplay() {
+      if (selectedWrapper && attributeDisplay.style.display !== 'none') {
+        const individualScale = parseFloat(selectedWrapper.sliders?.scale?.value || 1);
+        const effectiveScale = individualScale * globalScale;
+        const color = selectedWrapper.querySelector('svg')?.querySelector('*')?.getAttribute('stroke') || 'N/A';
+        
+        attributeContent.innerHTML = `
+          <div class="attribute-item">
+            <span class="attribute-label">File name:</span>
+            <span class="attribute-value">${selectedWrapper.fileName || 'Unknown'}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Position:</span>
+            <span class="attribute-value">top: ${selectedWrapper.style.top}, left: ${selectedWrapper.style.left}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Transform:</span>
+            <span class="attribute-value">${selectedWrapper.style.transform}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Transform origin:</span>
+            <span class="attribute-value">${selectedWrapper.style.transformOrigin}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Global scale:</span>
+            <span class="attribute-value">${globalScale.toFixed(3)}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Individual scale:</span>
+            <span class="attribute-value">${individualScale.toFixed(3)}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Effective scale:</span>
+            <span class="attribute-value">${effectiveScale.toFixed(3)} (individual × global)</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Color:</span>
+            <span class="attribute-value">${color}</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Box model:</span>
+            <span class="attribute-value">width: ${selectedWrapper.offsetWidth}px, height: ${selectedWrapper.offsetHeight}px</span>
+          </div>
+          <div class="attribute-item">
+            <span class="attribute-label">Computed styles:</span>
+            <span class="attribute-value">position: ${getComputedStyle(selectedWrapper).position}, display: ${getComputedStyle(selectedWrapper).display}, z-index: ${getComputedStyle(selectedWrapper).zIndex}</span>
+          </div>
+        `;
+      }
+    }
+
     // Auto-save state when values change
     function autoSave() {
       if (loadedFiles.length > 0) {
@@ -503,6 +656,11 @@
             wrapper.sliders.left.value = newLeft;
             wrapper.sliders.left.nextElementSibling.textContent = `${newLeft.toFixed(2)}px`;
           }
+        }
+        
+        // Update attribute display if a wrapper is selected
+        if (selectedWrapper) {
+          updateAttributeDisplay();
         }
       });
     });

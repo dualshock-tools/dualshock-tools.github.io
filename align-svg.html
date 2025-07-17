@@ -89,10 +89,6 @@
   <div class="main-container">
     <div id="canvas"></div>
     <div id="controls" class="controls">
-      <div class="control-group">
-        <h3>Global Controls</h3>
-        <label>Global Scale: <input type="range" id="globalScale" min="0.1" max="5" value="1" step="0.01"> <span id="globalScaleValue">1</span></label>
-      </div>
       <div id="individualControls"></div>
     </div>
   </div>
@@ -117,21 +113,15 @@
     const controls = document.getElementById('controls');
     const individualControls = document.getElementById('individualControls');
     const saveStatus = document.getElementById('saveStatus');
-    const globalScaleSlider = document.getElementById('globalScale');
-    const globalScaleValue = document.getElementById('globalScaleValue');
-    const attributeDisplay = document.getElementById('attributeDisplay');
-    const attributeContent = document.getElementById('attributeContent');
-    
     let selectedWrapper = null;
     let selectedGroup = null;
     let selectedSliders = {};
     let loadedFiles = [];
-    let globalScale = 1;
+    let isLoading = false;
 
     // Save state to localStorage
     function saveState() {
       const state = {
-        globalScale: globalScale,
         files: loadedFiles.map(file => ({
           name: file.name,
           content: file.content,
@@ -167,32 +157,24 @@
 
     // Load state from localStorage
     async function loadState() {
+      isLoading = true;
       try {
         const savedState = localStorage.getItem('svgOverlayState');
         if (savedState) {
           const state = JSON.parse(savedState);
           
-          // Restore global scale
-          if (state.globalScale !== undefined) {
-            globalScale = state.globalScale;
-            globalScaleSlider.value = globalScale;
-            globalScaleValue.textContent = globalScale.toFixed(2);
-          }
-          
           if (state.files && state.files.length > 0) {
-            // Create File objects from saved data
-            const files = state.files.map(fileData => {
-              const blob = new Blob([fileData.content], { type: 'image/svg+xml' });
-              const file = new File([blob], fileData.name, { type: 'image/svg+xml' });
-              file.savedState = {
+            // Pass plain objects with content and savedState
+            const files = state.files.map(fileData => ({
+              name: fileData.name,
+              content: fileData.content,
+              savedState: {
                 minY: fileData.minY,
                 minX: fileData.minX,
                 scale: fileData.scale,
                 color: fileData.color
-              };
-              return file;
-            });
-            
+              }
+            }));
             // Simulate file input change with saved files
             const event = { target: { files: files } };
             await handleFiles(event);
@@ -208,10 +190,12 @@
         saveStatus.textContent = 'Error loading saved state';
         saveStatus.style.color = '#dc3545';
       }
+      isLoading = false;
     }
 
     // Handle file processing
     async function handleFiles(event) {
+      isLoading = true;
       canvas.innerHTML = '';
       individualControls.innerHTML = '';
       loadedFiles = [];
@@ -222,7 +206,18 @@
       const files = [...event.target.files];
 
       for (const [index, file] of files.entries()) {
-        const text = await file.text();
+        let text, name, savedState;
+        if (file.content && file.savedState) {
+          // Loaded from localStorage
+          text = file.content;
+          name = file.name;
+          savedState = file.savedState;
+        } else {
+          // Real File object
+          text = await file.text();
+          name = file.name;
+          savedState = file.savedState || {};
+        }
         const wrapper = document.createElement('div');
         wrapper.className = 'svg-wrapper';
         wrapper.innerHTML = text;
@@ -246,8 +241,6 @@
         svg._baseViewBox = { minX, minY, vbWidth, vbHeight };
 
         // Get saved state or use defaults
-        const savedState = file.savedState || {};
-        // The sliders now control minY (top), minX (left), and scale (zoom)
         const baseMinY = savedState.minY !== undefined ? savedState.minY : minY;
         const baseMinX = savedState.minX !== undefined ? savedState.minX : minX;
         const scale = savedState.scale !== undefined ? savedState.scale : 1;
@@ -270,7 +263,7 @@
 
         const group = document.createElement('div');
         group.className = 'control-group';
-        group.innerHTML = `<h4 style="cursor: pointer; user-select: none;">${file.name}</h4>`;
+        group.innerHTML = `<h4 style="cursor: pointer; user-select: none;">${name}</h4>`;
 
         // Create color controls
         const colorControls = document.createElement('div');
@@ -320,21 +313,12 @@
           slider.type = 'range';
           slider.min = control.min;
           slider.max = control.max;
-          slider.value = control.value;
           if (control.step) slider.step = control.step;
-          slider.addEventListener('input', () => {
-            const minXVal = parseFloat(sliders.minX?.value ?? baseMinX);
-            const minYVal = parseFloat(sliders.minY?.value ?? baseMinY);
-            const scaleVal = parseFloat(sliders.scale?.value ?? scale);
-            setViewBox(minXVal, minYVal, scaleVal);
-            const displayValue = control.unit === 'px' ? parseFloat(slider.value).toFixed(2) : parseFloat(slider.value).toFixed(3);
-            valueSpan.textContent = `${displayValue}${control.unit}`;
-            if (selectedWrapper === wrapper) {
-              updateAttributeDisplay();
-            }
-          });
+          // Clamp value to min/max and set as string
+          let clampedValue = Math.max(control.min, Math.min(control.max, control.value));
+          slider.value = String(clampedValue);
           const valueSpan = document.createElement('span');
-          const displayValue = control.unit === 'px' ? control.value.toFixed(2) : control.value.toFixed(3);
+          const displayValue = control.unit === 'px' ? Number(slider.value).toFixed(2) : Number(slider.value).toFixed(3);
           valueSpan.textContent = `${displayValue}${control.unit}`;
           label.appendChild(slider);
           label.appendChild(valueSpan);
@@ -342,10 +326,15 @@
           group.appendChild(document.createElement('br'));
           slider.setAttribute('data-control', control.name);
           sliders[control.name] = slider;
+          slider.addEventListener('input', () => {
+            updateAllSliders();
+          });
         });
+        // After all sliders are created, update the UI once
+        updateAllSliders();
         wrapper.sliders = sliders;
         wrapper.controlGroup = group;
-        wrapper.fileName = file.name;
+        wrapper.fileName = name;
         wrapper.svg = svg;
         // Function to select this wrapper
         const selectWrapper = () => {
@@ -365,14 +354,37 @@
         individualControls.appendChild(group);
         // Store file data for saving
         loadedFiles.push({
-          name: file.name,
+          name: name,
           content: text,
-          minY: baseMinY,
-          minX: baseMinX,
-          scale: scale,
+          minY: parseFloat(sliders.minY.value),
+          minX: parseFloat(sliders.minX.value),
+          scale: parseFloat(sliders.scale.value),
           color: color
         });
+        // --- FIX: Update SVG/UI once after all slider values are set ---
+        function updateAllSliders() {
+          const minXVal = parseFloat(sliders.minX?.value ?? baseMinX);
+          const minYVal = parseFloat(sliders.minY?.value ?? baseMinY);
+          const scaleVal = parseFloat(sliders.scale?.value ?? scale);
+          setViewBox(minXVal, minYVal, scaleVal);
+          // Update value display spans
+          controlConfigs.forEach(control => {
+            const slider = sliders[control.name];
+            if (slider) {
+              const valueSpan = slider.nextSibling;
+              if (valueSpan && valueSpan.nodeType === Node.ELEMENT_NODE) {
+                const displayValue = control.unit === 'px' ? Number(slider.value).toFixed(2) : Number(slider.value).toFixed(3);
+                valueSpan.textContent = `${displayValue}${control.unit}`;
+              }
+            }
+          });
+          if (selectedWrapper === wrapper) {
+            updateAttributeDisplay();
+          }
+        }
+        updateAllSliders();
       }
+      isLoading = false;
     }
 
     // Get contrasting color for different images
@@ -411,8 +423,9 @@
           if (minYSlider) {
             // Invert: W should move image up (increase minY)
             const newValue = Math.min(parseFloat(minYSlider.max), parseFloat(minYSlider.value) + step);
-            minYSlider.value = newValue;
+            minYSlider.value = String(newValue);
             minYSlider.dispatchEvent(new Event('input'));
+            autoSave();
           }
           break;
         case 's':
@@ -420,8 +433,9 @@
           if (selectedSliders.minY) {
             // Invert: S should move image down (decrease minY)
             const newValue = Math.max(parseFloat(selectedSliders.minY.min), parseFloat(selectedSliders.minY.value) - step);
-            selectedSliders.minY.value = newValue;
+            selectedSliders.minY.value = String(newValue);
             selectedSliders.minY.dispatchEvent(new Event('input'));
+            autoSave();
           }
           break;
         case 'a':
@@ -430,8 +444,9 @@
           if (minXSlider) {
             // Invert: A should move image left (increase minX)
             const newValue = Math.min(parseFloat(minXSlider.max), parseFloat(minXSlider.value) + step);
-            minXSlider.value = newValue;
+            minXSlider.value = String(newValue);
             minXSlider.dispatchEvent(new Event('input'));
+            autoSave();
           }
           break;
         case 'd':
@@ -439,8 +454,9 @@
           if (selectedSliders.minX) {
             // Invert: D should move image right (decrease minX)
             const newValue = Math.max(parseFloat(selectedSliders.minX.min), parseFloat(selectedSliders.minX.value) - step);
-            selectedSliders.minX.value = newValue;
+            selectedSliders.minX.value = String(newValue);
             selectedSliders.minX.dispatchEvent(new Event('input'));
+            autoSave();
           }
           break;
         case 'arrowleft':
@@ -449,8 +465,9 @@
           if (scaleSlider) {
             const stepSize = event.shiftKey ? 0.001 : 0.01;
             const newValue = Math.max(parseFloat(scaleSlider.min), parseFloat(scaleSlider.value) - stepSize);
-            scaleSlider.value = newValue;
+            scaleSlider.value = String(newValue);
             scaleSlider.dispatchEvent(new Event('input'));
+            autoSave();
           }
           break;
         case 'arrowright':
@@ -458,8 +475,9 @@
           if (selectedSliders.scale) {
             const stepSize = event.shiftKey ? 0.001 : 0.01;
             const newValue = Math.min(parseFloat(selectedSliders.scale.max), parseFloat(selectedSliders.scale.value) + stepSize);
-            selectedSliders.scale.value = newValue;
+            selectedSliders.scale.value = String(newValue);
             selectedSliders.scale.dispatchEvent(new Event('input'));
+            autoSave();
           }
           break;
       }
@@ -509,6 +527,7 @@
 
     // Auto-save state when values change
     function autoSave() {
+      if (isLoading) return;
       if (loadedFiles.length > 0) {
         // Update loadedFiles with current values
         const wrappers = canvas.querySelectorAll('.svg-wrapper');
@@ -531,50 +550,11 @@
         });
         // Save to localStorage
         const state = {
-          globalScale: globalScale,
           files: loadedFiles
         };
         localStorage.setItem('svgOverlayState', JSON.stringify(state));
       }
     }
-
-    // Global scale event listener
-    globalScaleSlider.addEventListener('input', () => {
-      const newGlobalScale = parseFloat(globalScaleSlider.value);
-      const scaleRatio = newGlobalScale / globalScale;
-      globalScale = newGlobalScale;
-      globalScaleValue.textContent = globalScale.toFixed(2);
-      
-      // Update all wrappers with new global scale
-      const wrappers = canvas.querySelectorAll('.svg-wrapper');
-      wrappers.forEach(wrapper => {
-        const svg = wrapper.svg;
-        const scaleSlider = wrapper.sliders?.scale;
-        if (scaleSlider) {
-          const individualScale = parseFloat(scaleSlider.value);
-          const currentMinX = parseFloat(wrapper.sliders?.minX?.value || svg._baseViewBox.minX);
-          const currentMinY = parseFloat(wrapper.sliders?.minY?.value || svg._baseViewBox.minY);
-          const newMinX = currentMinX * scaleRatio;
-          const newMinY = currentMinY * scaleRatio;
-          setViewBox(newMinX, newMinY, individualScale * globalScale);
-          
-          // Update the slider values to reflect the new positions
-          if (wrapper.sliders.minX) {
-            wrapper.sliders.minX.value = newMinX;
-            wrapper.sliders.minX.nextElementSibling.textContent = `${newMinX.toFixed(2)}px`;
-          }
-          if (wrapper.sliders.minY) {
-            wrapper.sliders.minY.value = newMinY;
-            wrapper.sliders.minY.nextElementSibling.textContent = `${newMinY.toFixed(2)}px`;
-          }
-        }
-        
-        // Update attribute display if a wrapper is selected
-        if (selectedWrapper) {
-          updateAttributeDisplay();
-        }
-      });
-    });
 
     // Add auto-save listeners
     document.addEventListener('input', autoSave);

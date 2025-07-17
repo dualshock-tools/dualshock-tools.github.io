@@ -397,6 +397,12 @@
     // Keyboard controls
     document.addEventListener('keydown', (event) => {
       if (!selectedWrapper || !selectedSliders) return;
+      // Hide selected image on spacebar
+      if (event.code === 'Space') {
+        event.preventDefault();
+        selectedWrapper.style.visibility = 'hidden';
+        return;
+      }
       const step = event.shiftKey ? 0.1 : 1;
       switch(event.key.toLowerCase()) {
         case 'w':
@@ -456,6 +462,13 @@
             selectedSliders.scale.dispatchEvent(new Event('input'));
           }
           break;
+      }
+    });
+
+    // Show selected image again when spacebar is released
+    document.addEventListener('keyup', (event) => {
+      if (event.code === 'Space' && selectedWrapper) {
+        selectedWrapper.style.visibility = 'visible';
       }
     });
 

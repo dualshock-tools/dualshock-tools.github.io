@@ -120,6 +120,7 @@
     <button class="save" onclick="saveState()">Save State</button>
     <button class="clear" onclick="clearState()">Clear Saved State</button>
     <button class="preview" onclick="openPreviewModal()">Preview</button>
+    <button class="combine" onclick="combineSVGs()">Combine</button>
     <span id="saveStatus"></span>
   </div>
   
@@ -735,6 +736,67 @@
       if (e.key === 'Escape') {
         closePreviewModal();
       }
+    }
+
+    // Add Combine SVG logic
+    function combineSVGs() {
+      const wrappers = canvas.querySelectorAll('.svg-wrapper');
+      if (!wrappers.length) {
+        alert('No SVGs to combine.');
+        return;
+      }
+      // Use canvas size for initial output SVG, but we'll auto-fit the viewBox
+      const canvasWidth = parseInt(canvasWidthSlider.value) || 640;
+      const canvasHeight = parseInt(canvasHeightSlider.value) || 480;
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const combinedSVG = document.createElementNS(svgNS, 'svg');
+      combinedSVG.setAttribute('xmlns', svgNS);
+      // For each SVG, create a <g> with the correct transform
+      let allGroups = [];
+      wrappers.forEach((wrapper, idx) => {
+        let svg = wrapper.svg || wrapper.querySelector('svg');
+        if (!svg) return;
+        const g = document.createElementNS(svgNS, 'g');
+        const base = svg._baseViewBox || { minX: 0, minY: 0, vbWidth: 300, vbHeight: 300 };
+        const minXOffset = parseFloat(wrapper.sliders?.minX?.value || 0);
+        const minYOffset = parseFloat(wrapper.sliders?.minY?.value || 0);
+        const scaleVal = parseFloat(wrapper.sliders?.scale?.value || 1);
+        // Calculate as in preview logic, but preserve aspect ratio
+        const minX = base.minX - minXOffset;
+        const minY = base.minY - minYOffset;
+        const vbWidth = base.vbWidth;
+        const vbHeight = base.vbHeight;
+        const scaledWidth = vbWidth / scaleVal;
+        const scaledHeight = vbHeight / scaleVal;
+        const scale = Math.min(canvasWidth / scaledWidth, canvasHeight / scaledHeight);
+        const offsetX = (canvasWidth - scaledWidth * scale) / 2;
+        const offsetY = (canvasHeight - scaledHeight * scale) / 2;
+        g.setAttribute('transform', `translate(${offsetX - minX * scale},${offsetY - minY * scale}) scale(${scale})`);
+        Array.from(svg.childNodes).forEach(node => {
+          g.appendChild(node.cloneNode(true));
+        });
+        combinedSVG.appendChild(g);
+        allGroups.push(g);
+      });
+      // Set viewBox to match the overlay tool's canvas
+      combinedSVG.removeAttribute('width');
+      combinedSVG.removeAttribute('height');
+      combinedSVG.setAttribute('viewBox', `0 0 ${canvasWidth} ${canvasHeight}`);
+      combinedSVG.removeAttribute('style');
+      // Serialize SVG
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(combinedSVG);
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'combined.svg';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
     }
   </script>
 </body>

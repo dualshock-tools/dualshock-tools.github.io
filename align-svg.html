@@ -8,9 +8,23 @@
     body { font-family: sans-serif; padding: 1rem; }
     .main-container { display: flex; gap: 2rem; align-items: flex-start; }
     #canvas { position: relative; width: 640px; height: 480px; border: 1px solid #ccc; margin-top: 1rem; flex-shrink: 0; }
-    .svg-wrapper { position: absolute; box-sizing: border-box; /* cursor: pointer; */ border: 2px dashed #888; pointer-events: none; }
+    .svg-wrapper {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      /* cursor: pointer; */
+      border: 2px dashed #888;
+      pointer-events: none;
+    }
     .svg-wrapper.selected { outline: 2px solid #007bff; }
-    .svg-wrapper svg { display: block; max-width: 100%; height: auto; }
+    .svg-wrapper svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
     .controls { margin-top: 1rem; min-width: 300px; }
     .control-group { margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; }
     .control-group.selected { background-color: #f8f9fa; }
@@ -85,6 +99,16 @@
 </head>
 <body>
   <h2>SVG Overlay Tool</h2>
+  <div id="canvasSizeControls" style="margin-bottom: 1rem;">
+    <label style="margin-right:1em;">Width:
+      <input type="range" id="canvasWidthSlider" min="100" max="1920" value="640" step="1">
+      <span id="canvasWidthValue">640</span>px
+    </label>
+    <label>Height:
+      <input type="range" id="canvasHeightSlider" min="100" max="1080" value="480" step="1">
+      <span id="canvasHeightValue">480</span>px
+    </label>
+  </div>
   <input type="file" id="fileInput" multiple accept=".svg"/>
   <div class="main-container">
     <div id="canvas"></div>
@@ -95,6 +119,7 @@
   <div class="save-controls">
     <button class="save" onclick="saveState()">Save State</button>
     <button class="clear" onclick="clearState()">Clear Saved State</button>
+    <button class="preview" onclick="openPreviewModal()">Preview</button>
     <span id="saveStatus"></span>
   </div>
   
@@ -105,6 +130,14 @@
   
   <div class="keyboard-hint">
     <strong>Keyboard Controls:</strong> Click on an image to select it, then use W/S keys for vertical movement, A/D keys for horizontal movement, and Left/Right arrow keys for scaling.
+  </div>
+
+  <!-- Modal for SVG preview -->
+  <div id="previewModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); align-items:center; justify-content:center;">
+    <div style="position:relative; background:white; border-radius:8px; padding:1.5rem; max-width:90vw; max-height:90vh; overflow:auto; box-shadow:0 2px 16px rgba(0,0,0,0.3);">
+      <button onclick="closePreviewModal()" style="position:absolute; top:0.5rem; right:0.5rem; background:#dc3545; color:white; border:none; border-radius:4px; padding:0.3rem 0.7rem; font-size:1.2rem; cursor:pointer;">&times;</button>
+      <div id="previewSVGs" style="position:relative; width:500px; height:auto; background:#fff;"></div>
+    </div>
   </div>
 
   <script>
@@ -119,17 +152,41 @@
     let loadedFiles = [];
     let isLoading = false;
 
+    // Canvas size controls
+    const canvasWidthSlider = document.getElementById('canvasWidthSlider');
+    const canvasHeightSlider = document.getElementById('canvasHeightSlider');
+    const canvasWidthValue = document.getElementById('canvasWidthValue');
+    const canvasHeightValue = document.getElementById('canvasHeightValue');
+    function updateCanvasSize() {
+      const w = canvasWidthSlider.value;
+      const h = canvasHeightSlider.value;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      canvasWidthValue.textContent = w;
+      canvasHeightValue.textContent = h;
+      // Save canvas size to localStorage for persistence
+      localStorage.setItem('svgOverlayCanvasSize', JSON.stringify({ width: w, height: h }));
+    }
+    canvasWidthSlider.addEventListener('input', updateCanvasSize);
+    canvasHeightSlider.addEventListener('input', updateCanvasSize);
+    // Set initial size
+    updateCanvasSize();
+
     // Save state to localStorage
     function saveState() {
       const state = {
         files: loadedFiles.map(file => ({
           name: file.name,
           content: file.content,
-          minY: file.minY || 0,
-          minX: file.minX || 0,
+          minYOffset: file.minYOffset || 0,
+          minXOffset: file.minXOffset || 0,
           scale: file.scale || 1,
           color: file.color || '#FF6B6B'
-        }))
+        })),
+        canvasSize: {
+          width: canvasWidthSlider.value,
+          height: canvasHeightSlider.value
+        }
       };
       
       try {
@@ -159,7 +216,28 @@
     async function loadState() {
       isLoading = true;
       try {
+        // Load canvas size first
+        let canvasSize = null;
+        // Try to get from svgOverlayState (new format)
         const savedState = localStorage.getItem('svgOverlayState');
+        if (savedState) {
+          const state = JSON.parse(savedState);
+          if (state.canvasSize) {
+            canvasSize = state.canvasSize;
+          }
+        }
+        // Fallback: try legacy key
+        if (!canvasSize) {
+          const legacySize = localStorage.getItem('svgOverlayCanvasSize');
+          if (legacySize) {
+            canvasSize = JSON.parse(legacySize);
+          }
+        }
+        if (canvasSize) {
+          canvasWidthSlider.value = canvasSize.width;
+          canvasHeightSlider.value = canvasSize.height;
+          updateCanvasSize();
+        }
         if (savedState) {
           const state = JSON.parse(savedState);
           
@@ -169,8 +247,8 @@
               name: fileData.name,
               content: fileData.content,
               savedState: {
-                minY: fileData.minY,
-                minX: fileData.minX,
+                minYOffset: fileData.minYOffset,
+                minXOffset: fileData.minXOffset,
                 scale: fileData.scale,
                 color: fileData.color
               }
@@ -240,9 +318,9 @@
         // Store the base viewBox for this SVG
         svg._baseViewBox = { minX, minY, vbWidth, vbHeight };
 
-        // Get saved state or use defaults
-        const baseMinY = savedState.minY !== undefined ? savedState.minY : minY;
-        const baseMinX = savedState.minX !== undefined ? savedState.minX : minX;
+        // Get saved state or use defaults (declare only once)
+        const minYOffset = savedState.minYOffset !== undefined ? savedState.minYOffset : 0;
+        const minXOffset = savedState.minXOffset !== undefined ? savedState.minXOffset : 0;
         const scale = savedState.scale !== undefined ? savedState.scale : 1;
         const color = savedState.color || getContrastingColor(index);
 
@@ -252,12 +330,12 @@
           const height = svg._baseViewBox.vbHeight / scale;
           svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
         }
-        setViewBox(baseMinX, baseMinY, scale);
+        setViewBox(minX, minY, scale);
 
         // Ensure SVG is visible and properly sized
         svg.style.display = 'block';
-        svg.setAttribute('width', svg._baseViewBox.vbWidth);
-        svg.setAttribute('height', svg._baseViewBox.vbHeight);
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
 
         canvas.appendChild(wrapper);
 
@@ -300,10 +378,11 @@
         group.appendChild(colorControls);
 
         // Create controls for minY (top), minX (left), and scale
+        // Store base values for inversion
         const controlConfigs = [
-          { name: 'minY', label: 'top', min: minY - 200, max: minY + 200, value: baseMinY, step: 0.01, unit: 'px' },
-          { name: 'minX', label: 'left', min: minX - 200, max: minX + 200, value: baseMinX, step: 0.01, unit: 'px' },
-          { name: 'scale', label: 'scale', min: 0.1, max: 10, value: scale, step: 0.001, unit: '' }
+          { name: 'minY', label: 'top', min: -640, max: 640, value: minYOffset, step: 0.01, unit: 'px' },
+          { name: 'minX', label: 'left', min: -480, max: 480, value: minXOffset, step: 0.01, unit: 'px' },
+          { name: 'scale', label: 'scale', min: 0.01, max: 1, value: scale, step: 0.001, unit: '' }
         ];
         const sliders = {};
         controlConfigs.forEach(control => {
@@ -314,7 +393,7 @@
           slider.min = control.min;
           slider.max = control.max;
           if (control.step) slider.step = control.step;
-          // Clamp value to min/max and set as string
+          // Set slider value directly from config (no inversion)
           let clampedValue = Math.max(control.min, Math.min(control.max, control.value));
           slider.value = String(clampedValue);
           const valueSpan = document.createElement('span');
@@ -357,15 +436,16 @@
         loadedFiles.push({
           name: name,
           content: text,
-          minY: parseFloat(sliders.minY.value),
-          minX: parseFloat(sliders.minX.value),
+          minYOffset: parseFloat(sliders.minY.value),
+          minXOffset: parseFloat(sliders.minX.value),
           scale: parseFloat(sliders.scale.value),
           color: color
         });
         // --- FIX: Update SVG/UI once after all slider values are set ---
         function updateAllSliders() {
-          const minXVal = parseFloat(sliders.minX?.value ?? baseMinX);
-          const minYVal = parseFloat(sliders.minY?.value ?? baseMinY);
+          // Invert minX/minY: slider value is offset, subtract from base
+          const minXVal = svg._baseViewBox.minX - parseFloat(sliders.minX?.value ?? 0);
+          const minYVal = svg._baseViewBox.minY - parseFloat(sliders.minY?.value ?? 0);
           const scaleVal = parseFloat(sliders.scale?.value ?? scale);
           setViewBox(minXVal, minYVal, scaleVal);
           // Update value display spans
@@ -422,8 +502,8 @@
           event.preventDefault();
           const minYSlider = selectedSliders.minY;
           if (minYSlider) {
-            // Invert: W should move image up (increase minY)
-            const newValue = Math.min(parseFloat(minYSlider.max), parseFloat(minYSlider.value) + step);
+            // W should move image up (decrease slider value)
+            const newValue = Math.max(parseFloat(minYSlider.min), parseFloat(minYSlider.value) - step);
             minYSlider.value = String(newValue);
             minYSlider.dispatchEvent(new Event('input'));
             autoSave();
@@ -432,8 +512,8 @@
         case 's':
           event.preventDefault();
           if (selectedSliders.minY) {
-            // Invert: S should move image down (decrease minY)
-            const newValue = Math.max(parseFloat(selectedSliders.minY.min), parseFloat(selectedSliders.minY.value) - step);
+            // S should move image down (increase slider value)
+            const newValue = Math.min(parseFloat(selectedSliders.minY.max), parseFloat(selectedSliders.minY.value) + step);
             selectedSliders.minY.value = String(newValue);
             selectedSliders.minY.dispatchEvent(new Event('input'));
             autoSave();
@@ -443,8 +523,8 @@
           event.preventDefault();
           const minXSlider = selectedSliders.minX;
           if (minXSlider) {
-            // Invert: A should move image left (increase minX)
-            const newValue = Math.min(parseFloat(minXSlider.max), parseFloat(minXSlider.value) + step);
+            // A should move image left (decrease slider value)
+            const newValue = Math.max(parseFloat(minXSlider.min), parseFloat(minXSlider.value) - step);
             minXSlider.value = String(newValue);
             minXSlider.dispatchEvent(new Event('input'));
             autoSave();
@@ -453,8 +533,8 @@
         case 'd':
           event.preventDefault();
           if (selectedSliders.minX) {
-            // Invert: D should move image right (decrease minX)
-            const newValue = Math.max(parseFloat(selectedSliders.minX.min), parseFloat(selectedSliders.minX.value) - step);
+            // D should move image right (increase slider value)
+            const newValue = Math.min(parseFloat(selectedSliders.minX.max), parseFloat(selectedSliders.minX.value) + step);
             selectedSliders.minX.value = String(newValue);
             selectedSliders.minX.dispatchEvent(new Event('input'));
             autoSave();
@@ -495,8 +575,9 @@
     function updateAttributeDisplay() {
       if (selectedWrapper && attributeDisplay.style.display !== 'none') {
         const svg = selectedWrapper.svg;
-        const minX = parseFloat(selectedWrapper.sliders?.minX?.value || svg._baseViewBox.minX);
-        const minY = parseFloat(selectedWrapper.sliders?.minY?.value || svg._baseViewBox.minY);
+        // Invert minX/minY for display
+        const minX = svg._baseViewBox.minX - parseFloat(selectedWrapper.sliders?.minX?.value || 0);
+        const minY = svg._baseViewBox.minY - parseFloat(selectedWrapper.sliders?.minY?.value || 0);
         const scale = parseFloat(selectedWrapper.sliders?.scale?.value || 1);
         const width = svg._baseViewBox.vbWidth / scale;
         const height = svg._baseViewBox.vbHeight / scale;
@@ -535,25 +616,31 @@
         wrappers.forEach((wrapper, index) => {
           if (loadedFiles[index]) {
             const svg = wrapper.svg;
-            const minX = parseFloat(wrapper.sliders?.minX?.value ?? svg._baseViewBox.minX);
-            const minY = parseFloat(wrapper.sliders?.minY?.value ?? svg._baseViewBox.minY);
+            const minYOffset = parseFloat(wrapper.sliders?.minY?.value ?? 0);
+            const minXOffset = parseFloat(wrapper.sliders?.minX?.value ?? 0);
             const scale = parseFloat(wrapper.sliders?.scale?.value ?? 1);
             const colorInput = document.getElementById(`color-${index}`);
             const color = colorInput ? colorInput.value : loadedFiles[index].color;
             loadedFiles[index] = {
               ...loadedFiles[index],
-              minX,
-              minY,
+              minYOffset,
+              minXOffset,
               scale,
               color
             };
           }
         });
-        // Save to localStorage
+        // Save to localStorage (including canvas size)
         const state = {
-          files: loadedFiles
+          files: loadedFiles,
+          canvasSize: {
+            width: canvasWidthSlider.value,
+            height: canvasHeightSlider.value
+          }
         };
         localStorage.setItem('svgOverlayState', JSON.stringify(state));
+        // Also save canvas size separately for legacy support
+        localStorage.setItem('svgOverlayCanvasSize', JSON.stringify({ width: canvasWidthSlider.value, height: canvasHeightSlider.value }));
       }
     }
 
@@ -563,6 +650,55 @@
 
     // Load saved state on page load
     window.addEventListener('load', loadState);
+
+    // Add Preview Modal logic
+    function openPreviewModal() {
+      const modal = document.getElementById('previewModal');
+      const previewSVGs = document.getElementById('previewSVGs');
+      previewSVGs.innerHTML = '';
+      // Set preview size to always be 500px wide and auto height
+      previewSVGs.style.width = '500px';
+      // Dynamically set height to match canvas aspect ratio
+      const canvasWidth = parseInt(canvas.style.width) || 640;
+      const canvasHeight = parseInt(canvas.style.height) || 480;
+      const aspectRatio = canvasHeight / canvasWidth;
+      previewSVGs.style.height = (500 * aspectRatio) + 'px';
+      // Stack all SVGs in order, absolutely positioned
+      const wrappers = canvas.querySelectorAll('.svg-wrapper');
+      let foundSVG = false;
+      wrappers.forEach(wrapper => {
+        // Try wrapper.svg, fallback to querySelector
+        let svg = wrapper.svg || wrapper.querySelector('svg');
+        if (svg) {
+          const svgClone = svg.cloneNode(true);
+          svgClone.style.position = 'absolute';
+          svgClone.style.left = '0';
+          svgClone.style.top = '0';
+          svgClone.style.width = '100%';
+          svgClone.style.height = '100%';
+          svgClone.style.pointerEvents = 'none';
+          svgClone.setAttribute('width', '100%');
+          svgClone.setAttribute('height', '100%');
+          previewSVGs.appendChild(svgClone);
+          foundSVG = true;
+        }
+      });
+      if (!foundSVG) {
+        previewSVGs.innerHTML = '<div style="padding:2rem; text-align:center; color:#888;">No SVGs to preview.</div>';
+      }
+      modal.style.display = 'flex';
+      document.addEventListener('keydown', handlePreviewModalKey);
+    }
+    function closePreviewModal() {
+      const modal = document.getElementById('previewModal');
+      modal.style.display = 'none';
+      document.removeEventListener('keydown', handlePreviewModalKey);
+    }
+    function handlePreviewModalKey(e) {
+      if (e.key === 'Escape') {
+        closePreviewModal();
+      }
+    }
   </script>
 </body>
 </html>

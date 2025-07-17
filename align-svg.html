@@ -8,12 +8,13 @@
     body { font-family: sans-serif; padding: 1rem; }
     .main-container { display: flex; gap: 2rem; align-items: flex-start; }
     #canvas { position: relative; width: 640px; height: 480px; border: 1px solid #ccc; margin-top: 1rem; flex-shrink: 0; }
-    .svg-wrapper { position: absolute; box-sizing: border-box; cursor: pointer; border: 2px dashed #888; }
+    .svg-wrapper { position: absolute; box-sizing: border-box; /* cursor: pointer; */ border: 2px dashed #888; pointer-events: none; }
     .svg-wrapper.selected { outline: 2px solid #007bff; }
     .svg-wrapper svg { display: block; max-width: 100%; height: auto; }
     .controls { margin-top: 1rem; min-width: 300px; }
-    .control-group { margin-bottom: 1rem; }
-    .control-group.selected { background-color: #f8f9fa; padding: 0.5rem; border-radius: 4px; }
+    .control-group { margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; }
+    .control-group.selected { background-color: #f8f9fa; }
+    .control-group h4 { margin-top: 0; }
     input[type="range"] { width: 300px; }
     .color-controls { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
     .color-control { display: flex; align-items: center; gap: 0.5rem; }
@@ -134,8 +135,8 @@
         files: loadedFiles.map(file => ({
           name: file.name,
           content: file.content,
-          top: file.top || 0,
-          left: file.left || 0,
+          minY: file.minY || 0,
+          minX: file.minX || 0,
           scale: file.scale || 1,
           color: file.color || '#FF6B6B'
         }))
@@ -184,8 +185,8 @@
               const blob = new Blob([fileData.content], { type: 'image/svg+xml' });
               const file = new File([blob], fileData.name, { type: 'image/svg+xml' });
               file.savedState = {
-                top: fileData.top,
-                left: fileData.left,
+                minY: fileData.minY,
+                minX: fileData.minX,
                 scale: fileData.scale,
                 color: fileData.color
               };
@@ -225,34 +226,46 @@
         const wrapper = document.createElement('div');
         wrapper.className = 'svg-wrapper';
         wrapper.innerHTML = text;
-        
+
+        // Get the SVG element
+        const svg = wrapper.querySelector('svg');
+        if (!svg) continue;
+
+        // Extract or set the original viewBox
+        let originalViewBox = svg.getAttribute('viewBox');
+        let [minX, minY, vbWidth, vbHeight] = [0, 0, 300, 300];
+        if (originalViewBox) {
+          [minX, minY, vbWidth, vbHeight] = originalViewBox.split(/\s+|,/).map(Number);
+        } else {
+          // If no viewBox, try to use width/height attributes
+          vbWidth = parseFloat(svg.getAttribute('width')) || 300;
+          vbHeight = parseFloat(svg.getAttribute('height')) || 300;
+          svg.setAttribute('viewBox', `0 0 ${vbWidth} ${vbHeight}`);
+        }
+        // Store the base viewBox for this SVG
+        svg._baseViewBox = { minX, minY, vbWidth, vbHeight };
+
         // Get saved state or use defaults
         const savedState = file.savedState || {};
-        const baseTop = savedState.top !== undefined ? savedState.top : 0;
-        const baseLeft = savedState.left !== undefined ? savedState.left : 0;
-        // The saved scale is the individual scale value
+        // The sliders now control minY (top), minX (left), and scale (zoom)
+        const baseMinY = savedState.minY !== undefined ? savedState.minY : minY;
+        const baseMinX = savedState.minX !== undefined ? savedState.minX : minX;
         const scale = savedState.scale !== undefined ? savedState.scale : 1;
         const color = savedState.color || getContrastingColor(index);
-        
-        // Apply global scale to base positions
-        const top = baseTop * globalScale;
-        const left = baseLeft * globalScale;
-        
-        wrapper.style.top = `${top}px`;
-        wrapper.style.left = `${left}px`;
-        wrapper.style.transform = `scale(${scale * globalScale}, ${scale * globalScale})`;
-        wrapper.style.transformOrigin = 'top left';
-        
-        // Ensure SVG is visible and properly sized
-        const svg = wrapper.querySelector('svg');
-        if (svg) {
-          if (!svg.getAttribute('width') && !svg.getAttribute('height')) {
-            svg.setAttribute('width', '300');
-            // svg.setAttribute('height', '300');
-          }
-          svg.style.display = 'block';
+
+        // Set initial viewBox
+        function setViewBox(minX, minY, scale) {
+          const width = svg._baseViewBox.vbWidth / scale;
+          const height = svg._baseViewBox.vbHeight / scale;
+          svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
         }
-        
+        setViewBox(baseMinX, baseMinY, scale);
+
+        // Ensure SVG is visible and properly sized
+        svg.style.display = 'block';
+        svg.setAttribute('width', svg._baseViewBox.vbWidth);
+        svg.setAttribute('height', svg._baseViewBox.vbHeight);
+
         canvas.appendChild(wrapper);
 
         const group = document.createElement('div');
@@ -262,8 +275,6 @@
         // Create color controls
         const colorControls = document.createElement('div');
         colorControls.className = 'color-controls';
-        
-        // Single color control for both stroke and fill
         const colorControl = document.createElement('div');
         colorControl.className = 'color-control';
         colorControl.innerHTML = `
@@ -271,78 +282,57 @@
           <input type="color" id="color-${index}" value="${color}">
         `;
         const colorInput = colorControl.querySelector('input');
-        
-        // Function to apply color to SVG elements
         const applyColor = (color) => {
-          const svg = wrapper.querySelector('svg');
-          if (svg) {
-            const allElements = svg.querySelectorAll('*');
-            allElements.forEach(el => {
-              // Only apply to elements that can have stroke or fill
-              if (['path', 'circle', 'rect', 'ellipse', 'line', 'polyline', 'polygon', 'text'].includes(el.tagName.toLowerCase())) {
-                el.setAttribute('stroke', color);
-                el.setAttribute('fill', color);
-                // Also set stroke-width if not already set
-                if (!el.getAttribute('stroke-width')) {
-                  el.setAttribute('stroke-width', '1');
-                }
+          const allElements = svg.querySelectorAll('*');
+          allElements.forEach(el => {
+            if ([
+              'path', 'circle', 'rect', 'ellipse', 'line', 'polyline', 'polygon', 'text'
+            ].includes(el.tagName.toLowerCase())) {
+              el.setAttribute('stroke', color);
+              el.setAttribute('fill', color);
+              if (!el.getAttribute('stroke-width')) {
+                el.setAttribute('stroke-width', '1');
               }
-            });
-          }
+            }
+          });
         };
-        
-        // Apply color immediately
         applyColor(color);
-        
         colorInput.addEventListener('input', () => {
           applyColor(colorInput.value);
-          // Update attribute display if this wrapper is selected
           if (selectedWrapper === wrapper) {
             updateAttributeDisplay();
           }
         });
-        
         colorControls.appendChild(colorControl);
         group.appendChild(colorControls);
 
-        // Create controls for top, left, and scale
+        // Create controls for minY (top), minX (left), and scale
         const controlConfigs = [
-          { name: 'top', min: -200, max: 200, value: top, unit: 'px' },
-          { name: 'left', min: -200, max: 200, value: left, unit: 'px' },
-          { name: 'scale', min: 0.1, max: 10, value: scale, step: 0.001, unit: '' }
+          { name: 'minY', label: 'top', min: minY - 200, max: minY + 200, value: baseMinY, unit: 'px' },
+          { name: 'minX', label: 'left', min: minX - 200, max: minX + 200, value: baseMinX, unit: 'px' },
+          { name: 'scale', label: 'scale', min: 0.1, max: 10, value: scale, step: 0.001, unit: '' }
         ];
-
         const sliders = {};
-
         controlConfigs.forEach(control => {
           const label = document.createElement('label');
-          label.textContent = `${control.name}: `;
+          label.textContent = `${control.label}: `;
           const slider = document.createElement('input');
           slider.type = 'range';
           slider.min = control.min;
           slider.max = control.max;
           slider.value = control.value;
           if (control.step) slider.step = control.step;
-          
           slider.addEventListener('input', () => {
-            const value = parseFloat(slider.value);
-            const displayValue = control.unit === 'px' ? value.toFixed(2) : value.toFixed(3);
+            const minXVal = parseFloat(sliders.minX?.value ?? baseMinX);
+            const minYVal = parseFloat(sliders.minY?.value ?? baseMinY);
+            const scaleVal = parseFloat(sliders.scale?.value ?? scale);
+            setViewBox(minXVal, minYVal, scaleVal);
+            const displayValue = control.unit === 'px' ? parseFloat(slider.value).toFixed(2) : parseFloat(slider.value).toFixed(3);
             valueSpan.textContent = `${displayValue}${control.unit}`;
-            
-            if (control.name === 'top') {
-              wrapper.style.top = `${value}px`;
-            } else if (control.name === 'left') {
-              wrapper.style.left = `${value}px`;
-            } else if (control.name === 'scale') {
-              wrapper.style.transform = `scale(${value * globalScale}, ${value * globalScale})`;
-            }
-            
-            // Update attribute display if this wrapper is selected
             if (selectedWrapper === wrapper) {
               updateAttributeDisplay();
             }
           });
-          
           const valueSpan = document.createElement('span');
           const displayValue = control.unit === 'px' ? control.value.toFixed(2) : control.value.toFixed(3);
           valueSpan.textContent = `${displayValue}${control.unit}`;
@@ -350,99 +340,35 @@
           label.appendChild(valueSpan);
           group.appendChild(label);
           group.appendChild(document.createElement('br'));
-          
-          // Add data attribute to identify sliders
           slider.setAttribute('data-control', control.name);
           sliders[control.name] = slider;
         });
-
-        // Store sliders for this wrapper
         wrapper.sliders = sliders;
         wrapper.controlGroup = group;
         wrapper.fileName = file.name;
-
+        wrapper.svg = svg;
         // Function to select this wrapper
         const selectWrapper = () => {
-          // Remove previous selection
           if (selectedWrapper) {
             selectedWrapper.classList.remove('selected');
             selectedGroup.classList.remove('selected');
           }
-          
-          // Select this wrapper
           selectedWrapper = wrapper;
           selectedGroup = group;
           selectedSliders = sliders;
-          
           wrapper.classList.add('selected');
           group.classList.add('selected');
-          
-          // Display the current attributes of the selected image
-          const individualScale = parseFloat(wrapper.sliders?.scale?.value || 1);
-          const effectiveScale = individualScale * globalScale;
-          const color = wrapper.querySelector('svg')?.querySelector('*')?.getAttribute('stroke') || 'N/A';
-          
-          attributeContent.innerHTML = `
-            <div class="attribute-item">
-              <span class="attribute-label">File name:</span>
-              <span class="attribute-value">${file.name}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Position:</span>
-              <span class="attribute-value">top: ${wrapper.style.top}, left: ${wrapper.style.left}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Transform:</span>
-              <span class="attribute-value">${wrapper.style.transform}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Transform origin:</span>
-              <span class="attribute-value">${wrapper.style.transformOrigin}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Global scale:</span>
-              <span class="attribute-value">${globalScale.toFixed(3)}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Individual scale:</span>
-              <span class="attribute-value">${individualScale.toFixed(3)}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Effective scale:</span>
-              <span class="attribute-value">${effectiveScale.toFixed(3)} (individual × global)</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Color:</span>
-              <span class="attribute-value">${color}</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Box model:</span>
-              <span class="attribute-value">width: ${wrapper.offsetWidth}px, height: ${wrapper.offsetHeight}px</span>
-            </div>
-            <div class="attribute-item">
-              <span class="attribute-label">Computed styles:</span>
-              <span class="attribute-value">position: ${getComputedStyle(wrapper).position}, display: ${getComputedStyle(wrapper).display}, z-index: ${getComputedStyle(wrapper).zIndex}</span>
-            </div>
-          `;
-          
-          attributeDisplay.style.display = 'block';
+          updateAttributeDisplay();
         };
-
-        // Add click handler to select this wrapper
-        wrapper.addEventListener('click', selectWrapper);
-        
-        // Add click handler to the filename to select this wrapper
-        const filename = group.querySelector('h4');
-        filename.addEventListener('click', selectWrapper);
-
+        // Make the entire control group selectable on pointer down
+        group.addEventListener('pointerdown', selectWrapper);
         individualControls.appendChild(group);
-
         // Store file data for saving
         loadedFiles.push({
           name: file.name,
           content: text,
-          top: top,
-          left: left,
+          minY: baseMinY,
+          minX: baseMinX,
           scale: scale,
           color: color
         });
@@ -471,42 +397,40 @@
     // Keyboard controls
     document.addEventListener('keydown', (event) => {
       if (!selectedWrapper || !selectedSliders) return;
-      
-      const step = event.shiftKey ? 10 : 1; // Shift key for larger steps
-      
+      const step = event.shiftKey ? 10 : 1;
       switch(event.key.toLowerCase()) {
         case 'w':
           event.preventDefault();
-          const topSlider = selectedSliders.top;
-          if (topSlider) {
-            const newValue = Math.max(parseFloat(topSlider.min), parseFloat(topSlider.value) - step);
-            topSlider.value = newValue;
-            topSlider.dispatchEvent(new Event('input'));
+          const minYSlider = selectedSliders.minY;
+          if (minYSlider) {
+            const newValue = Math.max(parseFloat(minYSlider.min), parseFloat(minYSlider.value) - step);
+            minYSlider.value = newValue;
+            minYSlider.dispatchEvent(new Event('input'));
           }
           break;
         case 's':
           event.preventDefault();
-          if (selectedSliders.top) {
-            const newValue = Math.min(parseFloat(selectedSliders.top.max), parseFloat(selectedSliders.top.value) + step);
-            selectedSliders.top.value = newValue;
-            selectedSliders.top.dispatchEvent(new Event('input'));
+          if (selectedSliders.minY) {
+            const newValue = Math.min(parseFloat(selectedSliders.minY.max), parseFloat(selectedSliders.minY.value) + step);
+            selectedSliders.minY.value = newValue;
+            selectedSliders.minY.dispatchEvent(new Event('input'));
           }
           break;
         case 'a':
           event.preventDefault();
-          const leftSlider = selectedSliders.left;
-          if (leftSlider) {
-            const newValue = Math.max(parseFloat(leftSlider.min), parseFloat(leftSlider.value) - step);
-            leftSlider.value = newValue;
-            leftSlider.dispatchEvent(new Event('input'));
+          const minXSlider = selectedSliders.minX;
+          if (minXSlider) {
+            const newValue = Math.max(parseFloat(minXSlider.min), parseFloat(minXSlider.value) - step);
+            minXSlider.value = newValue;
+            minXSlider.dispatchEvent(new Event('input'));
           }
           break;
         case 'd':
           event.preventDefault();
-          if (selectedSliders.left) {
-            const newValue = Math.min(parseFloat(selectedSliders.left.max), parseFloat(selectedSliders.left.value) + step);
-            selectedSliders.left.value = newValue;
-            selectedSliders.left.dispatchEvent(new Event('input'));
+          if (selectedSliders.minX) {
+            const newValue = Math.min(parseFloat(selectedSliders.minX.max), parseFloat(selectedSliders.minX.value) + step);
+            selectedSliders.minX.value = newValue;
+            selectedSliders.minX.dispatchEvent(new Event('input'));
           }
           break;
         case 'arrowleft':
@@ -534,50 +458,33 @@
     // Function to update attribute display
     function updateAttributeDisplay() {
       if (selectedWrapper && attributeDisplay.style.display !== 'none') {
-        const individualScale = parseFloat(selectedWrapper.sliders?.scale?.value || 1);
-        const effectiveScale = individualScale * globalScale;
-        const color = selectedWrapper.querySelector('svg')?.querySelector('*')?.getAttribute('stroke') || 'N/A';
-        
+        const svg = selectedWrapper.svg;
+        const minX = parseFloat(selectedWrapper.sliders?.minX?.value || svg._baseViewBox.minX);
+        const minY = parseFloat(selectedWrapper.sliders?.minY?.value || svg._baseViewBox.minY);
+        const scale = parseFloat(selectedWrapper.sliders?.scale?.value || 1);
+        const width = svg._baseViewBox.vbWidth / scale;
+        const height = svg._baseViewBox.vbHeight / scale;
+        const color = svg.querySelector('*')?.getAttribute('stroke') || 'N/A';
         attributeContent.innerHTML = `
           <div class="attribute-item">
             <span class="attribute-label">File name:</span>
             <span class="attribute-value">${selectedWrapper.fileName || 'Unknown'}</span>
           </div>
           <div class="attribute-item">
-            <span class="attribute-label">Position:</span>
-            <span class="attribute-value">top: ${selectedWrapper.style.top}, left: ${selectedWrapper.style.left}</span>
+            <span class="attribute-label">viewBox:</span>
+            <span class="attribute-value">${minX} ${minY} ${width} ${height}</span>
           </div>
           <div class="attribute-item">
-            <span class="attribute-label">Transform:</span>
-            <span class="attribute-value">${selectedWrapper.style.transform}</span>
-          </div>
-          <div class="attribute-item">
-            <span class="attribute-label">Transform origin:</span>
-            <span class="attribute-value">${selectedWrapper.style.transformOrigin}</span>
-          </div>
-          <div class="attribute-item">
-            <span class="attribute-label">Global scale:</span>
-            <span class="attribute-value">${globalScale.toFixed(3)}</span>
-          </div>
-          <div class="attribute-item">
-            <span class="attribute-label">Individual scale:</span>
-            <span class="attribute-value">${individualScale.toFixed(3)}</span>
-          </div>
-          <div class="attribute-item">
-            <span class="attribute-label">Effective scale:</span>
-            <span class="attribute-value">${effectiveScale.toFixed(3)} (individual × global)</span>
+            <span class="attribute-label">Scale:</span>
+            <span class="attribute-value">${scale.toFixed(3)}</span>
           </div>
           <div class="attribute-item">
             <span class="attribute-label">Color:</span>
             <span class="attribute-value">${color}</span>
           </div>
           <div class="attribute-item">
-            <span class="attribute-label">Box model:</span>
-            <span class="attribute-value">width: ${selectedWrapper.offsetWidth}px, height: ${selectedWrapper.offsetHeight}px</span>
-          </div>
-          <div class="attribute-item">
-            <span class="attribute-label">Computed styles:</span>
-            <span class="attribute-value">position: ${getComputedStyle(selectedWrapper).position}, display: ${getComputedStyle(selectedWrapper).display}, z-index: ${getComputedStyle(selectedWrapper).zIndex}</span>
+            <span class="attribute-label">SVG size:</span>
+            <span class="attribute-value">width: ${svg.getAttribute('width')}px, height: ${svg.getAttribute('height')}px</span>
           </div>
         `;
       }
@@ -590,28 +497,21 @@
         const wrappers = canvas.querySelectorAll('.svg-wrapper');
         wrappers.forEach((wrapper, index) => {
           if (loadedFiles[index]) {
-            // Save the base positions (not adjusted by global scale)
-            const currentTop = parseFloat(wrapper.style.top) || 0;
-            const currentLeft = parseFloat(wrapper.style.left) || 0;
-            const baseTop = currentTop / globalScale;
-            const baseLeft = currentLeft / globalScale;
-            
-            // Get the individual scale value from the slider, not the combined transform
-            const scaleSlider = wrapper.sliders?.scale;
-            const scale = scaleSlider ? parseFloat(scaleSlider.value) : 1;
+            const svg = wrapper.svg;
+            const minX = parseFloat(wrapper.sliders?.minX?.value ?? svg._baseViewBox.minX);
+            const minY = parseFloat(wrapper.sliders?.minY?.value ?? svg._baseViewBox.minY);
+            const scale = parseFloat(wrapper.sliders?.scale?.value ?? 1);
             const colorInput = document.getElementById(`color-${index}`);
             const color = colorInput ? colorInput.value : loadedFiles[index].color;
-            
             loadedFiles[index] = {
               ...loadedFiles[index],
-              top: baseTop,
-              left: baseLeft,
+              minX,
+              minY,
               scale,
               color
             };
           }
         });
-        
         // Save to localStorage
         const state = {
           globalScale: globalScale,
@@ -631,30 +531,24 @@
       // Update all wrappers with new global scale
       const wrappers = canvas.querySelectorAll('.svg-wrapper');
       wrappers.forEach(wrapper => {
+        const svg = wrapper.svg;
         const scaleSlider = wrapper.sliders?.scale;
         if (scaleSlider) {
           const individualScale = parseFloat(scaleSlider.value);
-          wrapper.style.transform = `scale(${individualScale * globalScale}, ${individualScale * globalScale})`;
-          
-          // Adjust position to compensate for scaling
-          const currentTop = parseFloat(wrapper.style.top) || 0;
-          const currentLeft = parseFloat(wrapper.style.left) || 0;
-          
-          // Calculate the new position that maintains the visual position
-          const newTop = currentTop * scaleRatio;
-          const newLeft = currentLeft * scaleRatio;
-          
-          wrapper.style.top = `${newTop}px`;
-          wrapper.style.left = `${newLeft}px`;
+          const currentMinX = parseFloat(wrapper.sliders?.minX?.value || svg._baseViewBox.minX);
+          const currentMinY = parseFloat(wrapper.sliders?.minY?.value || svg._baseViewBox.minY);
+          const newMinX = currentMinX * scaleRatio;
+          const newMinY = currentMinY * scaleRatio;
+          setViewBox(newMinX, newMinY, individualScale * globalScale);
           
           // Update the slider values to reflect the new positions
-          if (wrapper.sliders.top) {
-            wrapper.sliders.top.value = newTop;
-            wrapper.sliders.top.nextElementSibling.textContent = `${newTop.toFixed(2)}px`;
+          if (wrapper.sliders.minX) {
+            wrapper.sliders.minX.value = newMinX;
+            wrapper.sliders.minX.nextElementSibling.textContent = `${newMinX.toFixed(2)}px`;
           }
-          if (wrapper.sliders.left) {
-            wrapper.sliders.left.value = newLeft;
-            wrapper.sliders.left.nextElementSibling.textContent = `${newLeft.toFixed(2)}px`;
+          if (wrapper.sliders.minY) {
+            wrapper.sliders.minY.value = newMinY;
+            wrapper.sliders.minY.nextElementSibling.textContent = `${newMinY.toFixed(2)}px`;
           }
         }
         

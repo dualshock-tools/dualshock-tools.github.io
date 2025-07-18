@@ -1911,6 +1911,14 @@ function process_ds_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
+// Add this helper function near the other utility functions
+function set_mute_visibility(show) {
+    var muteOutline = document.getElementById('Mute_outline');
+    var muteInfill = document.getElementById('Mute_infill');
+    if (muteOutline) muteOutline.style.display = show ? '' : 'none';
+    if (muteInfill) muteInfill.style.display = show ? '' : 'none';
+}
+
 async function continue_connection(report) {
     try {
         device.oninputreport = null;
@@ -1930,6 +1938,8 @@ async function continue_connection(report) {
         if(device.productId == 0x05c4) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            // Hide mute button for DS4
+            set_mute_visibility(false);
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1939,6 +1949,8 @@ async function continue_connection(report) {
         } else if(device.productId == 0x09cc) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            // Hide mute button for DS4
+            set_mute_visibility(false);
             if(await ds4_info()) {
                 connected = true;
                 mode = 1;
@@ -1948,6 +1960,8 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0ce6) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            // Show mute button for DS5
+            set_mute_visibility(true);
             if(await ds5_info(false)) {
                 connected = true;
                 mode = 2;
@@ -1957,6 +1971,8 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0df2) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            // Show mute button for DS5 Edge
+            set_mute_visibility(true);
             if(await ds5_info(true)) {
                 connected = true;
                 mode = 3;

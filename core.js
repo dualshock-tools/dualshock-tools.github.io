@@ -1697,6 +1697,75 @@ function process_ds4_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
+// Global object to keep track of button states
+var ds_button_states = {
+    // e.g. 'square': false, 'cross': false, ...
+};
+
+// Button mapping for DualSense USB input report (bytes 8-10)
+const DS_BUTTON_MAP = [
+    { name: 'up', byte: 7, mask: 0x0, svg: 'Up' },
+    { name: 'right', byte: 7, mask: 0x1, svg: 'Right' },
+    { name: 'down', byte: 7, mask: 0x2, svg: 'Down' },
+    { name: 'left', byte: 7, mask: 0x3, svg: 'Left' },
+    { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
+    { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
+    { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
+    { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
+    { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
+    { name: 'r1', byte: 8, mask: 0x02, svg: 'R1' },
+    { name: 'l2', byte: 8, mask: 0x04, svg: 'L2' },
+    { name: 'r2', byte: 8, mask: 0x08, svg: 'R2' },
+    { name: 'create', byte: 8, mask: 0x10, svg: 'Share' }, // 'create' is 'Share' in SVG
+    { name: 'options', byte: 8, mask: 0x20, svg: 'Options' },
+    { name: 'l3', byte: 8, mask: 0x40, svg: 'L3' },
+    { name: 'r3', byte: 8, mask: 0x80, svg: 'R3' },
+    { name: 'ps', byte: 9, mask: 0x01, svg: 'PS' },
+    { name: 'touchpad', byte: 9, mask: 0x02, svg: 'Trackpad' },
+    { name: 'mute', byte: 9, mask: 0x04, svg: 'Mute' },
+];
+
+// Track button pressed/unpressed states and detect changes
+function process_ds_buttons(data) {
+    if (!data || !data.data) return;
+    for (let btn of DS_BUTTON_MAP) {
+        let changed = false;
+        let val = (data.data.getUint8(btn.byte) & btn.mask);
+        let pressed;
+        if (btn.name === 'up' || btn.name === 'right' || btn.name === 'down' || btn.name === 'left') {
+            // Dpad is a 4-bit hat value
+            let hat = data.data.getUint8(7) & 0x0F;
+            pressed = (hat === btn.mask);
+        } else {
+            pressed = !!val;
+        }
+        if (ds_button_states[btn.name] !== pressed) {
+            ds_button_states[btn.name] = pressed;
+            changed = true;
+            console.log(ds_button_states, btn);
+        }
+        // Set SVG color for button infill (use correct SVG id)
+        if (changed && btn.svg) {
+            let group = document.getElementById(btn.svg + '_infill');
+            if (group) {
+                // Update all child elements in the group
+                let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+                elements.forEach(el => {
+                    if (pressed) {
+                        el.setAttribute('fill', 'black');
+                        el.setAttribute('stroke', 'black');
+                    } else {
+                        el.setAttribute('fill', 'transparent');
+                        el.setAttribute('stroke', 'transparent');
+                    }
+                });
+            }
+        }
+    }
+    // Optionally, do something if any button state changed
+    // if (changed) { ... }
+}
+
 function process_ds_input(data) {
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
@@ -1717,6 +1786,9 @@ function process_ds_input(data) {
         refresh_sticks();
         refresh_finetune();
     }
+
+    // Track button states
+    process_ds_buttons(data);
 
     var bat = data.data.getUint8(52);
     var bat_charge = bat & 0x0f;

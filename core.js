@@ -1495,6 +1495,34 @@ function refresh_stick_pos() {
         rr_data[pra] = Math.max(old, prd);
     }
 
+    // Move L3 and R3 SVG elements according to stick position
+    try {
+        // These values are tuned for the SVG's coordinate system and visual effect
+        const l3_max_offset = 25; // max px offset for L3
+        const r3_max_offset = 25; // max px offset for R3
+        // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
+        const l3_cx = 295.63, l3_cy = 461.03;
+        // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
+        const r3_cx = 662.06, r3_cy = 419.78;
+        // Calculate new positions
+        const l3_x = l3_cx + plx * l3_max_offset;
+        const l3_y = l3_cy + ply * l3_max_offset;
+        const r3_x = r3_cx + prx * r3_max_offset;
+        const r3_y = r3_cy + pry * r3_max_offset;
+        // Move the L3 group
+        const l3_group = document.querySelector('g#L3');
+        if (l3_group) {
+            l3_group.setAttribute('transform', `translate(${l3_x - l3_cx},${l3_y - l3_cy}) scale(0.70)`);
+        }
+        // Move the R3 group
+        const r3_group = document.querySelector('g#R3');
+        if (r3_group) {
+            r3_group.setAttribute('transform', `translate(${r3_x - r3_cx},${r3_y - r3_cy}) scale(0.70)`);
+        }
+    } catch (e) {
+        // Fail silently if SVG not present
+    }
+
     ctx.fillStyle = '#000000';
     ctx.strokeStyle = '#000000';
     ctx.beginPath();
@@ -1729,9 +1757,9 @@ const DS_BUTTON_MAP = [
 function process_ds_buttons(data) {
     if (!data || !data.data) return;
     for (let btn of DS_BUTTON_MAP) {
+        const val = (data.data.getUint8(btn.byte) & btn.mask);
+        let pressed = false;
         let changed = false;
-        let val = (data.data.getUint8(btn.byte) & btn.mask);
-        let pressed;
         if (btn.name === 'up' || btn.name === 'right' || btn.name === 'down' || btn.name === 'left') {
             // Dpad is a 4-bit hat value
             let hat = data.data.getUint8(7) & 0x0F;
@@ -1742,11 +1770,10 @@ function process_ds_buttons(data) {
         if (ds_button_states[btn.name] !== pressed) {
             ds_button_states[btn.name] = pressed;
             changed = true;
-            console.log(ds_button_states, btn);
         }
         // Set SVG color for button infill (use correct SVG id)
         if (changed && btn.svg) {
-            let group = document.getElementById(btn.svg + '_infill');
+            const group = document.getElementById(btn.svg + '_infill');
             if (group) {
                 // Update all child elements in the group
                 let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
@@ -1755,15 +1782,13 @@ function process_ds_buttons(data) {
                         el.setAttribute('fill', 'black');
                         el.setAttribute('stroke', 'black');
                     } else {
-                        el.setAttribute('fill', 'transparent');
-                        el.setAttribute('stroke', 'transparent');
+                        el.setAttribute('fill', 'white');
+                        el.setAttribute('stroke', 'white');
                     }
                 });
             }
         }
     }
-    // Optionally, do something if any button state changed
-    // if (changed) { ... }
 }
 
 function process_ds_input(data) {

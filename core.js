@@ -1763,31 +1763,22 @@ function process_ds_buttons(data) {
         return `rgb(${gray},${gray},${gray})`;
     }
 
-    const l2_analog = data.data.getUint8(4); // 0 (unpressed) to 255 (fully pressed)
-    if(l2_analog != ds_button_states['l2']) {
-        // Update L2 infill
-        const l2_infill = document.getElementById('L2_infill');
-        if (l2_infill) {
-            let elements = l2_infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-            elements.forEach(el => {
-                el.setAttribute('fill', analogToGray(l2_analog));
-                el.setAttribute('stroke', analogToGray(l2_analog));
-            });
+    [
+        ['l2', 'L2_infill', data.data.getUint8(4)],
+        ['r2', 'R2_infill', data.data.getUint8(5)]
+    ].forEach(([name, svg, val]) => {
+        if(val != ds_button_states[name]) {
+            const infill = document.getElementById(svg);
+            if (infill) {
+                let elements = infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+                elements.forEach(el => {
+                    el.setAttribute('fill', analogToGray(val));
+                    el.setAttribute('stroke', analogToGray(val));
+                });
+            }
         }
-    }
 
-    const r2_analog = data.data.getUint8(5);
-    if(r2_analog != ds_button_states['r2']) {
-        // Update R2 infill
-        const r2_infill = document.getElementById('R2_infill');
-        if (r2_infill) {
-            let elements = r2_infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-            elements.forEach(el => {
-                el.setAttribute('fill', analogToGray(r2_analog));
-                el.setAttribute('stroke', analogToGray(r2_analog));
-            });
-        }
-    }
+    });
 
     for (let btn of DS_BUTTON_MAP) {
         let pressed;

@@ -1790,13 +1790,24 @@ function process_ds_buttons(data) {
     }
 
     for (let btn of DS_BUTTON_MAP) {
-        const val = (data.data.getUint8(btn.byte) & btn.mask);
-        let pressed = val;
+        let pressed;
         let changed = false;
         if (['up', 'down', 'right', 'left'].includes(btn.name)) {
             // Dpad is a 4-bit hat value
             const hat = data.data.getUint8(7) & 0x0F;
-            pressed = (hat === btn.mask);
+            // Map hat values to directions
+            // 0: Up, 1: Up-Right, 2: Right, 3: Down-Right, 4: Down, 5: Down-Left, 6: Left, 7: Up-Left, 8: Center (not pressed)
+            if (btn.name === 'up') {
+                pressed = (hat === 0 || hat === 1 || hat === 7);
+            } else if (btn.name === 'right') {
+                pressed = (hat === 1 || hat === 2 || hat === 3);
+            } else if (btn.name === 'down') {
+                pressed = (hat === 3 || hat === 4 || hat === 5);
+            } else if (btn.name === 'left') {
+                pressed = (hat === 5 || hat === 6 || hat === 7);
+            }
+        } else {
+            pressed = (data.data.getUint8(btn.byte) & btn.mask);
         }
         if (ds_button_states[btn.name] !== pressed) {
             ds_button_states[btn.name] = pressed;

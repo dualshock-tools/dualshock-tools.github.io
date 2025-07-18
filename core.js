@@ -1128,28 +1128,32 @@ function welcome_accepted() {
     $("#welcomeModal").modal("hide");
 }
 
+function init_svg_colors() {
+    const lightBlue = '#7ecbff';
+    const midBlue = '#3399cc';
+    const controller = document.getElementById('Controller');
+    set_svg_group_color(controller, lightBlue);
+
+    ['Button_outlines', 'L3_outline', 'R3_outline'].forEach(id => {
+        const group = document.getElementById(id);
+        set_svg_group_color(group, midBlue);
+    });
+
+    ['Button_infills', 'L3_infill', 'R3_infill'].forEach(id => {
+        const group = document.getElementById(id);
+        set_svg_group_color(group, 'white');
+    });
+}
+
 function gboot() {
     gu = crypto.randomUUID();
     $("#infoshowall").hide();
     window.addEventListener('DOMContentLoaded', function() {
         lang_init();
+        init_svg_colors();
         welcome_modal();
         $("#checkCircularity").on('change', on_circ_check_change);
         on_circ_check_change();
-
-        // Set controller SVG color to light blue on startup
-        const lightBlue = '#7ecbff';
-        const midBlue = '#3399cc'; // a mid blue for outlines
-
-        // Set main controller group color
-        const controller = document.getElementById('Controller');
-        set_svg_group_color(controller, lightBlue);
-
-        // Set button outlines color
-        ['Button_outlines', 'L3', 'R3'].forEach(id => {
-            const group = document.getElementById(id);
-            set_svg_group_color(group, midBlue);
-        });
     });
 
     if (!("hid" in navigator)) {

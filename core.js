@@ -22,6 +22,10 @@ var last_written_finetune_data = []
 var finetune_visible = false
 var on_finetune_updating = false
 
+// Global object to keep track of button states
+const ds_button_states = {
+    // e.g. 'square': false, 'cross': false, ...
+};
 
 // Alphabetical order
 var available_langs = {
@@ -1667,6 +1671,122 @@ function update_battery_status(bat_capacity, cable_connected, is_charging, is_er
     }
 }
 
+// DS4 button mapping (see: https://www.psdevwiki.com/ps4/DS4-USB)
+const DS4_BUTTON_MAP = [
+    { name: 'up', byte: 4, mask: 0x0, svg: 'Up' }, // Dpad handled separately
+    { name: 'right', byte: 4, mask: 0x1, svg: 'Right' },
+    { name: 'down', byte: 4, mask: 0x2, svg: 'Down' },
+    { name: 'left', byte: 4, mask: 0x3, svg: 'Left' },
+    { name: 'square', byte: 4, mask: 0x10, svg: 'Square' },
+    { name: 'cross', byte: 4, mask: 0x20, svg: 'Cross' },
+    { name: 'circle', byte: 4, mask: 0x40, svg: 'Circle' },
+    { name: 'triangle', byte: 4, mask: 0x80, svg: 'Triangle' },
+    { name: 'l1', byte: 5, mask: 0x01, svg: 'L1' },
+    { name: 'l2', byte: 5, mask: 0x04, svg: 'L2' }, // analog handled separately
+    { name: 'r1', byte: 5, mask: 0x02, svg: 'R1' },
+    { name: 'r2', byte: 5, mask: 0x08, svg: 'R2' }, // analog handled separately
+    { name: 'share', byte: 5, mask: 0x10, svg: 'Create' },
+    { name: 'options', byte: 5, mask: 0x20, svg: 'Options' },
+    { name: 'l3', byte: 5, mask: 0x40, svg: 'L3' },
+    { name: 'r3', byte: 5, mask: 0x80, svg: 'R3' },
+    { name: 'ps', byte: 6, mask: 0x01, svg: 'PS' },
+    { name: 'touchpad', byte: 6, mask: 0x02, svg: 'Trackpad' },
+    // No mute button on DS4
+];
+
+// DS5 (DualSense) button mapping (USB input report bytes 7-9)
+const DS5_BUTTON_MAP = [
+    { name: 'up', byte: 7, mask: 0x0, svg: 'Up' }, // Dpad handled separately
+    { name: 'right', byte: 7, mask: 0x1, svg: 'Right' },
+    { name: 'down', byte: 7, mask: 0x2, svg: 'Down' },
+    { name: 'left', byte: 7, mask: 0x3, svg: 'Left' },
+    { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
+    { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
+    { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
+    { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
+    { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
+    { name: 'l2', byte: 4, mask: 0xff }, // analog handled separately
+    { name: 'r1', byte: 8, mask: 0x02, svg: 'R1' },
+    { name: 'r2', byte: 5, mask: 0xff }, // analog handled separately
+    { name: 'create', byte: 8, mask: 0x10, svg: 'Create' },
+    { name: 'options', byte: 8, mask: 0x20, svg: 'Options' },
+    { name: 'l3', byte: 8, mask: 0x40, svg: 'L3' },
+    { name: 'r3', byte: 8, mask: 0x80, svg: 'R3' },
+    { name: 'ps', byte: 9, mask: 0x01, svg: 'PS' },
+    { name: 'touchpad', byte: 9, mask: 0x02, svg: 'Trackpad' },
+    { name: 'mute', byte: 9, mask: 0x04, svg: 'Mute' },
+];
+
+// Generic button processing for DS4/DS5
+function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
+    if (!data || !data.data) return;
+
+    // L2/R2 analog infill
+    [
+        ['l2', 'L2_infill', data.data.getUint8(l2_analog_byte)],
+        ['r2', 'R2_infill', data.data.getUint8(r2_analog_byte)]
+    ].forEach(([name, svg, val]) => {
+        console.log('analog', name, 'byte', name === 'l2' ? l2_analog_byte : r2_analog_byte, 'value', val);
+        if(val != ds_button_states[name + '_analog']) {
+            ds_button_states[name + '_analog'] = val;
+            const infill = document.getElementById(svg);
+            if (infill) {
+                let elements = infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+                const gray = 255 - val;
+                elements.forEach(el => {
+                    el.setAttribute('fill', `rgb(${gray},${gray},${gray})`);
+                    el.setAttribute('stroke', `rgb(${gray},${gray},${gray})`);
+                });
+            }
+        }
+    });
+
+    // Dpad is a 4-bit hat value
+    const hat = data.data.getUint8(dpad_byte) & 0x0F;
+    const dpad_map = {
+        up:    (hat === 0 || hat === 1 || hat === 7),
+        right: (hat === 1 || hat === 2 || hat === 3),
+        down:  (hat === 3 || hat === 4 || hat === 5),
+        left:  (hat === 5 || hat === 6 || hat === 7)
+    };
+    for (let dir of ['up', 'right', 'down', 'left']) {
+        let pressed = dpad_map[dir];
+        if (ds_button_states[dir] !== pressed) {
+            ds_button_states[dir] = pressed;
+            // Update SVG if present
+            const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
+            if (group) {
+                let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+                elements.forEach(el => {
+                    const color = pressed ? 'black' : 'white';
+                    el.setAttribute('fill', color);
+                    el.setAttribute('stroke', color);
+                });
+            }
+        }
+    }
+
+    // Other buttons
+    for (let btn of BUTTON_MAP) {
+        if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
+        const pressed = (data.data.getUint8(btn.byte) & btn.mask) !== 0;
+        if (ds_button_states[btn.name] !== pressed) {
+            ds_button_states[btn.name] = pressed;
+            if (btn.svg) {
+                const group = document.getElementById(btn.svg + '_infill');
+                if (group) {
+                    let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+                    elements.forEach(el => {
+                        const color = pressed ? 'black' : 'white';
+                        el.setAttribute('fill', color);
+                        el.setAttribute('stroke', color);
+                    });
+                }
+            }
+        }
+    }
+}
+
 function process_ds4_input(data) {
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
@@ -1686,6 +1806,9 @@ function process_ds4_input(data) {
         ll_updated = true;
         refresh_sticks();
     }
+
+    // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
+    process_ds_buttons(data, DS4_BUTTON_MAP, 4, 7, 8);
 
     // Read battery
     var bat = data.data.getUint8(29);
@@ -1725,101 +1848,6 @@ function process_ds4_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
-// Global object to keep track of button states
-var ds_button_states = {
-    // e.g. 'square': false, 'cross': false, ...
-};
-
-// Button mapping for DualSense USB input report (bytes 8-10)
-const DS_BUTTON_MAP = [
-    { name: 'up', byte: 7, mask: 0x0, svg: 'Up' },
-    { name: 'right', byte: 7, mask: 0x1, svg: 'Right' },
-    { name: 'down', byte: 7, mask: 0x2, svg: 'Down' },
-    { name: 'left', byte: 7, mask: 0x3, svg: 'Left' },
-    { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
-    { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
-    { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
-    { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
-    { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
-    { name: 'l2', byte: 4, mask: 0xff },
-    { name: 'r1', byte: 8, mask: 0x02, svg: 'R1' },
-    { name: 'r2', byte: 5, mask: 0xff },
-    { name: 'create', byte: 8, mask: 0x10, svg: 'Create' },
-    { name: 'options', byte: 8, mask: 0x20, svg: 'Options' },
-    { name: 'l3', byte: 8, mask: 0x40, svg: 'L3' },
-    { name: 'r3', byte: 8, mask: 0x80, svg: 'R3' },
-    { name: 'ps', byte: 9, mask: 0x01, svg: 'PS' },
-    { name: 'touchpad', byte: 9, mask: 0x02, svg: 'Trackpad' },
-    { name: 'mute', byte: 9, mask: 0x04, svg: 'Mute' },
-];
-
-// Track button pressed/unpressed states and detect changes
-function process_ds_buttons(data) {
-    if (!data || !data.data) return;
-
-    // Fade L2 and R2 infill based on analog value
-    function analogToGray(val) {
-        const gray = 255 - val;
-        return `rgb(${gray},${gray},${gray})`;
-    }
-
-    [
-        ['l2', 'L2_infill', data.data.getUint8(4)],
-        ['r2', 'R2_infill', data.data.getUint8(5)]
-    ].forEach(([name, svg, val]) => {
-        if(val != ds_button_states[name]) {
-            const infill = document.getElementById(svg);
-            if (infill) {
-                let elements = infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-                elements.forEach(el => {
-                    el.setAttribute('fill', analogToGray(val));
-                    el.setAttribute('stroke', analogToGray(val));
-                });
-            }
-        }
-
-    });
-
-    for (let btn of DS_BUTTON_MAP) {
-        let pressed;
-        let changed = false;
-        if (['up', 'down', 'right', 'left'].includes(btn.name)) {
-            // Dpad is a 4-bit hat value
-            const hat = data.data.getUint8(7) & 0x0F;
-            // Map hat values to directions
-            // 0: Up, 1: Up-Right, 2: Right, 3: Down-Right, 4: Down, 5: Down-Left, 6: Left, 7: Up-Left, 8: Center (not pressed)
-            if (btn.name === 'up') {
-                pressed = (hat === 0 || hat === 1 || hat === 7);
-            } else if (btn.name === 'right') {
-                pressed = (hat === 1 || hat === 2 || hat === 3);
-            } else if (btn.name === 'down') {
-                pressed = (hat === 3 || hat === 4 || hat === 5);
-            } else if (btn.name === 'left') {
-                pressed = (hat === 5 || hat === 6 || hat === 7);
-            }
-        } else {
-            pressed = (data.data.getUint8(btn.byte) & btn.mask);
-        }
-        if (ds_button_states[btn.name] !== pressed) {
-            ds_button_states[btn.name] = pressed;
-            changed = true;
-        }
-
-        if (changed && btn.svg) {
-            const group = document.getElementById(btn.svg + '_infill');
-            if (group) {
-                // Update all child elements in the group
-                let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-                elements.forEach(el => {
-                    const color = pressed ? 'black' : 'white';
-                    el.setAttribute('fill', color);
-                    el.setAttribute('stroke', color);
-                });
-            }
-        }
-    }
-}
-
 function process_ds_input(data) {
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
@@ -1841,8 +1869,8 @@ function process_ds_input(data) {
         refresh_finetune();
     }
 
-    // Track button states
-    process_ds_buttons(data);
+    // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
+    process_ds_buttons(data, DS5_BUTTON_MAP, 7, 4, 5);
 
     var bat = data.data.getUint8(52);
     var bat_charge = bat & 0x0f;

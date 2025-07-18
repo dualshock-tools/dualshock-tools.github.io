@@ -1136,6 +1136,20 @@ function gboot() {
         welcome_modal();
         $("#checkCircularity").on('change', on_circ_check_change);
         on_circ_check_change();
+
+        // Set controller SVG color to light blue on startup
+        const lightBlue = '#7ecbff';
+        const midBlue = '#3399cc'; // a mid blue for outlines
+
+        // Set main controller group color
+        const controller = document.getElementById('Controller');
+        set_svg_group_color(controller, lightBlue);
+
+        // Set button outlines color
+        ['Button_outlines', 'L3', 'R3'].forEach(id => {
+            const group = document.getElementById(id);
+            set_svg_group_color(group, midBlue);
+        });
     });
 
     if (!("hid" in navigator)) {
@@ -1721,23 +1735,19 @@ const DS5_BUTTON_MAP = [
 function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
     if (!data || !data.data) return;
 
+    const pressedColor = '#1a237e'; // pleasing dark blue
     // L2/R2 analog infill
     [
         ['l2', 'L2_infill', data.data.getUint8(l2_analog_byte)],
         ['r2', 'R2_infill', data.data.getUint8(r2_analog_byte)]
     ].forEach(([name, svg, val]) => {
-        console.log('analog', name, 'byte', name === 'l2' ? l2_analog_byte : r2_analog_byte, 'value', val);
+        // Fade between white and pressedColor based on analog value
+        const t = val / 255;
+        const color = lerp_color('#ffffff', pressedColor, t);
         if(val != ds_button_states[name + '_analog']) {
             ds_button_states[name + '_analog'] = val;
             const infill = document.getElementById(svg);
-            if (infill) {
-                let elements = infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-                const gray = 255 - val;
-                elements.forEach(el => {
-                    el.setAttribute('fill', `rgb(${gray},${gray},${gray})`);
-                    el.setAttribute('stroke', `rgb(${gray},${gray},${gray})`);
-                });
-            }
+            set_svg_group_color(infill, color);
         }
     });
 
@@ -1755,14 +1765,7 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
             ds_button_states[dir] = pressed;
             // Update SVG if present
             const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
-            if (group) {
-                let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-                elements.forEach(el => {
-                    const color = pressed ? 'black' : 'white';
-                    el.setAttribute('fill', color);
-                    el.setAttribute('stroke', color);
-                });
-            }
+            set_svg_group_color(group, pressed ? pressedColor : 'white');
         }
     }
 
@@ -1774,16 +1777,23 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
             ds_button_states[btn.name] = pressed;
             if (btn.svg) {
                 const group = document.getElementById(btn.svg + '_infill');
-                if (group) {
-                    let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
-                    elements.forEach(el => {
-                        const color = pressed ? 'black' : 'white';
-                        el.setAttribute('fill', color);
-                        el.setAttribute('stroke', color);
-                    });
-                }
+                set_svg_group_color(group, pressed ? pressedColor : 'white');
             }
         }
+    }
+}
+
+function set_svg_group_color(group, color) {
+    if (group) {
+        let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+        elements.forEach(el => {
+            // Set up a smooth transition for fill and stroke if not already set
+            if (!el.style.transition) {
+                el.style.transition = 'fill 0.10s, stroke 0.10s';
+            }
+            el.setAttribute('fill', color);
+            el.setAttribute('stroke', color);
+        });
     }
 }
 
@@ -2505,4 +2515,25 @@ function lang_translate(target_file, target_lang, target_direction) {
         $("#curLang").html(available_langs[target_lang]["name"]);
     });
 
+}
+
+function lerp_color(a, b, t) {
+    // a, b: hex color strings, t: 0.0-1.0
+    function hex2rgb(hex) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+        const num = parseInt(hex, 16);
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+    function rgb2hex(r, g, b) {
+        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+    const c1 = hex2rgb(a);
+    const c2 = hex2rgb(b);
+    const c = [
+        Math.round(c1[0] + (c2[0] - c1[0]) * t),
+        Math.round(c1[1] + (c2[1] - c1[1]) * t),
+        Math.round(c1[2] + (c2[2] - c1[2]) * t)
+    ];
+    return rgb2hex(c[0], c[1], c[2]);
 }

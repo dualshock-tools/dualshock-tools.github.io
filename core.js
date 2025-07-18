@@ -1741,10 +1741,10 @@ const DS_BUTTON_MAP = [
     { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
     { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
     { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
+    { name: 'l2', byte: 4, mask: 0xff },
     { name: 'r1', byte: 8, mask: 0x02, svg: 'R1' },
-    { name: 'l2', byte: 8, mask: 0x04, svg: 'L2' },
-    { name: 'r2', byte: 8, mask: 0x08, svg: 'R2' },
-    { name: 'create', byte: 8, mask: 0x10, svg: 'Share' }, // 'create' is 'Share' in SVG
+    { name: 'r2', byte: 5, mask: 0xff },
+    { name: 'create', byte: 8, mask: 0x10, svg: 'Create' },
     { name: 'options', byte: 8, mask: 0x20, svg: 'Options' },
     { name: 'l3', byte: 8, mask: 0x40, svg: 'L3' },
     { name: 'r3', byte: 8, mask: 0x80, svg: 'R3' },
@@ -1756,35 +1756,62 @@ const DS_BUTTON_MAP = [
 // Track button pressed/unpressed states and detect changes
 function process_ds_buttons(data) {
     if (!data || !data.data) return;
+
+    // Fade L2 and R2 infill based on analog value
+    function analogToGray(val) {
+        const gray = 255 - val;
+        return `rgb(${gray},${gray},${gray})`;
+    }
+
+    const l2_analog = data.data.getUint8(4); // 0 (unpressed) to 255 (fully pressed)
+    if(l2_analog != ds_button_states['l2']) {
+        // Update L2 infill
+        const l2_infill = document.getElementById('L2_infill');
+        if (l2_infill) {
+            let elements = l2_infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+            elements.forEach(el => {
+                el.setAttribute('fill', analogToGray(l2_analog));
+                el.setAttribute('stroke', analogToGray(l2_analog));
+            });
+        }
+    }
+
+    const r2_analog = data.data.getUint8(5);
+    if(r2_analog != ds_button_states['r2']) {
+        // Update R2 infill
+        const r2_infill = document.getElementById('R2_infill');
+        if (r2_infill) {
+            let elements = r2_infill.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+            elements.forEach(el => {
+                el.setAttribute('fill', analogToGray(r2_analog));
+                el.setAttribute('stroke', analogToGray(r2_analog));
+            });
+        }
+    }
+
     for (let btn of DS_BUTTON_MAP) {
         const val = (data.data.getUint8(btn.byte) & btn.mask);
-        let pressed = false;
+        let pressed = val;
         let changed = false;
-        if (btn.name === 'up' || btn.name === 'right' || btn.name === 'down' || btn.name === 'left') {
+        if (['up', 'down', 'right', 'left'].includes(btn.name)) {
             // Dpad is a 4-bit hat value
-            let hat = data.data.getUint8(7) & 0x0F;
+            const hat = data.data.getUint8(7) & 0x0F;
             pressed = (hat === btn.mask);
-        } else {
-            pressed = !!val;
         }
         if (ds_button_states[btn.name] !== pressed) {
             ds_button_states[btn.name] = pressed;
             changed = true;
         }
-        // Set SVG color for button infill (use correct SVG id)
+
         if (changed && btn.svg) {
             const group = document.getElementById(btn.svg + '_infill');
             if (group) {
                 // Update all child elements in the group
                 let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
                 elements.forEach(el => {
-                    if (pressed) {
-                        el.setAttribute('fill', 'black');
-                        el.setAttribute('stroke', 'black');
-                    } else {
-                        el.setAttribute('fill', 'white');
-                        el.setAttribute('stroke', 'white');
-                    }
+                    const color = pressed ? 'black' : 'white';
+                    el.setAttribute('fill', color);
+                    el.setAttribute('stroke', color);
                 });
             }
         }

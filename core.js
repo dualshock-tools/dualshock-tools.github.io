@@ -1823,31 +1823,35 @@ function parse_touch_points(data, offset) {
     return points;
 }
 
+let hasActiveTouchPoints = false;
+let trackpadBbox = undefined;
+
 function update_touchpad_circles(points) {
+    const hasActivePointsNow = points.some(pt => pt.active);
+    if(!hasActivePointsNow && !hasActiveTouchPoints) return;
+
     // Find the Trackpad_infill group in the SVG
     const svg = document.getElementById('controller-svg');
-    const trackpad = svg && svg.querySelector('g#Trackpad_infill');
+    const trackpad = svg?.querySelector('g#Trackpad_infill');
     if (!trackpad) return;
-    // Remove old circles
-    Array.from(trackpad.querySelectorAll('circle.ds-touch')).forEach(c => c.remove());
-    // Get bounding box for Trackpad_infill
-    const path = trackpad.querySelector('path');
-    if (!path) return;
 
-    const bbox = path.getBBox();
-    // DS4/DS5 touchpad is 1920x943 units (raw values)
-    const RAW_W = 1920, RAW_H = 943;
+    trackpad.querySelectorAll('circle.ds-touch').forEach(c => c.remove());
+    hasActiveTouchPoints = hasActivePointsNow;
+    trackpadBbox = trackpadBbox ?? trackpad.querySelector('path')?.getBBox();
+
     // Draw up to 2 circles
     points.forEach((pt, idx) => {
         if (!pt.active) return;
         // Map raw x/y to SVG
-        const cx = bbox.x + (pt.x / RAW_W) * bbox.width;
-        const cy = bbox.y + (pt.y / RAW_H) * bbox.height;
+        // DS4/DS5 touchpad is 1920x943 units (raw values)
+        const RAW_W = 1920, RAW_H = 943;
+        const cx = trackpadBbox.x + (pt.x / RAW_W) * trackpadBbox.width;
+        const cy = trackpadBbox.y + (pt.y / RAW_H) * trackpadBbox.height;
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('class', 'ds-touch');
         circle.setAttribute('cx', cx);
         circle.setAttribute('cy', cy);
-        circle.setAttribute('r', Math.max(8, bbox.width * 0.04));
+        circle.setAttribute('r', trackpadBbox.width * 0.05);
         circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
         circle.setAttribute('fill-opacity', '0.5');
         circle.setAttribute('stroke', '#666');

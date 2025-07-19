@@ -1134,12 +1134,12 @@ function init_svg_colors() {
     const controller = document.getElementById('Controller');
     set_svg_group_color(controller, lightBlue);
 
-    ['Button_outlines', 'L3_outline', 'R3_outline'].forEach(id => {
+    ['Button_outlines', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
         const group = document.getElementById(id);
         set_svg_group_color(group, midBlue);
     });
 
-    ['Button_infills', 'L3_infill', 'R3_infill'].forEach(id => {
+    ['Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
         const group = document.getElementById(id);
         set_svg_group_color(group, 'white');
     });
@@ -1853,9 +1853,9 @@ function update_touchpad_circles(points) {
         circle.setAttribute('cy', cy);
         circle.setAttribute('r', trackpadBbox.width * 0.05);
         circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
-        circle.setAttribute('fill-opacity', '0.5');
-        circle.setAttribute('stroke', '#666');
-        circle.setAttribute('stroke-width', '3');
+        circle.setAttribute('fill-opacity', '1');
+        circle.setAttribute('stroke', '#3399cc');
+        circle.setAttribute('stroke-width', '4');
         trackpad.appendChild(circle);
     });
 }

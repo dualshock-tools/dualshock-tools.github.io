@@ -1801,6 +1801,61 @@ function set_svg_group_color(group, color) {
     }
 }
 
+// --- Touchpad overlay helpers ---
+function parse_touch_points(data, offset) {
+    // Returns array of up to 2 points: {active, id, x, y}
+    const points = [];
+    for (let i = 0; i < 2; i++) {
+        const base = offset + i * 4;
+        let arr = [];
+        for (let j = 0; j < 4; j++) arr.push(data.getUint8(base + j));
+        const b0 = data.getUint8(base);
+        const active = (b0 & 0x80) === 0; // 0 = finger down, 1 = up
+        const id = b0 & 0x7F;
+        const b1 = data.getUint8(base + 1);
+        const b2 = data.getUint8(base + 2);
+        const b3 = data.getUint8(base + 3);
+        // x: 12 bits, y: 12 bits
+        const x = ((b2 & 0x0F) << 8) | b1;
+        const y = (b3 << 4) | (b2 >> 4);
+        points.push({ active, id, x, y });
+    }
+    return points;
+}
+
+function update_touchpad_circles(points) {
+    // Find the Trackpad_infill group in the SVG
+    const svg = document.getElementById('controller-svg');
+    const trackpad = svg && svg.querySelector('g#Trackpad_infill');
+    if (!trackpad) return;
+    // Remove old circles
+    Array.from(trackpad.querySelectorAll('circle.ds-touch')).forEach(c => c.remove());
+    // Get bounding box for Trackpad_infill
+    const path = trackpad.querySelector('path');
+    if (!path) return;
+
+    const bbox = path.getBBox();
+    // DS4/DS5 touchpad is 1920x943 units (raw values)
+    const RAW_W = 1920, RAW_H = 943;
+    // Draw up to 2 circles
+    points.forEach((pt, idx) => {
+        if (!pt.active) return;
+        // Map raw x/y to SVG
+        const cx = bbox.x + (pt.x / RAW_W) * bbox.width;
+        const cy = bbox.y + (pt.y / RAW_H) * bbox.height;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('class', 'ds-touch');
+        circle.setAttribute('cx', cx);
+        circle.setAttribute('cy', cy);
+        circle.setAttribute('r', Math.max(8, bbox.width * 0.04));
+        circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
+        circle.setAttribute('fill-opacity', '0.5');
+        circle.setAttribute('stroke', '#666');
+        circle.setAttribute('stroke-width', '3');
+        trackpad.appendChild(circle);
+    });
+}
+
 function process_ds4_input(data) {
     var lx = data.data.getUint8(0);
     var ly = data.data.getUint8(1);
@@ -1823,6 +1878,9 @@ function process_ds4_input(data) {
 
     // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
     process_ds_buttons(data, DS4_BUTTON_MAP, 4, 7, 8);
+
+    const points = parse_touch_points(data.data, 34);
+    update_touchpad_circles(points);
 
     // Read battery
     var bat = data.data.getUint8(29);
@@ -1885,6 +1943,9 @@ function process_ds_input(data) {
 
     // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
     process_ds_buttons(data, DS5_BUTTON_MAP, 7, 4, 5);
+
+    const points = parse_touch_points(data.data, 32);
+    update_touchpad_circles(points);
 
     var bat = data.data.getUint8(52);
     var bat_charge = bat & 0x0f;

@@ -1853,7 +1853,7 @@ function update_touchpad_circles(points) {
         circle.setAttribute('cy', cy);
         circle.setAttribute('r', trackpadBbox.width * 0.05);
         circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
-        circle.setAttribute('fill-opacity', '1');
+        circle.setAttribute('fill-opacity', '0.5');
         circle.setAttribute('stroke', '#3399cc');
         circle.setAttribute('stroke-width', '4');
         trackpad.appendChild(circle);

@@ -1531,34 +1531,6 @@ function refresh_stick_pos() {
         rr_data[pra] = Math.max(old, prd);
     }
 
-    // Move L3 and R3 SVG elements according to stick position
-    try {
-        // These values are tuned for the SVG's coordinate system and visual effect
-        const l3_max_offset = 25; // max px offset for L3
-        const r3_max_offset = 25; // max px offset for R3
-        // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
-        const l3_cx = 295.63, l3_cy = 461.03;
-        // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
-        const r3_cx = 662.06, r3_cy = 419.78;
-        // Calculate new positions
-        const l3_x = l3_cx + plx * l3_max_offset;
-        const l3_y = l3_cy + ply * l3_max_offset;
-        const r3_x = r3_cx + prx * r3_max_offset;
-        const r3_y = r3_cy + pry * r3_max_offset;
-        // Move the L3 group
-        const l3_group = document.querySelector('g#L3');
-        if (l3_group) {
-            l3_group.setAttribute('transform', `translate(${l3_x - l3_cx},${l3_y - l3_cy}) scale(0.70)`);
-        }
-        // Move the R3 group
-        const r3_group = document.querySelector('g#R3');
-        if (r3_group) {
-            r3_group.setAttribute('transform', `translate(${r3_x - r3_cx},${r3_y - r3_cy}) scale(0.70)`);
-        }
-    } catch (e) {
-        // Fail silently if SVG not present
-    }
-
     ctx.fillStyle = '#000000';
     ctx.strokeStyle = '#000000';
     ctx.beginPath();
@@ -1608,6 +1580,28 @@ function refresh_stick_pos() {
         er = ofr.toFixed(2) + "%";
         $("#el-lbl").text(el);
         $("#er-lbl").text(er);
+    }
+
+    // Move L3 and R3 SVG elements according to stick position
+    try {
+        // These values are tuned for the SVG's coordinate system and visual effect
+        const max_stick_offset = 25;
+        // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
+        const l3_cx = 295.63, l3_cy = 461.03;
+        // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
+        const r3_cx = 662.06, r3_cy = 419.78;
+
+        const l3_x = l3_cx + plx * max_stick_offset;
+        const l3_y = l3_cy + ply * max_stick_offset;
+        const l3_group = document.querySelector('g#L3');
+        l3_group?.setAttribute('transform', `translate(${l3_x - l3_cx},${l3_y - l3_cy}) scale(0.70)`);
+
+        const r3_x = r3_cx + prx * max_stick_offset;
+        const r3_y = r3_cy + pry * max_stick_offset;
+        const r3_group = document.querySelector('g#R3');
+        r3_group?.setAttribute('transform', `translate(${r3_x - r3_cx},${r3_y - r3_cy}) scale(0.70)`);
+    } catch (e) {
+        // Fail silently if SVG not present
     }
 }
 
@@ -1703,12 +1697,11 @@ function update_battery_status(bat_capacity, cable_connected, is_charging, is_er
     }
 }
 
-// DS4 button mapping (see: https://www.psdevwiki.com/ps4/DS4-USB)
 const DS4_BUTTON_MAP = [
-    { name: 'up', byte: 4, mask: 0x0, svg: 'Up' }, // Dpad handled separately
-    { name: 'right', byte: 4, mask: 0x1, svg: 'Right' },
-    { name: 'down', byte: 4, mask: 0x2, svg: 'Down' },
-    { name: 'left', byte: 4, mask: 0x3, svg: 'Left' },
+    { name: 'up', byte: 4, mask: 0x0 }, // Dpad handled separately
+    { name: 'right', byte: 4, mask: 0x1 },
+    { name: 'down', byte: 4, mask: 0x2 },
+    { name: 'left', byte: 4, mask: 0x3 },
     { name: 'square', byte: 4, mask: 0x10, svg: 'Square' },
     { name: 'cross', byte: 4, mask: 0x20, svg: 'Cross' },
     { name: 'circle', byte: 4, mask: 0x40, svg: 'Circle' },
@@ -1726,12 +1719,11 @@ const DS4_BUTTON_MAP = [
     // No mute button on DS4
 ];
 
-// DS5 (DualSense) button mapping (USB input report bytes 7-9)
 const DS5_BUTTON_MAP = [
-    { name: 'up', byte: 7, mask: 0x0, svg: 'Up' }, // Dpad handled separately
-    { name: 'right', byte: 7, mask: 0x1, svg: 'Right' },
-    { name: 'down', byte: 7, mask: 0x2, svg: 'Down' },
-    { name: 'left', byte: 7, mask: 0x3, svg: 'Left' },
+    { name: 'up', byte: 7, mask: 0x0 }, // Dpad handled separately
+    { name: 'right', byte: 7, mask: 0x1 },
+    { name: 'down', byte: 7, mask: 0x2 },
+    { name: 'left', byte: 7, mask: 0x3 },
     { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
     { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
     { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
@@ -1761,7 +1753,7 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
     ].forEach(([name, svg, val]) => {
         // Fade between white and pressedColor based on analog value
         const t = val / 255;
-        const color = lerp_color('#ffffff', pressedColor, t);
+        const color = lerp_color('white', pressedColor, t);
         if(val != ds_button_states[name + '_analog']) {
             ds_button_states[name + '_analog'] = val;
             const infill = document.getElementById(svg);
@@ -1778,7 +1770,7 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
         left:  (hat === 5 || hat === 6 || hat === 7)
     };
     for (let dir of ['up', 'right', 'down', 'left']) {
-        let pressed = dpad_map[dir];
+        const pressed = dpad_map[dir];
         if (ds_button_states[dir] !== pressed) {
             ds_button_states[dir] = pressed;
             // Update SVG if present
@@ -1821,7 +1813,7 @@ function parse_touch_points(data, offset) {
     const points = [];
     for (let i = 0; i < 2; i++) {
         const base = offset + i * 4;
-        let arr = [];
+        const arr = [];
         for (let j = 0; j < 4; j++) arr.push(data.getUint8(base + j));
         const b0 = data.getUint8(base);
         const active = (b0 & 0x80) === 0; // 0 = finger down, 1 = up
@@ -1849,6 +1841,7 @@ function update_touchpad_circles(points) {
     const trackpad = svg?.querySelector('g#Trackpad_infill');
     if (!trackpad) return;
 
+    // Remove the previous touch points, if any
     trackpad.querySelectorAll('circle.ds-touch').forEach(c => c.remove());
     hasActiveTouchPoints = hasActivePointsNow;
     trackpadBbox = trackpadBbox ?? trackpad.querySelector('path')?.getBBox();
@@ -1991,10 +1984,9 @@ function process_ds_input(data) {
     update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
 }
 
-// Add this helper function near the other utility functions
 function set_mute_visibility(show) {
-    var muteOutline = document.getElementById('Mute_outline');
-    var muteInfill = document.getElementById('Mute_infill');
+    const muteOutline = document.getElementById('Mute_outline');
+    const muteInfill = document.getElementById('Mute_infill');
     if (muteOutline) muteOutline.style.display = show ? '' : 'none';
     if (muteInfill) muteInfill.style.display = show ? '' : 'none';
 }

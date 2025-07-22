@@ -1845,13 +1845,14 @@ function update_touchpad_circles(points) {
         // Map raw x/y to SVG
         // DS4/DS5 touchpad is 1920x943 units (raw values)
         const RAW_W = 1920, RAW_H = 943;
-        const cx = trackpadBbox.x + (pt.x / RAW_W) * trackpadBbox.width;
-        const cy = trackpadBbox.y + (pt.y / RAW_H) * trackpadBbox.height;
+        const pointRadius = trackpadBbox.width * 0.05;
+        const cx = trackpadBbox.x + pointRadius + (pt.x / RAW_W) * (trackpadBbox.width - pointRadius*2);
+        const cy = trackpadBbox.y + pointRadius + (pt.y / RAW_H) * (trackpadBbox.height - pointRadius*2);
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('class', 'ds-touch');
         circle.setAttribute('cx', cx);
         circle.setAttribute('cy', cy);
-        circle.setAttribute('r', trackpadBbox.width * 0.05);
+        circle.setAttribute('r', pointRadius);
         circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
         circle.setAttribute('fill-opacity', '0.5');
         circle.setAttribute('stroke', '#3399cc');

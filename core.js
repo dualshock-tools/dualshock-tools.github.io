@@ -236,6 +236,7 @@ async function ds4_calibrate_range_begin() {
     try {
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,2]))
+        await new Promise(r => setTimeout(r, 200));
     
         // Assert
         data = await device.receiveFeatureReport(0x91)
@@ -261,6 +262,7 @@ async function ds4_calibrate_range_end() {
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,2]))
+        await new Promise(r => setTimeout(r, 200));
     
         data = await device.receiveFeatureReport(0x91)
         data2 = await device.receiveFeatureReport(0x92)
@@ -289,6 +291,7 @@ async function ds4_calibrate_sticks_begin() {
     try {
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
+        await new Promise(r => setTimeout(r, 200));
 
         // Assert
         data = await device.receiveFeatureReport(0x91);
@@ -316,6 +319,7 @@ async function ds4_calibrate_sticks_sample() {
     try {
         // Sample
         await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
+        await new Promise(r => setTimeout(r, 200));
 
         // Assert
         data = await device.receiveFeatureReport(0x91);
@@ -342,6 +346,7 @@ async function ds4_calibrate_sticks_end() {
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
+        await new Promise(r => setTimeout(r, 200));
 
         data = await device.receiveFeatureReport(0x91);
         data2 = await device.receiveFeatureReport(0x92);
@@ -365,18 +370,19 @@ async function ds4_calibrate_sticks_end() {
 
 async function ds4_calibrate_sticks() {
     la("ds4_calibrate_sticks");
-    var err = l("Stick calibration failed: ");
+    let err = l("Stick calibration failed: ");
     try {
         set_progress(0);
     
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
+        await new Promise(r => setTimeout(r, 200));
     
         // Assert
-        data = await device.receiveFeatureReport(0x91);
-        data2 = await device.receiveFeatureReport(0x92);
-        d1 = data.getUint32(0, false);
-        d2 = data2.getUint32(0, false);
+        let data = await device.receiveFeatureReport(0x91);
+        let data2 = await device.receiveFeatureReport(0x92);
+        let d1 = data.getUint32(0, false);
+        let d2 = data2.getUint32(0, false);
         if(d1 != 0x91010101 || d2 != 0x920101ff) {
             la("ds4_calibrate_sticks_failed", {"s": 1, "d1": d1, "d2": d2});
             close_calibrate_window();
@@ -384,18 +390,19 @@ async function ds4_calibrate_sticks() {
         }
     
         set_progress(10);
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 200));
     
         for(var i=0;i<3;i++) {
             // Sample
             await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
+            await new Promise(r => setTimeout(r, 200));
     
             // Assert
-            data = await device.receiveFeatureReport(0x91);
-            data2 = await device.receiveFeatureReport(0x92);
+            let data = await device.receiveFeatureReport(0x91);
+            let data2 = await device.receiveFeatureReport(0x92);
             if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
-                d1 = dec2hex32(data.getUint32(0, false));
-                d2 = dec2hex32(data2.getUint32(0, false));
+                let d1 = dec2hex32(data.getUint32(0, false));
+                let d2 = dec2hex32(data2.getUint32(0, false));
                 la("ds4_calibrate_sticks_failed", {"s": 2, "i": i, "d1": d1, "d2": d2});
                 close_calibrate_window();
                 return show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
@@ -407,9 +414,10 @@ async function ds4_calibrate_sticks() {
     
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
+        await new Promise(r => setTimeout(r, 200));
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
-            d1 = dec2hex32(data.getUint32(0, false));
-            d2 = dec2hex32(data2.getUint32(0, false));
+            let d1 = dec2hex32(data.getUint32(0, false));
+            let d2 = dec2hex32(data2.getUint32(0, false));
             la("ds4_calibrate_sticks_failed", {"s": 3, "d1": d1, "d2": d2});
             close_calibrate_window();
             return show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
@@ -549,19 +557,25 @@ async function ds5_system_info(base, num, length, decode = true) {
 
 function ds5_color(x) {
     const colorMap = {
-        '00' : 'White',
-        '01' : 'Black',
-        '02' : 'Cosmic Red',
-        '03' : 'Nova Pink',
-        '04' : 'Galactic Purple',
-        '05' : 'Starlight Blue',
-        '06' : 'Gray Camo',
-        '07' : 'Volcanic Red',
-        '08' : 'Sterling Silver',
-        '09' : 'Chroma Indigo',
-        '30' : '30Th Anniversary',
-        'Z1' : 'God of War Ragnarok',
-        'Z3' : 'Astro Bot'
+        '00' : l('White'),
+        '01' : l('Midnight Black'),
+        '02' : l('Cosmic Red'),
+        '03' : l('Nova Pink'),
+        '04' : l('Galactic Purple'),
+        '05' : l('Starlight Blue'),
+        '06' : l('Grey Camouflage'),
+        '07' : l('Volcanic Red'),
+        '08' : l('Sterling Silver'),
+        '09' : l('Cobalt Blue'),
+        '10' : l('Chroma Teal'),
+        '11' : l('Chroma Indigo'),
+        '12' : l('Chroma Pearl'),
+        '30' : l('30th Anniversary'),
+        'Z1' : l('God of War Ragnarok'),
+        'Z2' : l('Spider-Man 2'),
+        'Z3' : l('Astro Bot'),
+        'Z4' : l('Fortnite'),
+        'Z6' : l('The Last of Us')
     };
 
     const colorCode = x.slice(4, 6);
@@ -1164,9 +1178,11 @@ async function on_finetune_change(x) {
     list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
     
     out=[]
-    for(i=0;i<12;i++) {
-        v = $("#finetune" + list[i]).val()
-        out.push(parseInt(v))
+
+    for(let i=0;i<12;i++) {
+        let el = $("#finetune" + list[i]);
+        let v = parseInt(el.val())
+        out.push(v)
     }
     await write_finetune_data(out)
 }
@@ -1192,9 +1208,9 @@ async function ds5_finetune() {
     curModal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
     curModal.show();
 
-    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    let list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
     for(i=0;i<12;i++) {
-        $("#finetune" + list[i]).attr("value", data[i])
+        $("#finetune" + list[i]).val(data[i])
         $("#finetune" + list[i]).on('change', on_finetune_change)
     }
 

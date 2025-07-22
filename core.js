@@ -240,6 +240,7 @@ async function ds4_calibrate_range_begin() {
     try {
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,2]))
+        await new Promise(r => setTimeout(r, 200));
     
         // Assert
         data = await device.receiveFeatureReport(0x91)
@@ -265,6 +266,7 @@ async function ds4_calibrate_range_end() {
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,2]))
+        await new Promise(r => setTimeout(r, 200));
     
         data = await device.receiveFeatureReport(0x91)
         data2 = await device.receiveFeatureReport(0x92)
@@ -293,6 +295,7 @@ async function ds4_calibrate_sticks_begin() {
     try {
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
+        await new Promise(r => setTimeout(r, 200));
 
         // Assert
         data = await device.receiveFeatureReport(0x91);
@@ -320,6 +323,7 @@ async function ds4_calibrate_sticks_sample() {
     try {
         // Sample
         await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
+        await new Promise(r => setTimeout(r, 200));
 
         // Assert
         data = await device.receiveFeatureReport(0x91);
@@ -346,6 +350,7 @@ async function ds4_calibrate_sticks_end() {
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
+        await new Promise(r => setTimeout(r, 200));
 
         data = await device.receiveFeatureReport(0x91);
         data2 = await device.receiveFeatureReport(0x92);
@@ -375,6 +380,7 @@ async function ds4_calibrate_sticks() {
     
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
+        await new Promise(r => setTimeout(r, 200));
     
         // Assert
         let data = await device.receiveFeatureReport(0x91);
@@ -388,11 +394,12 @@ async function ds4_calibrate_sticks() {
         }
     
         set_progress(10);
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 200));
     
         for(var i=0;i<3;i++) {
             // Sample
             await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
+            await new Promise(r => setTimeout(r, 200));
     
             // Assert
             let data = await device.receiveFeatureReport(0x91);
@@ -411,6 +418,7 @@ async function ds4_calibrate_sticks() {
     
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
+        await new Promise(r => setTimeout(r, 200));
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
             let d1 = dec2hex32(data.getUint32(0, false));
             let d2 = dec2hex32(data2.getUint32(0, false));
@@ -563,9 +571,15 @@ function ds5_color(x) {
         '07' : l('Volcanic Red'),
         '08' : l('Sterling Silver'),
         '09' : l('Cobalt Blue'),
+        '10' : l('Chroma Teal'),
+        '11' : l('Chroma Indigo'),
+        '12' : l('Chroma Pearl'),
         '30' : l('30th Anniversary'),
         'Z1' : l('God of War Ragnarok'),
-        'Z3' : l('Astro Bot')
+        'Z2' : l('Spider-Man 2'),
+        'Z3' : l('Astro Bot'),
+        'Z4' : l('Fortnite'),
+        'Z6' : l('The Last of Us')
     };
 
     const colorCode = x.slice(4, 6);

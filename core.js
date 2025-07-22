@@ -1753,7 +1753,7 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
     ].forEach(([name, svg, val]) => {
         // Fade between white and pressedColor based on analog value
         const t = val / 255;
-        const color = lerp_color('white', pressedColor, t);
+        const color = lerp_color('#ffffff', pressedColor, t);
         if(val != ds_button_states[name + '_analog']) {
             ds_button_states[name + '_analog'] = val;
             const infill = document.getElementById(svg);

@@ -25,6 +25,16 @@ var on_finetune_updating = false
 // Global object to keep track of button states
 const ds_button_states = {
     // e.g. 'square': false, 'cross': false, ...
+    sticks: {
+        left: {
+            x: 0,
+            y: 0
+        },
+        right: {
+            x: 0,
+            y: 0
+        }
+    }
 };
 
 // Alphabetical order
@@ -1309,8 +1319,9 @@ function refresh_finetune() {
 }
 
 function ds5_finetune_update_all() {
-    ds5_finetune_update("finetuneStickCanvasL", last_lx, last_ly)
-    ds5_finetune_update("finetuneStickCanvasR", last_rx, last_ry)
+    const { left, right } = ds_button_states.sticks;
+    ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
+    ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
 }
 
 function ds5_finetune_update(name, plx, ply) {
@@ -1382,7 +1393,7 @@ async function finetune_cancel() {
     finetune_close();
 }
 
-var last_lx = 0, last_ly = 0, last_rx = 0, last_ry = 0;
+
 var ll_updated = false;
 
 var ll_data=new Array(48);
@@ -1512,11 +1523,7 @@ function refresh_stick_pos() {
     ctx.closePath();
     ctx.stroke();
 
-    var plx = last_lx;
-    var ply = last_ly;
-    var prx = last_rx;
-    var pry = last_ry;
-
+    const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = ds_button_states.sticks;
     if(enable_circ_test) {
         var pld = Math.sqrt(plx*plx + ply*ply);
         var pla = (parseInt(Math.round(Math.atan2(ply, plx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
@@ -1687,9 +1694,9 @@ function update_nvs_changes_status(new_value) {
     has_changes_to_write = new_value;
 }
 
-function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {
-    var bat_txt = bat_percent_to_text(bat_capacity, is_charging);
-    var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
+function update_battery_status({bat_capacity, cable_connected, is_charging, is_error}) {
+    const bat_txt = bat_percent_to_text(bat_capacity, is_charging);
+    const can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
 
     if(bat_txt != last_bat_txt) {
         $("#d-bat").html(bat_txt);
@@ -1725,7 +1732,7 @@ const DS5_BUTTON_MAP = [
     { name: 'down', byte: 7, mask: 0x2 },
     { name: 'left', byte: 7, mask: 0x3 },
     { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
-    { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
+    { name: 'cross', byte: 7, mask:  0x20, svg: 'Cross' },
     { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
     { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
     { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
@@ -1741,28 +1748,46 @@ const DS5_BUTTON_MAP = [
     { name: 'mute', byte: 9, mask: 0x04, svg: 'Mute' },
 ];
 
-// Generic button processing for DS4/DS5
-function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
-    if (!data || !data.data) return;
+function sticksChanged(current, newValues) {
+    return current.left.x !== newValues.left.x || current.left.y !== newValues.left.y ||
+           current.right.x !== newValues.right.x || current.right.y !== newValues.right.y;
+}
 
-    const pressedColor = '#1a237e'; // pleasing dark blue
-    // L2/R2 analog infill
+// Generic button processing for DS4/DS5
+function record_ds_button_states(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
+    if (!data) return {};
+
+    const changes = {};
+
+    // Stick positions (always at bytes 0-3)
+    const [lx, ly, rx, ry] = [0, 1, 2, 3].map(i => data.getUint8(i));
+    const [new_lx, new_ly, new_rx, new_ry] = [lx, ly, rx, ry].map(v => Math.round((v - 127.5) / 128 * 100) / 100);
+    const newSticks = {
+        left: { x: new_lx, y: new_ly },
+        right: { x: new_rx, y: new_ry }
+    };
+
+    if (sticksChanged(ds_button_states.sticks, newSticks)) {
+        ds_button_states.sticks = newSticks;
+        changes.sticks = newSticks;
+        ll_updated = true;
+    }
+
+    // L2/R2 analog values
     [
-        ['l2', 'L2_infill', data.data.getUint8(l2_analog_byte)],
-        ['r2', 'R2_infill', data.data.getUint8(r2_analog_byte)]
-    ].forEach(([name, svg, val]) => {
-        // Fade between white and pressedColor based on analog value
-        const t = val / 255;
-        const color = lerp_color('#ffffff', pressedColor, t);
-        if(val != ds_button_states[name + '_analog']) {
-            ds_button_states[name + '_analog'] = val;
-            const infill = document.getElementById(svg);
-            set_svg_group_color(infill, color);
+        ['l2', l2_analog_byte],
+        ['r2', r2_analog_byte]
+    ].forEach(([name, byte]) => {
+        const val = data.getUint8(byte);
+        const key = name + '_analog';
+        if (val !== ds_button_states[key]) {
+            ds_button_states[key] = val;
+            changes[key] = val;
         }
     });
 
     // Dpad is a 4-bit hat value
-    const hat = data.data.getUint8(dpad_byte) & 0x0F;
+    const hat = data.getUint8(dpad_byte) & 0x0F;
     const dpad_map = {
         up:    (hat === 0 || hat === 1 || hat === 7),
         right: (hat === 1 || hat === 2 || hat === 3),
@@ -1773,22 +1798,66 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
         const pressed = dpad_map[dir];
         if (ds_button_states[dir] !== pressed) {
             ds_button_states[dir] = pressed;
-            // Update SVG if present
-            const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
-            set_svg_group_color(group, pressed ? pressedColor : 'white');
+            changes[dir] = pressed;
         }
     }
 
     // Other buttons
     for (let btn of BUTTON_MAP) {
         if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
-        const pressed = (data.data.getUint8(btn.byte) & btn.mask) !== 0;
+        const pressed = (data.getUint8(btn.byte) & btn.mask) !== 0;
         if (ds_button_states[btn.name] !== pressed) {
             ds_button_states[btn.name] = pressed;
-            if (btn.svg) {
-                const group = document.getElementById(btn.svg + '_infill');
-                set_svg_group_color(group, pressed ? pressedColor : 'white');
-            }
+            changes[btn.name] = pressed;
+        }
+    }
+
+    return changes;
+}
+
+function update_stick_graphics(changes, {is_ds5}) {
+    if (!changes || !changes.sticks) return;
+
+    refresh_sticks();
+    if (is_ds5) {
+        refresh_finetune();
+    }
+}
+
+function update_ds_button_svg(changes, BUTTON_MAP) {
+    if (!changes || Object.keys(changes).length === 0) return;
+
+    const pressedColor = '#1a237e'; // pleasing dark blue
+
+    // Update L2/R2 analog infill
+    ['l2', 'r2'].forEach(name => {
+        const key = name + '_analog';
+        if (changes.hasOwnProperty(key)) {
+            const val = changes[key];
+            const t = val / 255;
+            const color = lerp_color('#ffffff', pressedColor, t);
+            const svg = name.toUpperCase() + '_infill';
+            const infill = document.getElementById(svg);
+            set_svg_group_color(infill, color);
+        }
+    });
+
+    // Update dpad buttons
+    for (let dir of ['up', 'right', 'down', 'left']) {
+        if (changes.hasOwnProperty(dir)) {
+            const pressed = changes[dir];
+            const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
+            set_svg_group_color(group, pressed ? pressedColor : 'white');
+        }
+    }
+
+    // Update other buttons
+    for (let btn of BUTTON_MAP) {
+        if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
+        if (changes.hasOwnProperty(btn.name) && btn.svg) {
+            const pressed = changes[btn.name];
+            const group = document.getElementById(btn.svg + '_infill');
+            set_svg_group_color(group, pressed ? pressedColor : 'white');
         }
     }
 }
@@ -1868,138 +1937,80 @@ function update_touchpad_circles(points) {
     });
 }
 
-function process_ds4_input(data) {
-    var lx = data.data.getUint8(0);
-    var ly = data.data.getUint8(1);
-    var rx = data.data.getUint8(2);
-    var ry = data.data.getUint8(3);
-
-    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
-    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
-    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
-    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
-
-    if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
-        last_lx = new_lx;
-        last_ly = new_ly;
-        last_rx = new_rx;
-        last_ry = new_ry;
-        ll_updated = true;
-        refresh_sticks();
-    }
-
-    // Handle L2/R2 for haptic feedback
-    if ($('#haptic-test-pane').is(':visible')) {
-        const l2 = data.data.getUint8(7);
-        const r2 = data.data.getUint8(8);
-        if (l2 || r2) {
-            trigger_haptic_motors(l2, r2);
-        }
-    }
-
-    // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
-    process_ds_buttons(data, DS4_BUTTON_MAP, 4, 7, 8);
-
-    const points = parse_touch_points(data.data, 34);
-    update_touchpad_circles(points);
-
-    // Read battery
-    var bat = data.data.getUint8(29);
-    var bat_data = bat & 0x0f;
-    var bat_status = (bat >> 4) & 1;
-
-    var bat_capacity = 0;
-    var cable_connected = false;
-    var is_charging = false;
-    var is_error = false;
-
-    if(bat_status == 1) {
-        cable_connected = true;
-        if(bat_data < 10) {
-            bat_capacity = Math.min(bat_data * 10 + 5, 100);
-            is_charging = true;
-        } else if(bat_data == 10) {
-            bat_capacity = 100;
-            is_charging = true;
-        } else if(bat_data == 11) {
-            bat_capacity = 100;
-            // charged
-        } else {
-            // error
-            bat_capacity = 0;
-            is_error = true;
-        }
-    } else {
-        cable_connected = false;
-        if(bat_data < 10) {
-            bat_capacity = bat_data * 10 + 5;
-        } else {
-            bat_capacity = 100;
-        }
-    }
-
-    update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
+function get_current_main_tab() {
+    const mainTabs = document.getElementById('mainTabs');
+    const activeBtn = mainTabs?.querySelector('.nav-link.active');
+    return activeBtn?.id || 'controller-tab';
 }
 
-function process_ds_input(data) {
-    var lx = data.data.getUint8(0);
-    var ly = data.data.getUint8(1);
-    var rx = data.data.getUint8(2);
-    var ry = data.data.getUint8(3);
+function get_current_test_tab() {
+    const testsList = document.getElementById('tests-list');
+    const activeBtn = testsList?.querySelector('.list-group-item.active');
+    return activeBtn?.id || 'haptic-test-tab';
+}
 
-    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
-    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
-    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
-    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
+function process_ds4_input({data}) {
+    // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
+    const changes = record_ds_button_states(data, DS4_BUTTON_MAP, 4, 7, 8);
 
-    if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
-        last_lx = new_lx;
-        last_ly = new_ly;
-        last_rx = new_rx;
-        last_ry = new_ry;
-        ll_updated = true;
-        refresh_sticks();
-        refresh_finetune();
+    const current_active_tab = get_current_main_tab();
+    if(current_active_tab === 'controller-tab') {
+        update_stick_graphics(changes, { is_ds5: false });
+        update_ds_button_svg(changes, DS4_BUTTON_MAP);
+
+        const points = parse_touch_points(data, 34);
+        update_touchpad_circles(points);
     }
 
-    // Handle L2/R2 for haptic feedback
-    if ($('#haptic-test-pane').is(':visible')) {
-        const l2 = data.data.getUint8(4);
-        const r2 = data.data.getUint8(5);
-        if (l2 || r2) {
-            trigger_haptic_motors(l2, r2);
-        }
+    if(current_active_tab === 'tests-tab') {
+        handle_test_input(changes);
     }
+
+    const batStatus = parse_battery_status(data, { byte: 29, is_ds4: true });
+    update_battery_status(batStatus);
+}
+
+function process_ds_input({data}) {
+    const current_active_tab = get_current_main_tab();
 
     // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
-    process_ds_buttons(data, DS5_BUTTON_MAP, 7, 4, 5);
+    const changes = record_ds_button_states(data, DS5_BUTTON_MAP, 7, 4, 5);
 
-    const points = parse_touch_points(data.data, 32);
-    update_touchpad_circles(points);
+    if(current_active_tab === 'controller-tab') {
+        update_stick_graphics(changes, { is_ds5: true });
+        update_ds_button_svg(changes, DS5_BUTTON_MAP);
 
-    var bat = data.data.getUint8(52);
-    var bat_charge = bat & 0x0f;
-    var bat_status = bat >> 4;
-
-    var bat_capacity = 0;
-    var cable_connected = false;
-    var is_charging = false;
-    var is_error = false;
-
-    if(bat_status == 0) {
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-    } else if(bat_status == 1) {
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-        is_charging = true;
-        cable_connected = true;
-    } else if(bat_status == 2) {
-        bat_capacity = 100;
-        cable_connected = true;
-    } else {
-        is_error = true;
+        const points = parse_touch_points(data, 32);
+        update_touchpad_circles(points);
     }
 
-    update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
+    if(current_active_tab === 'tests-tab') {
+        handle_test_input(changes);
+    }
+
+    const batStatus = parse_battery_status(data, { byte: 52, is_ds4: false });
+    update_battery_status(batStatus);
+}
+
+function handle_test_input(/* changes */) {
+    const current_test_tab = get_current_test_tab();
+
+    // Handle different test tabs
+    switch (current_test_tab) {
+        case 'haptic-test-tab':
+            // Handle L2/R2 for haptic feedback
+            const l2 = ds_button_states.l2_analog || 0;
+            const r2 = ds_button_states.r2_analog || 0;
+            if (l2 || r2) {
+                trigger_haptic_motors(l2, r2);
+            }
+            break;
+
+        // Add more test tabs here as needed
+        default:
+            console.log("Unknown test tab:", current_test_tab);
+            break;
+    }
 }
 
 function set_mute_visibility(show) {
@@ -2698,4 +2709,56 @@ function lerp_color(a, b, t) {
         Math.round(c1[2] + (c2[2] - c1[2]) * t)
     ];
     return rgb2hex(c[0], c[1], c[2]);
+}
+
+
+function parse_battery_status(data, {byte, is_ds4 = false}) {
+    const bat = data.getUint8(byte);
+    let bat_capacity = 0, cable_connected = false, is_charging = false, is_error = false;
+
+    if (is_ds4) {
+        // DS4: bat_data = low 4 bits, bat_status = bit 4
+        const bat_data = bat & 0x0f;
+        const bat_status = (bat >> 4) & 1;
+        if (bat_status == 1) {
+            cable_connected = true;
+            if (bat_data < 10) {
+                bat_capacity = Math.min(bat_data * 10 + 5, 100);
+                is_charging = true;
+            } else if (bat_data == 10) {
+                bat_capacity = 100;
+                is_charging = true;
+            } else if (bat_data == 11) {
+                bat_capacity = 100;
+                // charged
+            } else {
+                bat_capacity = 0;
+                is_error = true;
+            }
+        } else {
+            cable_connected = false;
+            if (bat_data < 10) {
+                bat_capacity = bat_data * 10 + 5;
+            } else {
+                bat_capacity = 100;
+            }
+        }
+    } else {
+        // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
+        const bat_charge = bat & 0x0f;
+        const bat_status = bat >> 4;
+        if (bat_status == 0) {
+            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        } else if (bat_status == 1) {
+            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+            is_charging = true;
+            cable_connected = true;
+        } else if (bat_status == 2) {
+            bat_capacity = 100;
+            cable_connected = true;
+        } else {
+            is_error = true;
+        }
+    }
+    return { bat_capacity, cable_connected, is_charging, is_error };
 }

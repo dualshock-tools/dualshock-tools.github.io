@@ -1760,8 +1760,10 @@ function record_ds_button_states(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2
     const changes = {};
 
     // Stick positions (always at bytes 0-3)
-    const [lx, ly, rx, ry] = [0, 1, 2, 3].map(i => data.getUint8(i));
-    const [new_lx, new_ly, new_rx, new_ry] = [lx, ly, rx, ry].map(v => Math.round((v - 127.5) / 128 * 100) / 100);
+    const [new_lx, new_ly, new_rx, new_ry] = [0, 1, 2, 3]
+        .map(i => data.getUint8(i))
+        .map(v => Math.round((v - 127.5) / 128 * 100) / 100);
+
     const newSticks = {
         left: { x: new_lx, y: new_ly },
         right: { x: new_rx, y: new_ry }

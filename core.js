@@ -1172,8 +1172,8 @@ function gboot() {
         lang_init();
         init_svg_colors();
         welcome_modal();
-        $("#checkCircularity").on('change', on_circ_check_change);
-        on_circ_check_change();
+        $("input[name='displayMode']").on('change', on_display_mode_change);
+        on_display_mode_change();
     });
 
     if (!("hid" in navigator)) {
@@ -1328,43 +1328,12 @@ function ds5_finetune_update(name, plx, ply) {
     var yb = 15 + sz;
     var w = c.width;
     ctx.clearRect(0, 0, c.width, c.height);
-    ctx.lineWidth = 1;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#000000';
 
-    // Left circle
-    ctx.beginPath();
-    ctx.arc(hb, yb, sz, 0, 2 * Math.PI);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // Draw stick position with circle
+    draw_stick_position(ctx, hb, yb, sz, plx, ply, { enable_zoom_center: true });
 
-    ctx.strokeStyle = '#aaaaaa';
-    ctx.beginPath();
-    ctx.moveTo(hb-sz, yb);
-    ctx.lineTo(hb+sz, yb);
-    ctx.closePath();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(hb, yb-sz);
-    ctx.lineTo(hb, yb+sz);
-    ctx.closePath();
-    ctx.stroke();
-
-    ctx.fillStyle = '#000000';
-    ctx.strokeStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(hb+plx*sz,yb+ply*sz,4, 0, 2*Math.PI);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(hb, yb);
-    ctx.lineTo(hb+plx*sz, yb+ply*sz);
-    ctx.stroke();
-
-    $("#"+ name + "x-lbl").text(float_to_str(plx));
-    $("#"+ name + "y-lbl").text(float_to_str(ply));
+    $("#"+ name + "x-lbl").text(float_to_str(plx, 3));
+    $("#"+ name + "y-lbl").text(float_to_str(ply, 3));
 }
 
 function finetune_close() {
@@ -1396,42 +1365,31 @@ var rr_data=new Array(48);
 var enable_circ_test = false;
 
 function reset_circularity() {
-    for(i=0;i<ll_data.length;i++) ll_data[i] = 0;
-    for(i=0;i<rr_data.length;i++) rr_data[i] = 0;
+    ll_data.fill(0);
+    rr_data.fill(0);
     enable_circ_test = false;
     ll_updated = false;
-    $("#checkCircularity").prop('checked', false);
+    $("#normalMode").prop('checked', true);
     refresh_stick_pos();
 }
 
-function refresh_stick_pos() {
-    var c = document.getElementById("stickCanvas");
-    var ctx = c.getContext("2d");
-    var sz = 60;
-    var hb = 20 + sz;
-    var yb = 15 + sz;
-    var w = c.width;
-    ctx.clearRect(0, 0, c.width, c.height);
+function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
+    const { circularity_data = null, enable_zoom_center = false } = opts;
+
+    // Draw base circle
     ctx.lineWidth = 1;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#000000';
-
-    // Left circle
     ctx.beginPath();
-    ctx.arc(hb, yb, sz, 0, 2 * Math.PI);
+    ctx.arc(center_x, center_y, sz, 0, 2 * Math.PI);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Right circle
-    ctx.beginPath();
-    ctx.arc(w - hb, yb, sz, 0, 2 * Math.PI);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
+    // Helper function for circularity visualization color
     function cc_to_color(cc) {
-        var dd = Math.sqrt(Math.pow((1.0 - cc), 2));
+        const dd = Math.sqrt(Math.pow((1.0 - cc), 2));
+        let hh;
         if(cc <= 1.0)
             hh = 220 - 220 * Math.min(1.0, Math.max(0, (dd - 0.05)) / 0.1);
         else
@@ -1439,148 +1397,161 @@ function refresh_stick_pos() {
         return hh;
     }
 
-    if(enable_circ_test) {
-        var MAX_N = ll_data.length;
+    // Draw circularity visualization if data provided
+    if (circularity_data?.length > 0) {
+        const MAX_N = circularity_data.length;
 
-        for(i=0;i<MAX_N;i++) {
-            var kd = ll_data[i];
-            var kd1 = ll_data[(i+1) % ll_data.length];
+        for(let i = 0; i < MAX_N; i++) {
+            const kd = circularity_data[i];
+            const kd1 = circularity_data[(i+1) % circularity_data.length];
             if (kd === undefined || kd1 === undefined) continue;
-            var ka = i * Math.PI * 2 / MAX_N;
-            var ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
+            const ka = i * Math.PI * 2 / MAX_N;
+            const ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
 
-            var kx = Math.cos(ka) * kd;
-            var ky = Math.sin(ka) * kd;
-            var kx1 = Math.cos(ka1) * kd1;
-            var ky1 = Math.sin(ka1) * kd1;
+            const kx = Math.cos(ka) * kd;
+            const ky = Math.sin(ka) * kd;
+            const kx1 = Math.cos(ka1) * kd1;
+            const ky1 = Math.sin(ka1) * kd1;
 
             ctx.beginPath();
-            ctx.moveTo(hb, yb);
-            ctx.lineTo(hb+kx*sz, yb+ky*sz);
-            ctx.lineTo(hb+kx1*sz, yb+ky1*sz);
-            ctx.lineTo(hb, yb);
+            ctx.moveTo(center_x, center_y);
+            ctx.lineTo(center_x+kx*sz, center_y+ky*sz);
+            ctx.lineTo(center_x+kx1*sz, center_y+ky1*sz);
+            ctx.lineTo(center_x, center_y);
             ctx.closePath();
 
-            var cc = (kd + kd1) / 2;
-            var hh = cc_to_color(cc);
-            ctx.fillStyle = 'hsla(' + parseInt(hh) + ', 100%, 50%, 0.5)';
-            ctx.fill();
-        }
-
-        for(i=0;i<MAX_N;i++) {
-            var kd = rr_data[i];
-            var kd1 = rr_data[(i+1) % rr_data.length];
-            if (kd === undefined || kd1 === undefined) continue;
-            var ka = i * Math.PI * 2 / MAX_N;
-            var ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
-
-            var kx = Math.cos(ka) * kd;
-            var ky = Math.sin(ka) * kd;
-            var kx1 = Math.cos(ka1) * kd1;
-            var ky1 = Math.sin(ka1) * kd1;
-
-            ctx.beginPath();
-            ctx.moveTo(w-hb, yb);
-            ctx.lineTo(w-hb+kx*sz, yb+ky*sz);
-            ctx.lineTo(w-hb+kx1*sz, yb+ky1*sz);
-            ctx.lineTo(w-hb, yb);
-            ctx.closePath();
-
-            var cc = (kd + kd1) / 2;
-            var hh = cc_to_color(cc);
+            const cc = (kd + kd1) / 2;
+            const hh = cc_to_color(cc);
             ctx.fillStyle = 'hsla(' + parseInt(hh) + ', 100%, 50%, 0.5)';
             ctx.fill();
         }
     }
 
+    // Draw crosshairs
     ctx.strokeStyle = '#aaaaaa';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(hb-sz, yb);
-    ctx.lineTo(hb+sz, yb);
+    ctx.moveTo(center_x-sz, center_y);
+    ctx.lineTo(center_x+sz, center_y);
     ctx.closePath();
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(w-hb-sz, yb);
-    ctx.lineTo(w-hb+sz, yb);
+    ctx.moveTo(center_x, center_y-sz);
+    ctx.lineTo(center_x, center_y+sz);
     ctx.closePath();
     ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(hb, yb-sz);
-    ctx.lineTo(hb, yb+sz);
-    ctx.closePath();
-    ctx.stroke();
+    // Apply center zoom transformation if enabled
+    let display_x = stick_x;
+    let display_y = stick_y;
+    if (enable_zoom_center) {
+        const transformed = apply_center_zoom(stick_x, stick_y);
+        display_x = transformed.x;
+        display_y = transformed.y;
 
-    ctx.beginPath();
-    ctx.moveTo(w-hb, yb-sz);
-    ctx.lineTo(w-hb, yb+sz);
-    ctx.closePath();
-    ctx.stroke();
-
-    var plx = last_lx;
-    var ply = last_ly;
-    var prx = last_rx;
-    var pry = last_ry;
-
-    if(enable_circ_test) {
-        var pld = Math.sqrt(plx*plx + ply*ply);
-        var pla = (parseInt(Math.round(Math.atan2(ply, plx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-        var old = ll_data[pla];
-        if(old === undefined) old = 0;
-        ll_data[pla] = Math.max(old, pld);
-
-        var prd = Math.sqrt(prx*prx + pry*pry);
-        var pra = (parseInt(Math.round(Math.atan2(pry, prx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-        var old = rr_data[pra];
-        if(old === undefined) old = 0;
-        rr_data[pra] = Math.max(old, prd);
+        // Draw light gray circle at 50% radius to show border of zoomed center
+        ctx.strokeStyle = '#d3d3d3'; // light gray
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(center_x, center_y, sz * 0.5, 0, 2 * Math.PI);
+        ctx.stroke();
     }
 
     ctx.fillStyle = '#000000';
     ctx.strokeStyle = '#000000';
+
+    // Draw stick line with variable thickness
+    // Calculate distance from center
+    const stick_distance = Math.sqrt(display_x*display_x + display_y*display_y);
+    const boundary_radius = 0.5; // 50% radius
+
+    // Determine if we need to draw a two-segment line
+    const use_two_segments = enable_zoom_center && stick_distance > boundary_radius;
+    if (use_two_segments) {
+        // Calculate boundary point
+        const boundary_x = (display_x / stick_distance) * boundary_radius;
+        const boundary_y = (display_y / stick_distance) * boundary_radius;
+
+        // First segment: thicker line from center to boundary
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(center_x, center_y);
+        ctx.lineTo(center_x + boundary_x*sz, center_y + boundary_y*sz);
+        ctx.stroke();
+
+        // Second segment: thinner line from boundary to stick position
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(center_x + boundary_x*sz, center_y + boundary_y*sz);
+        ctx.lineTo(center_x + display_x*sz, center_y + display_y*sz);
+        ctx.stroke();
+    } else {
+        // Single line from center to stick position
+        ctx.lineWidth = enable_zoom_center ? 3 : 1;
+        ctx.beginPath();
+        ctx.moveTo(center_x, center_y);
+        ctx.lineTo(center_x + display_x*sz, center_y + display_y*sz);
+        ctx.stroke();
+    }
+
+    // Draw filled circle at stick position
     ctx.beginPath();
-    ctx.arc(hb+plx*sz,yb+ply*sz,4, 0, 2*Math.PI);
+    ctx.arc(center_x+display_x*sz, center_y+display_y*sz, 3, 0, 2*Math.PI);
     ctx.fill();
+}
 
-    ctx.beginPath();
-    ctx.moveTo(hb, yb);
-    ctx.lineTo(hb+plx*sz, yb+ply*sz);
-    ctx.stroke();
+function refresh_stick_pos() {
+    const c = document.getElementById("stickCanvas");
+    const ctx = c.getContext("2d");
+    const sz = 60;
+    const hb = 20 + sz;
+    const yb = 15 + sz;
+    const w = c.width;
+    ctx.clearRect(0, 0, c.width, c.height);
 
-    ctx.beginPath();
-    ctx.arc(w-hb+prx*sz, yb+pry*sz,4, 0, 2*Math.PI);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(w-hb, yb);
-    ctx.lineTo(w-hb+prx*sz, yb+pry*sz);
-    ctx.stroke();
-
-    var lbl = "", lbx = "";
-    $("#lx-lbl").text(float_to_str(plx));
-    $("#ly-lbl").text(float_to_str(ply));
-    $("#rx-lbl").text(float_to_str(prx));
-    $("#ry-lbl").text(float_to_str(pry));
+    let plx = last_lx;
+    let ply = last_ly;
+    let prx = last_rx;
+    let pry = last_ry;
 
     if(enable_circ_test) {
-        var ofl = 0, ofr = 0, lcounter = 0, rcounter = 0;
-        ofl = 0; ofr = 0;
-        for (i=0;i<ll_data.length;i++) 
-            if(ll_data[i] > 0.2) {
-                lcounter += 1;
-                ofl += Math.pow(ll_data[i] - 1, 2);
-            }
-        for (i=0;i<rr_data.length;i++) {
-            if(rr_data[i] > 0.2) {
-                rcounter += 1;
-                ofr += Math.pow(rr_data[i] - 1, 2);
-            }
-        }
-        if(lcounter > 0)
-            ofl = Math.sqrt(ofl / lcounter) * 100;
-        if(rcounter > 0)
-            ofr = Math.sqrt(ofr / rcounter) * 100;
+        [[plx, ply, ll_data], [prx, pry, rr_data]].forEach(([px, py, circularity_data]) => {
+            const MAX_N = circularity_data.length;
+            const pa = (parseInt(Math.round(Math.atan2(py, px) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
+            const pd = Math.sqrt(px*px + py*py);
+            const old = circularity_data[pa] ?? 0;
+            circularity_data[pa] = Math.max(old, pd);
+        });
+    }
+
+    const enable_zoom_center = center_zoom_checked();
+    // Draw left stick
+    draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+        circularity_data: enable_circ_test ? ll_data : null,
+        enable_zoom_center,
+    });
+
+    // Draw right stick
+    draw_stick_position(ctx, w-hb, yb, sz, prx, pry, {
+        circularity_data: enable_circ_test ? rr_data : null,
+        enable_zoom_center,
+    });
+
+    const precision = enable_zoom_center ? 3 : 2;
+    $("#lx-lbl").text(float_to_str(last_lx, precision));
+    $("#ly-lbl").text(float_to_str(last_ly, precision));
+    $("#rx-lbl").text(float_to_str(last_rx, precision));
+    $("#ry-lbl").text(float_to_str(last_ry, precision));
+
+    if(enable_circ_test) {
+        const olf = ll_data.reduce((acc, val) => val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
+        const lcounter = ll_data.filter(val => val > 0.2).length;
+        const ofl = lcounter > 0 ? Math.sqrt(olf / lcounter) * 100 : 0;
+
+        const orf = rr_data.reduce((acc, val) => val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
+        const rcounter = rr_data.filter(val => val > 0.2).length;
+        const ofr = rcounter > 0 ? Math.sqrt(orf / rcounter) * 100 : 0;
 
         el = ofl.toFixed(2) + "%";
         er = ofr.toFixed(2) + "%";
@@ -1611,12 +1582,38 @@ function refresh_stick_pos() {
     }
 }
 
-function circ_checked() { return $("#checkCircularity").is(':checked') }
+function circ_checked() { return $("#checkCircularityMode").is(':checked') }
+function center_zoom_checked() { return $("#centerZoomMode").is(':checked') }
 
-function on_circ_check_change() {
+function apply_center_zoom(x, y) {
+    // Calculate distance from center
+    const distance = Math.sqrt(x * x + y * y);
+
+    // If distance is 0, return original values
+    if (distance === 0) {
+        return { x, y};
+    }
+
+    // Calculate angle
+    const angle = Math.atan2(y, x);
+
+    // Apply center zoom transformation
+    const new_distance =
+        distance <= 0.05
+        ? (distance / 0.05) * 0.5 // 0 to 0.05 maps to 0 to 0.5 (half the radius)
+        : 0.5 + ((distance - 0.05) / 0.95) * 0.5 // 0.05 to 1.0 maps to 0.5 to 1.0 (other half)
+
+    // Convert back to x, y coordinates
+    return {
+        x: Math.cos(angle) * new_distance,
+        y: Math.sin(angle) * new_distance
+    };
+}
+
+function on_display_mode_change() {
     enable_circ_test = circ_checked();
-    for(i=0;i<ll_data.length;i++) ll_data[i] = 0;
-    for(i=0;i<rr_data.length;i++) rr_data[i] = 0;
+    ll_data.fill(0);
+    rr_data.fill(0);
 
     if(enable_circ_test) {
         $("#circ-data").show();
@@ -1626,9 +1623,9 @@ function on_circ_check_change() {
     refresh_stick_pos();
 }
 
-function float_to_str(f) {
-    if(f < 0.004 && f >= -0.004) return "+0.00";
-    return (f<0?"":"+") + f.toFixed(2);
+function float_to_str(f, precision = 2) {
+    if(precision <=2 && f < 0.004 && f >= -0.004) return "+0.00";
+    return (f<0?"":"+") + f.toFixed(precision);
 }
 
 var on_delay = false;
@@ -1880,10 +1877,10 @@ function process_ds4_input(data) {
     var rx = data.data.getUint8(2);
     var ry = data.data.getUint8(3);
 
-    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
-    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
-    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
-    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
+    var new_lx = (lx - 127.5) / 128;
+    var new_ly = (ly - 127.5) / 128;
+    var new_rx = (rx - 127.5) / 128;
+    var new_ry = (ry - 127.5) / 128;
 
     if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
         last_lx = new_lx;
@@ -1944,10 +1941,10 @@ function process_ds_input(data) {
     var rx = data.data.getUint8(2);
     var ry = data.data.getUint8(3);
 
-    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
-    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
-    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
-    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
+    var new_lx = (lx - 127.5) / 128;
+    var new_ly = (ly - 127.5) / 128;
+    var new_rx = (rx - 127.5) / 128;
+    var new_ry = (ry - 127.5) / 128;
 
     if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
         last_lx = new_lx;

@@ -297,8 +297,16 @@ dl.row dd { font-family: monospace; }
                 </div>
                 <div class="px-2">
                     <center>
-                        <input class="form-check-input" type="checkbox" value="" id="checkCircularity">
-                        <label class="form-check-label ds-i18n" for="checkCircularity">Check circularity</label>
+                        <div class="btn-group mb-3" role="group" aria-label="Display mode options">
+                          <input type="radio" class="btn-check" name="displayMode" id="normalMode" value="normal" checked>
+                          <label class="btn btn-outline-secondary btn-sm ds-i18n" for="normalMode">Normal</label>
+
+                          <input type="radio" class="btn-check" name="displayMode" id="centerZoomMode" value="centerZoom">
+                          <label class="btn btn-outline-secondary btn-sm ds-i18n" for="centerZoomMode">Center zoom</label>
+
+                          <input type="radio" class="btn-check" name="displayMode" id="checkCircularityMode" value="checkCircularity">
+                          <label class="btn btn-outline-secondary btn-sm ds-i18n" for="checkCircularityMode">Check circularity</label>
+                        </div>
                         <div class="hstack" id="circ-data">
                             <div class="vstack" style="text-align: center;">
                                 <span class="ds-i18n">Err L:</span> 

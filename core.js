@@ -1166,8 +1166,8 @@ function gboot() {
         lang_init();
         init_svg_colors();
         welcome_modal();
-        $("input[name='displayMode']").on('change', on_display_mode_change);
-        on_display_mode_change();
+        $("input[name='displayMode']").on('change', on_stick_mode_change);
+        on_stick_mode_change();
     });
 
     if (!("hid" in navigator)) {
@@ -1604,7 +1604,7 @@ function apply_center_zoom(x, y) {
     };
 }
 
-function on_display_mode_change() {
+function on_stick_mode_change() {
     enable_circ_test = circ_checked();
     ll_data.fill(0);
     rr_data.fill(0);
@@ -2236,7 +2236,7 @@ async function multi_calib_sticks_end() {
         await ds4_calibrate_sticks_end();
     else
         await ds5_calibrate_sticks_end();
-    on_circ_check_change();
+    on_stick_mode_change();
 }
 
 async function multi_calib_sticks_sample() {
@@ -2267,7 +2267,7 @@ async function multi_calibrate_range_on_close() {
         await ds4_calibrate_range_end();
     else
         await ds5_calibrate_range_end();
-    on_circ_check_change();
+    on_stick_mode_change();
 }
 
 

@@ -17,10 +17,17 @@ var gj = 0;
 var gu = 0;
 
 // DS5 finetuning
-var finetune_original_data = []
-var last_written_finetune_data = []
-var finetune_visible = false
-var on_finetune_updating = false
+let finetune_original_data = []
+let last_written_finetune_data = []
+let finetune_visible = false
+let on_finetune_updating = false
+
+// Active stick tracking for finetune modal
+let active_stick = 'left' // 'left' or 'right'
+
+// Continuous D-pad adjustment tracking
+let dpad_adjustment_interval = null
+let dpad_adjustment_timeout = null
 
 // Global object to keep track of button states
 const ds_button_states = {
@@ -1255,7 +1262,7 @@ async function ds5_finetune() {
     finetune_original_data = data
     finetune_visible = true
 
-    refresh_finetune()
+    refresh_finetune_sticks();
 }
 
 async function ds5_get_inmemory_module_data() {
@@ -1314,9 +1321,7 @@ async function write_finetune_data(data) {
     await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
 }
 
-function refresh_finetune() {
-    if (!finetune_visible)
-        return;
+function refresh_finetune_sticks() {
     if (on_finetune_updating)
         return;
 
@@ -1328,6 +1333,47 @@ function ds5_finetune_update_all() {
     const { left, right } = ds_button_states.sticks;
     ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
     ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
+
+    // Highlight the active finetune input based on stick position
+    highlight_active_finetune_input();
+}
+
+function highlight_active_finetune_input() {
+    const sticks = ds_button_states.sticks;
+    const currentStick = sticks[active_stick];
+    const deadzone = 0.3;
+
+    // Clear highlights from all inputs first
+    const inputs = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB"];
+    inputs.forEach(suffix => {
+        $(`#finetune${suffix}`).removeClass("border-primary border-2");
+    });
+
+    // Clear label highlights
+    const labelIds = ["Lx-lbl", "Ly-lbl", "Rx-lbl", "Ry-lbl"];
+    labelIds.forEach(suffix => {
+        $(`#finetuneStickCanvas${suffix}`).removeClass("text-primary");
+    });
+
+    // Only highlight if stick is moved significantly from center
+    if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
+        const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+        const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+        if (inputSuffix) {
+            // Highllight the corresponding finetune input box
+            $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
+
+            // Also highlight the corresponding LX/LY label to observe
+            let labelId = "";
+            if (active_stick === 'left') {
+                labelId = `finetuneStickCanvas${quadrant === 'left' || quadrant === 'right' ? "Lx" : "Ly"}-lbl`;
+            } else { // right
+                labelId = `finetuneStickCanvas${quadrant === 'left' || quadrant === 'right' ? "Rx" : "Ry"}-lbl`;
+            }
+
+            $(`#${labelId}`).addClass("text-primary");
+        }
+    }
 }
 
 function ds5_finetune_update(name, plx, ply) {
@@ -1350,8 +1396,148 @@ function ds5_finetune_update(name, plx, ply) {
 function finetune_close() {
     $("#finetuneModal").modal("hide");
     finetune_visible = false
+    stop_continuous_dpad_adjustment();
 
     finetune_original_data = []
+}
+
+function set_stick_to_finetune(stick) {
+    // Stop any continuous adjustments when switching sticks
+    stop_continuous_dpad_adjustment();
+
+    active_stick = stick;
+
+    // Remove active class from both cards
+    $("#left-stick-card").removeClass("stick-card-active");
+    $("#right-stick-card").removeClass("stick-card-active");
+
+    // Add active class to the selected card
+    if (stick === 'left') {
+        $("#left-stick-card").addClass("stick-card-active");
+    } else {
+        $("#right-stick-card").addClass("stick-card-active");
+    }
+}
+
+function handle_finetune_stick_switching(changes) {
+    if (changes.l1) {
+        set_stick_to_finetune('left');
+    } else if (changes.r1) {
+        set_stick_to_finetune('right');
+    }
+}
+
+function get_stick_quadrant(x, y) {
+    // Determine which quadrant the stick is in based on x,y coordinates
+    // x and y are normalized values between -1 and 1
+    if (Math.abs(x) > Math.abs(y)) {
+        return x > 0 ? 'right' : 'left';
+    } else {
+        return y > 0 ? 'down' : 'up';
+    }
+}
+
+function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
+    if (stick === 'left') {
+        switch (quadrant) {
+            case 'left': return "LL";
+            case 'up': return "LT";
+            case 'right': return "LR";
+            case 'down': return "LB";
+        }
+    } else if (stick === 'right') {
+        switch (quadrant) {
+            case 'left': return "RL";
+            case 'up': return "RT";
+            case 'right': return "RR";
+            case 'down': return "RB";
+        }
+    }
+    return null; // Invalid
+}
+
+function handle_finetune_dpad_adjustment(changes) {
+    const sticks = ds_button_states.sticks;
+    const currentStick = sticks[active_stick];
+
+    // Only adjust if stick is moved significantly from center
+    const deadzone = 0.1;
+    if (Math.abs(currentStick.x) < deadzone && Math.abs(currentStick.y) < deadzone) {
+        stop_continuous_dpad_adjustment();
+        return;
+    }
+
+    const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+
+    // Check for button press events (not current state)
+    // Use different step sizes based on quadrant - right/down values are much larger
+    const adjustmentStep = (quadrant === 'right' || quadrant === 'down') ? 15 : 3;
+    let adjustment = 0;
+
+    if (quadrant === 'left' || quadrant === 'right') {
+        // Horizontal quadrants: left increases, right decreases
+        if (changes.left || changes.square) {
+            adjustment = adjustmentStep;
+        } else if (changes.right || changes.circle) {
+            adjustment = -adjustmentStep;
+        } else if ([changes.left, changes.right, changes.square, changes.circle].includes(false)) {
+            // Button was released
+            stop_continuous_dpad_adjustment();
+            return;
+        }
+    } else if (quadrant === 'up' || quadrant === 'down') {
+        // Vertical quadrants: up increases, down decreases
+        if (changes.up || changes.triangle) {
+            adjustment = adjustmentStep;
+        } else if (changes.down || changes.cross) {
+            adjustment = -adjustmentStep;
+        } else if ([changes.up, changes.down, changes.triangle, changes.cross].includes(false)) {
+            // Button was released
+            stop_continuous_dpad_adjustment();
+            return;
+        }
+    }
+
+    // Start continuous adjustment on button press
+    if (adjustment !== 0) {
+        start_continuous_dpad_adjustment(active_stick, quadrant, adjustment);
+    }
+}
+
+function start_continuous_dpad_adjustment(active_stick, quadrant, adjustment) {
+    stop_continuous_dpad_adjustment();
+
+    const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+    const element = $(`#finetune${inputSuffix}`);
+
+    if (!element.length) return;
+
+    // Perform initial adjustment immediately...
+    perform_dpad_adjustment(element, adjustment);
+
+    // ...then prime continuous adjustment
+    dpad_adjustment_timeout = setTimeout(() => {
+        dpad_adjustment_interval = setInterval(() => {
+            perform_dpad_adjustment(element, adjustment);
+        }, 150);
+    }, 400); // Initial delay before continuous adjustment starts (400ms)
+}
+
+function stop_continuous_dpad_adjustment() {
+    clearInterval(dpad_adjustment_interval);
+    dpad_adjustment_interval = null;
+
+    clearTimeout(dpad_adjustment_timeout);
+    dpad_adjustment_timeout = null;
+}
+
+async function perform_dpad_adjustment(element, adjustment) {
+    const currentValue = parseInt(element.val()) || 0;
+    const newValue = Math.max(0, Math.min(65535, currentValue + adjustment));
+    element.val(newValue);
+
+    // Trigger the change event to update the finetune data
+    await on_finetune_change();
 }
 
 function finetune_save() {
@@ -1847,9 +2033,6 @@ function update_stick_graphics(changes, {is_ds5}) {
     if (!changes || !changes.sticks) return;
 
     refresh_sticks();
-    if (is_ds5) {
-        refresh_finetune();
-    }
 }
 
 function update_ds_button_svg(changes, BUTTON_MAP) {
@@ -2003,13 +2186,18 @@ function process_ds_input({data}) {
 
     // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
     const changes = record_ds_button_states(data, DS5_BUTTON_MAP, 7, 4, 5);
-
     if(current_active_tab === 'controller-tab') {
-        update_stick_graphics(changes, { is_ds5: true });
-        update_ds_button_svg(changes, DS5_BUTTON_MAP);
+        if(finetune_visible) {
+            refresh_finetune_sticks();
+            handle_finetune_stick_switching(changes);
+            handle_finetune_dpad_adjustment(changes);
+        } else {
+            update_stick_graphics(changes, { is_ds5: true });
+            update_ds_button_svg(changes, DS5_BUTTON_MAP);
 
-        const points = parse_touch_points(data, 32);
-        update_touchpad_circles(points);
+            const points = parse_touch_points(data, 32);
+            update_touchpad_circles(points);
+        }
     }
 
     if(current_active_tab === 'tests-tab') {

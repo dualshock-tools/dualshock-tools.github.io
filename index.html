@@ -521,7 +521,7 @@ input[id^="finetune"].border-primary {
 
 <!-- Finetune Modal -->
 <div class="modal fade" id="finetuneModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="finetuneModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-lg-down">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5 ds-i18n" id="finetuneModalLabel">Finetune stick calibration</h1>
@@ -530,9 +530,10 @@ input[id^="finetune"].border-primary {
       <div class="modal-body">
         <p class="ds-i18n">This screen allows to finetune raw calibration data on your controller</p>
         <div class="alert alert-info" role="alert">
-          <i class="fas fa-info-circle"></i>&nbsp;&nbsp;<span class="ds-i18n">
-            Press L1 to select Left stick, R1 to select Right stick</span><br/><br/>
-          <span class="ds-i18n">While holding the stick to be adjusted straight up/down/left/right, observe the highlighted value at the bottom of then dialog, then use the D-pad buttons to adjust the finetune value:</span><br/>
+          <i class="fas fa-info-circle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">
+            While holding the stick to be adjusted straight up/down/left/right, observe the highlighted value at the bottom of then dialog, then use the D-pad buttons to adjust the finetune value:
+          </span><br/>
           <small class="ds-i18n">
             • Move the stick position towards the center until it is just smaller than 1.00 (or larger than -1.00) then move back to 1.00 (or -1.00)<br>
             • Repeat the adjustment for the left/right and up/down pairs several times until you can move away from 1.00 with only one button press.
@@ -543,7 +544,7 @@ input[id^="finetune"].border-primary {
             <div class="row">
               <div class="col col-lg-6 col-12">
 
-                <div class="card text-bg-light stick-card-active" id="left-stick-card">
+                <div class="card text-bg-light" id="left-stick-card">
                   <div class="card-header"><span class="ds-i18n">Left stick</span></div>
                   <div class="card-body">
                     <div class="container-fluid">

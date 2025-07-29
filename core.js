@@ -1334,7 +1334,6 @@ function ds5_finetune_update_all() {
 
 function highlight_active_finetune_input() {
     const sticks = ds_button_states.sticks;
-    const currentStick = sticks[active_stick];
     const deadzone = 0.3;
 
     // Clear highlights from all inputs first
@@ -1349,7 +1348,10 @@ function highlight_active_finetune_input() {
         $(`#finetuneStickCanvas${suffix}`).removeClass("text-primary");
     });
 
+    if(!active_stick) return;
+
     // Only highlight if stick is moved significantly from center
+    const currentStick = sticks[active_stick];
     if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
         const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
         const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
@@ -1427,6 +1429,10 @@ function finetune_close() {
 }
 
 function set_stick_to_finetune(stick) {
+    if(active_stick === stick) {
+        return;
+    }
+
     // Stop any continuous adjustments when switching sticks
     stop_continuous_dpad_adjustment();
 
@@ -1445,11 +1451,42 @@ function set_stick_to_finetune(stick) {
 }
 
 function handle_finetune_stick_switching(changes) {
-    if (changes.l1) {
+    // Handle automatic stick switching based on movement
+    if (changes.sticks) {
+        update_active_stick_based_on_movement();
+    }
+}
+
+function is_stick_away_from_center(stick_pos, deadzone = 0.2) {
+    return Math.abs(stick_pos.x) >= deadzone || Math.abs(stick_pos.y) >= deadzone;
+}
+
+function update_active_stick_based_on_movement() {
+    const sticks = ds_button_states.sticks;
+    const deadzone = 0.2;
+
+    const left_is_away = is_stick_away_from_center(sticks.left, deadzone);
+    const right_is_away = is_stick_away_from_center(sticks.right, deadzone);
+
+    if (left_is_away && right_is_away) {
+        // Both sticks are away from center - clear highlighting
+        clear_active_stick();
+    } else if (left_is_away && !right_is_away) {
+        // Only left stick is away from center
         set_stick_to_finetune('left');
-    } else if (changes.r1) {
+    } else if (right_is_away && !left_is_away) {
+        // Only right stick is away from center
         set_stick_to_finetune('right');
     }
+    // If both sticks are centered, keep current active stick (no change)
+}
+
+function clear_active_stick() {
+    // Remove active class from both cards
+    $("#left-stick-card").removeClass("stick-card-active");
+    $("#right-stick-card").removeClass("stick-card-active");
+
+    active_stick = null; // Clear active stick
 }
 
 function get_stick_quadrant(x, y) {
@@ -1482,6 +1519,8 @@ function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
 }
 
 function handle_finetune_dpad_adjustment(changes) {
+    if(!active_stick) return;
+
     const sticks = ds_button_states.sticks;
     const currentStick = sticks[active_stick];
 

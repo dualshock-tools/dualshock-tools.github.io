@@ -41,6 +41,84 @@
 <style>
 dl.row dt { font-weight: normal; }
 dl.row dd { font-family: monospace; }
+
+/* Active stick card styling */
+.stick-card-active {
+    border: 1px solid #0d6efd !important;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.3) !important;
+}
+
+.stick-card-active .card-header {
+    background-color: #0d6efd !important;
+    color: white !important;
+}
+
+/* Styling for coordinate labels - base state to prevent layout shift */
+#finetuneStickCanvasLx-lbl,
+#finetuneStickCanvasLy-lbl,
+#finetuneStickCanvasRx-lbl,
+#finetuneStickCanvasRy-lbl {
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    background-color: transparent !important;
+}
+
+/* Styling for finetune input boxes - base state to prevent layout shift */
+input[id^="finetune"] {
+    border: 2px solid transparent !important;
+    width: 90px !important;
+    min-width: 90px !important;
+}
+
+/* Styling for highlighted finetune input boxes */
+input[id^="finetune"].border-primary {
+    border: 2px solid #0d6efd !important;
+}
+
+/* Styling for highlighted coordinate labels */
+#finetuneStickCanvasLx-lbl.text-primary,
+#finetuneStickCanvasLy-lbl.text-primary,
+#finetuneStickCanvasRx-lbl.text-primary,
+#finetuneStickCanvasRy-lbl.text-primary {
+    color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+/* CSS Grid layout for finetune inputs around canvas */
+.finetune-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 
+        ". top ."
+        "left center right"
+        ". bottom .";
+    justify-items: center;
+    align-items: center;
+    width: 100%;
+    margin: 0 auto;
+    max-width: fit-content;
+}
+
+.finetune-top {
+    grid-area: top;
+}
+
+.finetune-left {
+    grid-area: left;
+}
+
+.finetune-center {
+    grid-area: center;
+}
+
+.finetune-right {
+    grid-area: right;
+}
+
+.finetune-bottom {
+    grid-area: bottom;
+}
 </style>
 
 </head>
@@ -443,7 +521,7 @@ dl.row dd { font-family: monospace; }
 
 <!-- Finetune Modal -->
 <div class="modal fade" id="finetuneModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="finetuneModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-lg-down">
     <div class="modal-content">
       <div class="modal-header">
         <h1 class="modal-title fs-5 ds-i18n" id="finetuneModalLabel">Finetune stick calibration</h1>
@@ -451,33 +529,40 @@ dl.row dd { font-family: monospace; }
       </div>
       <div class="modal-body">
         <p class="ds-i18n">This screen allows to finetune raw calibration data on your controller</p>
+        <div class="alert alert-info" role="alert">
+          <i class="fas fa-info-circle"></i>&nbsp;&nbsp;<span class="ds-i18n">
+            Press L1 to select Left stick, R1 to select Right stick</span><br/><br/>
+          <span class="ds-i18n">While holding the stick to be adjusted straight up/down/left/right, observe the highlighted value at the bottom of then dialog, then use the D-pad buttons to adjust the finetune value:</span><br/>
+          <small class="ds-i18n">
+            • Move the stick position towards the center until it is just smaller than 1.00 (or larger than -1.00) then move back to 1.00 (or -1.00)<br>
+            • Repeat the adjustment for the left/right and up/down pairs several times until you can move away from 1.00 with only one button press.
+          </small>
+        </div>
         <div style="width: 100%; display: flex; justify-content: center;">
           <div class="container-fluid">
             <div class="row">
               <div class="col col-lg-6 col-12">
 
-                <div class="card text-bg-light" >
+                <div class="card text-bg-light stick-card-active" id="left-stick-card">
                   <div class="card-header"><span class="ds-i18n">Left stick</span></div>
                   <div class="card-body">
                     <div class="container-fluid">
-                      <div class="row">
-                        <table>
-                          <tr><td></td><td style="text-align: center;">
-                              <input id="finetuneLT" type="number" class="form-control" min="0" max="65535" value="0">
-                            </td><td></td></tr>
-                            <tr>
-                              <td height="160px" style="vertical-align: middle; align: right;">
-                                <input id="finetuneLL" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                              <td><canvas id="finetuneStickCanvasL" width="150" height="150"></canvas></td>
-                              <td height="160px" style="vertical-align: middle; align: left;">
-                                <input id="finetuneLR" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                            </tr>
-                            <tr><td></td><td style="text-align: center;">
-                                <input id="finetuneLB" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td><td></td></tr>
-                        </table>
+                      <div class="finetune-grid">
+                        <div class="finetune-top">
+                          <input id="finetuneLT" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-left">
+                          <input id="finetuneLL" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-center">
+                          <canvas id="finetuneStickCanvasL" width="150" height="150"></canvas>
+                        </div>
+                        <div class="finetune-right">
+                          <input id="finetuneLR" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-bottom">
+                          <input id="finetuneLB" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
                       </div>
                       <div class="row">
                         <div class="col"></div>
@@ -520,28 +605,26 @@ dl.row dd { font-family: monospace; }
 
               </div> <!-- col -->
               <div class="col col-lg-6 col-12">
-                <div class="card text-bg-light" >
+                <div class="card text-bg-light" id="right-stick-card">
                   <div class="card-header"><span class="ds-i18n">Right stick</span></div>
                   <div class="card-body">
                     <div class="container-fluid">
-                      <div class="row">
-                        <table>
-                          <tr><td></td><td style="text-align: center;">
-                              <input id="finetuneRT" type="number" class="form-control" min="0" max="65535" value="0">
-                            </td><td></td></tr>
-                            <tr>
-                              <td height="160px" style="vertical-align: middle; align: right;">
-                                <input id="finetuneRL" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                              <td><canvas id="finetuneStickCanvasR" width="150" height="150"></canvas></td>
-                              <td height="160px" style="vertical-align: middle; align: left;">
-                                <input id="finetuneRR" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                            </tr>
-                            <tr><td></td><td style="text-align: center;">
-                                <input id="finetuneRB" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td><td></td></tr>
-                        </table>
+                      <div class="finetune-grid">
+                        <div class="finetune-top">
+                          <input id="finetuneRT" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-left">
+                          <input id="finetuneRL" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-center">
+                          <canvas id="finetuneStickCanvasR" width="150" height="150"></canvas>
+                        </div>
+                        <div class="finetune-right">
+                          <input id="finetuneRR" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-bottom">
+                          <input id="finetuneRB" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
                       </div>
                       <div class="row">
                         <div class="col"></div>

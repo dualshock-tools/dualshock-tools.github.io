@@ -23,7 +23,7 @@ let finetune_visible = false
 let on_finetune_updating = false
 
 // Active stick tracking for finetune modal
-let active_stick = 'left' // 'left' or 'right'
+let active_stick = null // 'left', 'right', or null
 
 // Continuous D-pad adjustment tracking
 let dpad_adjustment_interval = null

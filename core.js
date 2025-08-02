@@ -17,14 +17,31 @@ var gj = 0;
 var gu = 0;
 
 // DS5 finetuning
-var finetune_original_data = []
-var last_written_finetune_data = []
-var finetune_visible = false
-var on_finetune_updating = false
+let finetune_original_data = []
+let last_written_finetune_data = []
+let finetune_visible = false
+let on_finetune_updating = false
+
+// Active stick tracking for finetune modal
+let active_stick = null // 'left', 'right', or null
+
+// Continuous D-pad adjustment tracking
+let dpad_adjustment_interval = null
+let dpad_adjustment_timeout = null
 
 // Global object to keep track of button states
 const ds_button_states = {
     // e.g. 'square': false, 'cross': false, ...
+    sticks: {
+        left: {
+            x: 0,
+            y: 0
+        },
+        right: {
+            x: 0,
+            y: 0
+        }
+    }
 };
 
 // Alphabetical order
@@ -1245,7 +1262,7 @@ async function ds5_finetune() {
     finetune_original_data = data
     finetune_visible = true
 
-    refresh_finetune()
+    refresh_finetune_sticks();
 }
 
 async function ds5_get_inmemory_module_data() {
@@ -1304,9 +1321,7 @@ async function write_finetune_data(data) {
     await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
 }
 
-function refresh_finetune() {
-    if (!finetune_visible)
-        return;
+function refresh_finetune_sticks() {
     if (on_finetune_updating)
         return;
 
@@ -1315,8 +1330,52 @@ function refresh_finetune() {
 }
 
 function ds5_finetune_update_all() {
-    ds5_finetune_update("finetuneStickCanvasL", last_lx, last_ly)
-    ds5_finetune_update("finetuneStickCanvasR", last_rx, last_ry)
+    const { left, right } = ds_button_states.sticks;
+    ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
+    ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
+
+    // Highlight the active finetune input based on stick position
+    highlight_active_finetune_input();
+}
+
+function highlight_active_finetune_input() {
+    const sticks = ds_button_states.sticks;
+    const deadzone = 0.3;
+
+    // Clear highlights from all inputs first
+    const inputs = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB"];
+    inputs.forEach(suffix => {
+        $(`#finetune${suffix}`).removeClass("border-primary border-2");
+    });
+
+    // Clear label highlights
+    const labelIds = ["Lx-lbl", "Ly-lbl", "Rx-lbl", "Ry-lbl"];
+    labelIds.forEach(suffix => {
+        $(`#finetuneStickCanvas${suffix}`).removeClass("text-primary");
+    });
+
+    if(!active_stick) return;
+
+    // Only highlight if stick is moved significantly from center
+    const currentStick = sticks[active_stick];
+    if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
+        const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+        const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+        if (inputSuffix) {
+            // Highllight the corresponding finetune input box
+            $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
+
+            // Also highlight the corresponding LX/LY label to observe
+            let labelId = "";
+            if (active_stick === 'left') {
+                labelId = `finetuneStickCanvas${quadrant === 'left' || quadrant === 'right' ? "Lx" : "Ly"}-lbl`;
+            } else { // right
+                labelId = `finetuneStickCanvas${quadrant === 'left' || quadrant === 'right' ? "Rx" : "Ry"}-lbl`;
+            }
+
+            $(`#${labelId}`).addClass("text-primary");
+        }
+    }
 }
 
 function ds5_finetune_update(name, plx, ply) {
@@ -1370,8 +1429,185 @@ function ds5_finetune_update(name, plx, ply) {
 function finetune_close() {
     $("#finetuneModal").modal("hide");
     finetune_visible = false
+    stop_continuous_dpad_adjustment();
 
     finetune_original_data = []
+}
+
+function set_stick_to_finetune(stick) {
+    if(active_stick === stick) {
+        return;
+    }
+
+    // Stop any continuous adjustments when switching sticks
+    stop_continuous_dpad_adjustment();
+
+    active_stick = stick;
+
+    // Remove active class from both cards
+    $("#left-stick-card").removeClass("stick-card-active");
+    $("#right-stick-card").removeClass("stick-card-active");
+
+    // Add active class to the selected card
+    if (stick === 'left') {
+        $("#left-stick-card").addClass("stick-card-active");
+    } else {
+        $("#right-stick-card").addClass("stick-card-active");
+    }
+}
+
+function handle_finetune_stick_switching(changes) {
+    // Handle automatic stick switching based on movement
+    if (changes.sticks) {
+        update_active_stick_based_on_movement();
+    }
+}
+
+function is_stick_away_from_center(stick_pos, deadzone = 0.2) {
+    return Math.abs(stick_pos.x) >= deadzone || Math.abs(stick_pos.y) >= deadzone;
+}
+
+function update_active_stick_based_on_movement() {
+    const sticks = ds_button_states.sticks;
+    const deadzone = 0.2;
+
+    const left_is_away = is_stick_away_from_center(sticks.left, deadzone);
+    const right_is_away = is_stick_away_from_center(sticks.right, deadzone);
+
+    if (left_is_away && right_is_away) {
+        // Both sticks are away from center - clear highlighting
+        clear_active_stick();
+    } else if (left_is_away && !right_is_away) {
+        // Only left stick is away from center
+        set_stick_to_finetune('left');
+    } else if (right_is_away && !left_is_away) {
+        // Only right stick is away from center
+        set_stick_to_finetune('right');
+    }
+    // If both sticks are centered, keep current active stick (no change)
+}
+
+function clear_active_stick() {
+    // Remove active class from both cards
+    $("#left-stick-card").removeClass("stick-card-active");
+    $("#right-stick-card").removeClass("stick-card-active");
+
+    active_stick = null; // Clear active stick
+}
+
+function get_stick_quadrant(x, y) {
+    // Determine which quadrant the stick is in based on x,y coordinates
+    // x and y are normalized values between -1 and 1
+    if (Math.abs(x) > Math.abs(y)) {
+        return x > 0 ? 'right' : 'left';
+    } else {
+        return y > 0 ? 'down' : 'up';
+    }
+}
+
+function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
+    if (stick === 'left') {
+        switch (quadrant) {
+            case 'left': return "LL";
+            case 'up': return "LT";
+            case 'right': return "LR";
+            case 'down': return "LB";
+        }
+    } else if (stick === 'right') {
+        switch (quadrant) {
+            case 'left': return "RL";
+            case 'up': return "RT";
+            case 'right': return "RR";
+            case 'down': return "RB";
+        }
+    }
+    return null; // Invalid
+}
+
+function handle_finetune_dpad_adjustment(changes) {
+    if(!active_stick) return;
+
+    const sticks = ds_button_states.sticks;
+    const currentStick = sticks[active_stick];
+
+    // Only adjust if stick is moved significantly from center
+    const deadzone = 0.1;
+    if (Math.abs(currentStick.x) < deadzone && Math.abs(currentStick.y) < deadzone) {
+        stop_continuous_dpad_adjustment();
+        return;
+    }
+
+    const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+
+    // Check for button press events (not current state)
+    // Use different step sizes based on quadrant - right/down values are much larger
+    const adjustmentStep = (quadrant === 'right' || quadrant === 'down') ? 15 : 3;
+    let adjustment = 0;
+
+    if (quadrant === 'left' || quadrant === 'right') {
+        // Horizontal quadrants: left increases, right decreases
+        if (changes.left || changes.square) {
+            adjustment = adjustmentStep;
+        } else if (changes.right || changes.circle) {
+            adjustment = -adjustmentStep;
+        } else if ([changes.left, changes.right, changes.square, changes.circle].includes(false)) {
+            // Button was released
+            stop_continuous_dpad_adjustment();
+            return;
+        }
+    } else if (quadrant === 'up' || quadrant === 'down') {
+        // Vertical quadrants: up increases, down decreases
+        if (changes.up || changes.triangle) {
+            adjustment = adjustmentStep;
+        } else if (changes.down || changes.cross) {
+            adjustment = -adjustmentStep;
+        } else if ([changes.up, changes.down, changes.triangle, changes.cross].includes(false)) {
+            // Button was released
+            stop_continuous_dpad_adjustment();
+            return;
+        }
+    }
+
+    // Start continuous adjustment on button press
+    if (adjustment !== 0) {
+        start_continuous_dpad_adjustment(active_stick, quadrant, adjustment);
+    }
+}
+
+function start_continuous_dpad_adjustment(active_stick, quadrant, adjustment) {
+    stop_continuous_dpad_adjustment();
+
+    const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+    const element = $(`#finetune${inputSuffix}`);
+
+    if (!element.length) return;
+
+    // Perform initial adjustment immediately...
+    perform_dpad_adjustment(element, adjustment);
+
+    // ...then prime continuous adjustment
+    dpad_adjustment_timeout = setTimeout(() => {
+        dpad_adjustment_interval = setInterval(() => {
+            perform_dpad_adjustment(element, adjustment);
+        }, 150);
+    }, 400); // Initial delay before continuous adjustment starts (400ms)
+}
+
+function stop_continuous_dpad_adjustment() {
+    clearInterval(dpad_adjustment_interval);
+    dpad_adjustment_interval = null;
+
+    clearTimeout(dpad_adjustment_timeout);
+    dpad_adjustment_timeout = null;
+}
+
+async function perform_dpad_adjustment(element, adjustment) {
+    const currentValue = parseInt(element.val()) || 0;
+    const newValue = Math.max(0, Math.min(65535, currentValue + adjustment));
+    element.val(newValue);
+
+    // Trigger the change event to update the finetune data
+    await on_finetune_change();
 }
 
 function finetune_save() {
@@ -1388,7 +1624,7 @@ async function finetune_cancel() {
     finetune_close();
 }
 
-var last_lx = 0, last_ly = 0, last_rx = 0, last_ry = 0;
+
 var ll_updated = false;
 
 var ll_data=new Array(48);
@@ -1518,11 +1754,7 @@ function refresh_stick_pos() {
     ctx.closePath();
     ctx.stroke();
 
-    var plx = last_lx;
-    var ply = last_ly;
-    var prx = last_rx;
-    var pry = last_ry;
-
+    const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = ds_button_states.sticks;
     if(enable_circ_test) {
         var pld = Math.sqrt(plx*plx + ply*ply);
         var pla = (parseInt(Math.round(Math.atan2(ply, plx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
@@ -1693,9 +1925,9 @@ function update_nvs_changes_status(new_value) {
     has_changes_to_write = new_value;
 }
 
-function update_battery_status(bat_capacity, cable_connected, is_charging, is_error) {
-    var bat_txt = bat_percent_to_text(bat_capacity, is_charging);
-    var can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
+function update_battery_status({bat_capacity, cable_connected, is_charging, is_error}) {
+    const bat_txt = bat_percent_to_text(bat_capacity, is_charging);
+    const can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
 
     if(bat_txt != last_bat_txt) {
         $("#d-bat").html(bat_txt);
@@ -1731,7 +1963,7 @@ const DS5_BUTTON_MAP = [
     { name: 'down', byte: 7, mask: 0x2 },
     { name: 'left', byte: 7, mask: 0x3 },
     { name: 'square', byte: 7, mask: 0x10, svg: 'Square' },
-    { name: 'cross', byte: 7, mask: 0x20, svg: 'Cross' },
+    { name: 'cross', byte: 7, mask:  0x20, svg: 'Cross' },
     { name: 'circle', byte: 7, mask: 0x40, svg: 'Circle' },
     { name: 'triangle', byte: 7, mask: 0x80, svg: 'Triangle' },
     { name: 'l1', byte: 8, mask: 0x01, svg: 'L1' },
@@ -1747,28 +1979,48 @@ const DS5_BUTTON_MAP = [
     { name: 'mute', byte: 9, mask: 0x04, svg: 'Mute' },
 ];
 
-// Generic button processing for DS4/DS5
-function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
-    if (!data || !data.data) return;
+function sticksChanged(current, newValues) {
+    return current.left.x !== newValues.left.x || current.left.y !== newValues.left.y ||
+           current.right.x !== newValues.right.x || current.right.y !== newValues.right.y;
+}
 
-    const pressedColor = '#1a237e'; // pleasing dark blue
-    // L2/R2 analog infill
+// Generic button processing for DS4/DS5
+function record_ds_button_states(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
+    if (!data) return {};
+
+    const changes = {};
+
+    // Stick positions (always at bytes 0-3)
+    const [new_lx, new_ly, new_rx, new_ry] = [0, 1, 2, 3]
+        .map(i => data.getUint8(i))
+        .map(v => Math.round((v - 127.5) / 128 * 100) / 100);
+
+    const newSticks = {
+        left: { x: new_lx, y: new_ly },
+        right: { x: new_rx, y: new_ry }
+    };
+
+    if (sticksChanged(ds_button_states.sticks, newSticks)) {
+        ds_button_states.sticks = newSticks;
+        changes.sticks = newSticks;
+        ll_updated = true;
+    }
+
+    // L2/R2 analog values
     [
-        ['l2', 'L2_infill', data.data.getUint8(l2_analog_byte)],
-        ['r2', 'R2_infill', data.data.getUint8(r2_analog_byte)]
-    ].forEach(([name, svg, val]) => {
-        // Fade between white and pressedColor based on analog value
-        const t = val / 255;
-        const color = lerp_color('#ffffff', pressedColor, t);
-        if(val != ds_button_states[name + '_analog']) {
-            ds_button_states[name + '_analog'] = val;
-            const infill = document.getElementById(svg);
-            set_svg_group_color(infill, color);
+        ['l2', l2_analog_byte],
+        ['r2', r2_analog_byte]
+    ].forEach(([name, byte]) => {
+        const val = data.getUint8(byte);
+        const key = name + '_analog';
+        if (val !== ds_button_states[key]) {
+            ds_button_states[key] = val;
+            changes[key] = val;
         }
     });
 
     // Dpad is a 4-bit hat value
-    const hat = data.data.getUint8(dpad_byte) & 0x0F;
+    const hat = data.getUint8(dpad_byte) & 0x0F;
     const dpad_map = {
         up:    (hat === 0 || hat === 1 || hat === 7),
         right: (hat === 1 || hat === 2 || hat === 3),
@@ -1779,22 +2031,63 @@ function process_ds_buttons(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_anal
         const pressed = dpad_map[dir];
         if (ds_button_states[dir] !== pressed) {
             ds_button_states[dir] = pressed;
-            // Update SVG if present
-            const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
-            set_svg_group_color(group, pressed ? pressedColor : 'white');
+            changes[dir] = pressed;
         }
     }
 
     // Other buttons
     for (let btn of BUTTON_MAP) {
         if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
-        const pressed = (data.data.getUint8(btn.byte) & btn.mask) !== 0;
+        const pressed = (data.getUint8(btn.byte) & btn.mask) !== 0;
         if (ds_button_states[btn.name] !== pressed) {
             ds_button_states[btn.name] = pressed;
-            if (btn.svg) {
-                const group = document.getElementById(btn.svg + '_infill');
-                set_svg_group_color(group, pressed ? pressedColor : 'white');
-            }
+            changes[btn.name] = pressed;
+        }
+    }
+
+    return changes;
+}
+
+function update_stick_graphics(changes, {is_ds5}) {
+    if (!changes || !changes.sticks) return;
+
+    refresh_sticks();
+}
+
+function update_ds_button_svg(changes, BUTTON_MAP) {
+    if (!changes || Object.keys(changes).length === 0) return;
+
+    const pressedColor = '#1a237e'; // pleasing dark blue
+
+    // Update L2/R2 analog infill
+    ['l2', 'r2'].forEach(name => {
+        const key = name + '_analog';
+        if (changes.hasOwnProperty(key)) {
+            const val = changes[key];
+            const t = val / 255;
+            const color = lerp_color('#ffffff', pressedColor, t);
+            const svg = name.toUpperCase() + '_infill';
+            const infill = document.getElementById(svg);
+            set_svg_group_color(infill, color);
+        }
+    });
+
+    // Update dpad buttons
+    for (let dir of ['up', 'right', 'down', 'left']) {
+        if (changes.hasOwnProperty(dir)) {
+            const pressed = changes[dir];
+            const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
+            set_svg_group_color(group, pressed ? pressedColor : 'white');
+        }
+    }
+
+    // Update other buttons
+    for (let btn of BUTTON_MAP) {
+        if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
+        if (changes.hasOwnProperty(btn.name) && btn.svg) {
+            const pressed = changes[btn.name];
+            const group = document.getElementById(btn.svg + '_infill');
+            set_svg_group_color(group, pressed ? pressedColor : 'white');
         }
     }
 }
@@ -1874,120 +2167,85 @@ function update_touchpad_circles(points) {
     });
 }
 
-function process_ds4_input(data) {
-    var lx = data.data.getUint8(0);
-    var ly = data.data.getUint8(1);
-    var rx = data.data.getUint8(2);
-    var ry = data.data.getUint8(3);
-
-    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
-    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
-    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
-    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
-
-    if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
-        last_lx = new_lx;
-        last_ly = new_ly;
-        last_rx = new_rx;
-        last_ry = new_ry;
-        ll_updated = true;
-        refresh_sticks();
-    }
-
-    // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
-    process_ds_buttons(data, DS4_BUTTON_MAP, 4, 7, 8);
-
-    const points = parse_touch_points(data.data, 34);
-    update_touchpad_circles(points);
-
-    // Read battery
-    var bat = data.data.getUint8(29);
-    var bat_data = bat & 0x0f;
-    var bat_status = (bat >> 4) & 1;
-
-    var bat_capacity = 0;
-    var cable_connected = false;
-    var is_charging = false;
-    var is_error = false;
-
-    if(bat_status == 1) {
-        cable_connected = true;
-        if(bat_data < 10) {
-            bat_capacity = Math.min(bat_data * 10 + 5, 100);
-            is_charging = true;
-        } else if(bat_data == 10) {
-            bat_capacity = 100;
-            is_charging = true;
-        } else if(bat_data == 11) {
-            bat_capacity = 100;
-            // charged
-        } else {
-            // error
-            bat_capacity = 0;
-            is_error = true;
-        }
-    } else {
-        cable_connected = false;
-        if(bat_data < 10) {
-            bat_capacity = bat_data * 10 + 5;
-        } else {
-            bat_capacity = 100;
-        }
-    }
-
-    update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
+function get_current_main_tab() {
+    const mainTabs = document.getElementById('mainTabs');
+    const activeBtn = mainTabs?.querySelector('.nav-link.active');
+    return activeBtn?.id || 'controller-tab';
 }
 
-function process_ds_input(data) {
-    var lx = data.data.getUint8(0);
-    var ly = data.data.getUint8(1);
-    var rx = data.data.getUint8(2);
-    var ry = data.data.getUint8(3);
+function get_current_test_tab() {
+    const testsList = document.getElementById('tests-list');
+    const activeBtn = testsList?.querySelector('.list-group-item.active');
+    return activeBtn?.id || 'haptic-test-tab';
+}
 
-    var new_lx = Math.round((lx - 127.5) / 128 * 100) / 100;
-    var new_ly = Math.round((ly - 127.5) / 128 * 100) / 100;
-    var new_rx = Math.round((rx - 127.5) / 128 * 100) / 100;
-    var new_ry = Math.round((ry - 127.5) / 128 * 100) / 100;
+function process_ds4_input({data}) {
+    // Use DS4 map: dpad byte 4, L2 analog 7, R2 analog 8
+    const changes = record_ds_button_states(data, DS4_BUTTON_MAP, 4, 7, 8);
 
-    if(last_lx != new_lx || last_ly != new_ly || last_rx != new_rx || last_ry != new_ry) {
-        last_lx = new_lx;
-        last_ly = new_ly;
-        last_rx = new_rx;
-        last_ry = new_ry;
-        ll_updated = true;
-        refresh_sticks();
-        refresh_finetune();
+    const current_active_tab = get_current_main_tab();
+    if(current_active_tab === 'controller-tab') {
+        update_stick_graphics(changes, { is_ds5: false });
+        update_ds_button_svg(changes, DS4_BUTTON_MAP);
+
+        const points = parse_touch_points(data, 34);
+        update_touchpad_circles(points);
     }
+
+    if(current_active_tab === 'tests-tab') {
+        handle_test_input(changes);
+    }
+
+    const batStatus = parse_battery_status(data, { byte: 29, is_ds4: true });
+    update_battery_status(batStatus);
+}
+
+function process_ds_input({data}) {
+    const current_active_tab = get_current_main_tab();
 
     // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
-    process_ds_buttons(data, DS5_BUTTON_MAP, 7, 4, 5);
+    const changes = record_ds_button_states(data, DS5_BUTTON_MAP, 7, 4, 5);
+    if(current_active_tab === 'controller-tab') {
+        if(finetune_visible) {
+            refresh_finetune_sticks();
+            handle_finetune_stick_switching(changes);
+            handle_finetune_dpad_adjustment(changes);
+        } else {
+            update_stick_graphics(changes, { is_ds5: true });
+            update_ds_button_svg(changes, DS5_BUTTON_MAP);
 
-    const points = parse_touch_points(data.data, 32);
-    update_touchpad_circles(points);
-
-    var bat = data.data.getUint8(52);
-    var bat_charge = bat & 0x0f;
-    var bat_status = bat >> 4;
-
-    var bat_capacity = 0;
-    var cable_connected = false;
-    var is_charging = false;
-    var is_error = false;
-
-    if(bat_status == 0) {
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-    } else if(bat_status == 1) {
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-        is_charging = true;
-        cable_connected = true;
-    } else if(bat_status == 2) {
-        bat_capacity = 100;
-        cable_connected = true;
-    } else {
-        is_error = true;
+            const points = parse_touch_points(data, 32);
+            update_touchpad_circles(points);
+        }
     }
 
-    update_battery_status(bat_capacity, cable_connected, is_charging, is_error);
+    if(current_active_tab === 'tests-tab') {
+        handle_test_input(changes);
+    }
+
+    const batStatus = parse_battery_status(data, { byte: 52, is_ds4: false });
+    update_battery_status(batStatus);
+}
+
+function handle_test_input(/* changes */) {
+    const current_test_tab = get_current_test_tab();
+
+    // Handle different test tabs
+    switch (current_test_tab) {
+        case 'haptic-test-tab':
+            // Handle L2/R2 for haptic feedback
+            const l2 = ds_button_states.l2_analog || 0;
+            const r2 = ds_button_states.r2_analog || 0;
+            if (l2 || r2) {
+                trigger_haptic_motors(l2, r2);
+            }
+            break;
+
+        // Add more test tabs here as needed
+        default:
+            console.log("Unknown test tab:", current_test_tab);
+            break;
+    }
 }
 
 function set_mute_visibility(show) {
@@ -2016,6 +2274,7 @@ async function continue_connection(report) {
         if(device.productId == 0x05c4) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            $("#info-tab").hide()
             // Hide mute button for DS4
             set_mute_visibility(false);
             if(await ds4_info()) {
@@ -2027,6 +2286,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x09cc) {
             $("#infoshowall").hide()
             $("#ds5finetune").hide()
+            $("#info-tab").hide()
             // Hide mute button for DS4
             set_mute_visibility(false);
             if(await ds4_info()) {
@@ -2038,6 +2298,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0ce6) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            $("#info-tab").show()
             // Show mute button for DS5
             set_mute_visibility(true);
             if(await ds5_info(false)) {
@@ -2049,6 +2310,7 @@ async function continue_connection(report) {
         } else if(device.productId == 0x0df2) {
             $("#infoshowall").show()
             $("#ds5finetune").show()
+            $("#info-tab").show()
             // Show mute button for DS5 Edge
             set_mute_visibility(true);
             if(await ds5_info(true)) {
@@ -2085,6 +2347,11 @@ async function continue_connection(report) {
             $("#resetBtn").show();
             $("#d-nvstatus").text = l("Unknown");
             $("#d-bdaddr").text = l("Unknown");
+            // Always default to the Calibration tab
+            const calibTab = document.getElementById('controller-tab');
+            if (calibTab) {
+                new bootstrap.Tab(calibTab).show();
+            }
         } else {
             show_popup(l("Connected invalid device: ") + l("Error 1"));
             $("#btnconnect").prop("disabled", false);
@@ -2355,9 +2622,12 @@ function show_edge_modal() {
     new bootstrap.Modal(document.getElementById('edgeModal'), {}).show()
 }
 
-function show_info_modal() {
+function show_info_tab() {
     la("info_modal");
-    new bootstrap.Modal(document.getElementById('infoModal'), {}).show()
+    const infoTab = document.getElementById('info-tab');
+    if (infoTab) {
+        new bootstrap.Tab(infoTab).show();
+    }
 }
 
 function discord_popup() { 
@@ -2615,6 +2885,46 @@ function lang_translate(target_file, target_lang, target_direction) {
 
 }
 
+let haptic_timeout = undefined;
+let haptic_last_trigger = 0;
+async function trigger_haptic_motors(strong_motor /*left*/, weak_motor /*right*/) {
+    // The DS4 contoller has a strong (left) and a weak (right) motor.
+    // The DS5 emulates the same behavior, but the left and right motors are the same.
+
+    const now = Date.now();
+    if (now - haptic_last_trigger < 200) {
+        return; // Rate limited - ignore calls within 200ms
+    }
+
+    haptic_last_trigger = now;
+
+    try {
+        if (mode == 1) { // DS4
+            const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
+            await device.sendReport(0x05, data);
+        } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+            const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
+            await device.sendReport(0x02, data);
+        }
+
+        // Stop rumble after duration
+        clearTimeout(haptic_timeout);
+        haptic_timeout = setTimeout(stop_haptic_motors, 250);
+    } catch(e) {
+        show_popup(l("Error triggering rumble: ") + e);
+    }
+}
+
+async function stop_haptic_motors() {
+    if (mode == 1) { // DS4
+        const data = new Uint8Array([0x05, 0x00, 0, 0, 0]);
+        await device.sendReport(0x05, data);
+    } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+        const data = new Uint8Array([0x02, 0x00, 0, 0]);
+        await device.sendReport(0x02, data);
+    }
+}
+
 function lerp_color(a, b, t) {
     // a, b: hex color strings, t: 0.0-1.0
     function hex2rgb(hex) {
@@ -2634,4 +2944,56 @@ function lerp_color(a, b, t) {
         Math.round(c1[2] + (c2[2] - c1[2]) * t)
     ];
     return rgb2hex(c[0], c[1], c[2]);
+}
+
+
+function parse_battery_status(data, {byte, is_ds4 = false}) {
+    const bat = data.getUint8(byte);
+    let bat_capacity = 0, cable_connected = false, is_charging = false, is_error = false;
+
+    if (is_ds4) {
+        // DS4: bat_data = low 4 bits, bat_status = bit 4
+        const bat_data = bat & 0x0f;
+        const bat_status = (bat >> 4) & 1;
+        if (bat_status == 1) {
+            cable_connected = true;
+            if (bat_data < 10) {
+                bat_capacity = Math.min(bat_data * 10 + 5, 100);
+                is_charging = true;
+            } else if (bat_data == 10) {
+                bat_capacity = 100;
+                is_charging = true;
+            } else if (bat_data == 11) {
+                bat_capacity = 100;
+                // charged
+            } else {
+                bat_capacity = 0;
+                is_error = true;
+            }
+        } else {
+            cable_connected = false;
+            if (bat_data < 10) {
+                bat_capacity = bat_data * 10 + 5;
+            } else {
+                bat_capacity = 100;
+            }
+        }
+    } else {
+        // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
+        const bat_charge = bat & 0x0f;
+        const bat_status = bat >> 4;
+        if (bat_status == 0) {
+            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        } else if (bat_status == 1) {
+            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+            is_charging = true;
+            cable_connected = true;
+        } else if (bat_status == 2) {
+            bat_capacity = 100;
+            cable_connected = true;
+        } else {
+            is_error = true;
+        }
+    }
+    return { bat_capacity, cable_connected, is_charging, is_error };
 }

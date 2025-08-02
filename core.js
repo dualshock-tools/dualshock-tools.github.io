@@ -588,6 +588,11 @@ function ds5_color(x) {
     return colorName;
 }
 
+// This function should be used only for ASCII strings (not UTF)
+function reverse_str(s) {
+    return s.split('').reverse().join('');
+}
+
 
 async function ds5_info(is_edge) {
     try {
@@ -623,7 +628,7 @@ async function ds5_info(is_edge) {
         serial_number = await ds5_system_info(1, 19, 17);
         append_info(l("Serial Number"), serial_number, "hw");
         append_info_extra(l("MCU Unique ID"), await ds5_system_info(1, 9, 9, false), "hw");
-        append_info_extra(l("PCBA ID"), await ds5_system_info(1, 17, 14), "hw");
+        append_info_extra(l("PCBA ID"), reverse_str(await ds5_system_info(1, 17, 14)), "hw");
         append_info_extra(l("Battery Barcode"), await ds5_system_info(1, 24, 23), "hw");
         append_info_extra(l("VCM Left Barcode"), await ds5_system_info(1, 26, 16), "hw");
         append_info_extra(l("VCM Right Barcode"), await ds5_system_info(1, 28, 16), "hw");

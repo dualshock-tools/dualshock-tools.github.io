@@ -221,7 +221,6 @@
     "Nova Pink": "Nova Pink",
     "PCBA ID": "PCBA ID",
     "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "Forbind venligst en DualShock 4-, DualSense- eller DualSense Edge-controller til din computer, og tryk på Tilslut.",
-    "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "",
     "Right Module Barcode": "Højre Modul Stregkode",
     "SBL FW Version": "SBL FW Version",
     "Spider FW Version": "Spider FW Version",
@@ -242,5 +241,8 @@
     "here": "her",
     "left module": "venstre modul",
     "right module": "højre modul",
+    "10x zoom": "",
+    "Normal": "",
+    "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "",
     "": ""
 }

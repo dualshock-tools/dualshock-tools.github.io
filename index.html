@@ -297,8 +297,16 @@ dl.row dd { font-family: monospace; }
                 </div>
                 <div class="px-2">
                     <center>
-                        <input class="form-check-input" type="checkbox" value="" id="checkCircularity">
-                        <label class="form-check-label ds-i18n" for="checkCircularity">Check circularity</label>
+                        <div class="btn-group mb-3" role="group" aria-label="Display mode options">
+                          <input type="radio" class="btn-check" name="displayMode" id="normalMode" value="normal" checked>
+                          <label class="btn btn-outline-secondary btn-sm ds-i18n" for="normalMode">Normal</label>
+
+                          <input type="radio" class="btn-check" name="displayMode" id="centerZoomMode" value="centerZoom">
+                          <label class="btn btn-outline-secondary btn-sm ds-i18n" for="centerZoomMode">10x zoom</label>
+
+                          <input type="radio" class="btn-check" name="displayMode" id="checkCircularityMode" value="checkCircularity">
+                          <label class="btn btn-outline-secondary btn-sm ds-i18n" for="checkCircularityMode">Check circularity</label>
+                        </div>
                         <div class="hstack" id="circ-data">
                             <div class="vstack" style="text-align: center;">
                                 <span class="ds-i18n">Err L:</span> 
@@ -943,7 +951,7 @@ dl.row dd { font-family: monospace; }
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.10</a> (2025-08-02) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.11</a> (2025-08-02) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

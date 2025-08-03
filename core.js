@@ -17,13 +17,14 @@ var gj = 0;
 var gu = 0;
 
 // DS5 finetuning
+let finetune_mode = 'center'; // 'center' or 'circularity'
 let finetune_original_data = []
 let last_written_finetune_data = []
 let finetune_visible = false
 let on_finetune_updating = false
 
 // Active stick tracking for finetune modal
-let active_stick = null // 'left', 'right', or null
+let active_stick = null; // 'left', 'right', or null
 
 // Continuous D-pad adjustment tracking
 let dpad_adjustment_interval = null
@@ -83,6 +84,16 @@ function dec2hex32(i) {
 
 function dec2hex8(i) {
    return (i+0x100).toString(16).substr(-2).toUpperCase();
+}
+
+function calculateCircularityError(data) {
+    // Sum of squared deviations from ideal distance of 1.0, only for values > 0.2
+    const sumSquaredDeviations = data.reduce((acc, val) =>
+        val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
+
+    // Calculate RMS deviation as percentage
+    const validDataCount = data.filter(val => val > 0.2).length;
+    return validDataCount > 0 ? Math.sqrt(sumSquaredDeviations / validDataCount) * 100 : 0;
 }
 
 function ds5_hw_to_bm(hw_ver) {
@@ -1219,17 +1230,14 @@ function alloc_req(id, data=[]) {
     return out;
 }
 
-async function on_finetune_change(x) {
-    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
-    
-    out=[]
-
-    for(let i=0;i<12;i++) {
-        let el = $("#finetune" + list[i]);
-        let v = parseInt(el.val())
-        out.push(v)
-    }
-    await write_finetune_data(out)
+async function on_finetune_change() {
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    const out = list.map((suffix) => {
+        const el = $("#finetune" + suffix);
+        const v = parseInt(el.val());
+        return isNaN(v) ? 0 : v;
+    });
+    await write_finetune_data(out);
 }
 
 async function ds5_finetune() {
@@ -1253,11 +1261,28 @@ async function ds5_finetune() {
     curModal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
     curModal.show();
 
-    let list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
-    for(i=0;i<12;i++) {
-        $("#finetune" + list[i]).val(data[i])
-        $("#finetune" + list[i]).on('change', on_finetune_change)
-    }
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
+    list.forEach((suffix, i) => {
+        $("#finetune" + suffix).val(data[i]);
+        $("#finetune" + suffix).on('change', on_finetune_change);
+    });
+
+    // Set up mode toggle event listeners
+    $("#finetuneModeCenter").on('change', function() {
+        if (this.checked) {
+            toggle_finetune_mode('center');
+        }
+    });
+
+    $("#finetuneModeCircularity").on('change', function() {
+        if (this.checked) {
+            toggle_finetune_mode('circularity');
+        }
+    });
+
+    // Initialize in center mode
+    toggle_finetune_mode('center');
+    set_stick_to_finetune('left');
 
     finetune_original_data = data
     finetune_visible = true
@@ -1307,17 +1332,13 @@ async function write_finetune_data(data) {
         return;
     }
 
-    if (data == last_written_finetune_data) {
+    const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    if (deepEqual(data, last_written_finetune_data)) {
         return;
     }
 
     last_written_finetune_data = data
-    pkg = [12,1]
-    for(i=0;i<data.length;i++) {
-        x = data[i]
-        pkg.push(x & 0xff)
-        pkg.push(x >> 8)
-    }
+    const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);
     await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
 }
 
@@ -1338,42 +1359,52 @@ function ds5_finetune_update_all() {
     highlight_active_finetune_input();
 }
 
-function highlight_active_finetune_input() {
-    const sticks = ds_button_states.sticks;
-    const deadzone = 0.3;
+function clear_stick_input_highlights(to_clear = {center: true, circularity: true}) {
+    const { center, circularity } = to_clear;
+    const stickInputs = [
+        center ? ["LX", "LY", "RX", "RY"] : null,
+        circularity ? ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB"] : null,
+    ].flat().filter(Boolean);
 
-    // Clear highlights from all inputs first
-    const inputs = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB"];
-    inputs.forEach(suffix => {
+    stickInputs.forEach(suffix => {
         $(`#finetune${suffix}`).removeClass("border-primary border-2");
     });
 
-    // Clear label highlights
-    const labelIds = ["Lx-lbl", "Ly-lbl", "Rx-lbl", "Ry-lbl"];
-    labelIds.forEach(suffix => {
-        $(`#finetuneStickCanvas${suffix}`).removeClass("text-primary");
-    });
+    if(finetune_mode === 'center' && center || finetune_mode === 'circularity' && circularity) {
+        // Clear label highlights
+        const labelIds = ["Lx-lbl", "Ly-lbl", "Rx-lbl", "Ry-lbl"];
+        labelIds.forEach(suffix => {
+            $(`#finetuneStickCanvas${suffix}`).removeClass("text-primary");
+        });
+    }
+}
 
+function highlight_active_finetune_input() {
     if(!active_stick) return;
 
-    // Only highlight if stick is moved significantly from center
-    const currentStick = sticks[active_stick];
-    if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
-        const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
-        const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
-        if (inputSuffix) {
-            // Highllight the corresponding finetune input box
-            $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
+    clear_stick_input_highlights({circularity: true});
+    if (finetune_mode === 'center') {
+        // Center mode: highlighting is handled directly in handle_center_mode_adjustment
+    } else {
+        // Circularity mode: highlight based on stick position (original logic)
+        const sticks = ds_button_states.sticks;
+        const deadzone = 0.5;
+        const currentStick = sticks[active_stick];
 
-            // Also highlight the corresponding LX/LY label to observe
-            let labelId = "";
-            if (active_stick === 'left') {
-                labelId = `finetuneStickCanvas${quadrant === 'left' || quadrant === 'right' ? "Lx" : "Ly"}-lbl`;
-            } else { // right
-                labelId = `finetuneStickCanvas${quadrant === 'left' || quadrant === 'right' ? "Rx" : "Ry"}-lbl`;
+        // Only highlight if stick is moved significantly from center
+        if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
+            const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+            const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+            if (inputSuffix) {
+                // Highlight the corresponding finetune input box
+                $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
+
+                // Also highlight the corresponding LX/LY label to observe
+                const labelId = `finetuneStickCanvas${
+                    active_stick === 'left' ? 'L' : 'R'}${
+                    quadrant === 'left' || quadrant === 'right' ? 'x' : 'y'}-lbl`;
+                $(`#${labelId}`).addClass("text-primary");
             }
-
-            $(`#${labelId}`).addClass("text-primary");
         }
     }
 }
@@ -1383,13 +1414,19 @@ function ds5_finetune_update(name, plx, ply) {
     var c = document.getElementById(name);
     var ctx = c.getContext("2d");
     var sz = 60;
-    var hb = 20 + sz;
+    var hb = 15 + sz;
     var yb = 15 + sz;
     var w = c.width;
     ctx.clearRect(0, 0, c.width, c.height);
 
-    // Draw stick position with circle
-    draw_stick_position(ctx, hb, yb, sz, plx, ply, { enable_zoom_center: true });
+    if (finetune_mode === 'circularity') {
+        // Draw stick position with circle
+        const isLeftStick = name === "finetuneStickCanvasL";
+        draw_stick_position(ctx, hb, yb, sz, plx, ply, { circularity_data: isLeftStick ? ll_data : rr_data });
+    } else {
+        // Draw stick position with crosshair
+        draw_stick_position(ctx, hb, yb, sz, plx, ply, { enable_zoom_center: true });
+    }
 
     $("#"+ name + "x-lbl").text(float_to_str(plx, 3));
     $("#"+ name + "y-lbl").text(float_to_str(ply, 3));
@@ -1397,10 +1434,20 @@ function ds5_finetune_update(name, plx, ply) {
 
 function finetune_close() {
     $("#finetuneModal").modal("hide");
-    finetune_visible = false
-    stop_continuous_dpad_adjustment();
+    finetune_visible = false;
 
-    finetune_original_data = []
+    // Remove event listeners from finetune inputs
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    list.forEach(suffix => {
+        $("#finetune" + suffix).off('change');
+    });
+
+    $("#finetuneModeCenter").off('change');
+    $("#finetuneModeCircularity").off('change');
+
+    clear_active_stick();
+    stop_continuous_dpad_adjustment();
+    finetune_original_data = [];
 }
 
 function set_stick_to_finetune(stick) {
@@ -1410,6 +1457,7 @@ function set_stick_to_finetune(stick) {
 
     // Stop any continuous adjustments when switching sticks
     stop_continuous_dpad_adjustment();
+    clear_stick_input_highlights();
 
     active_stick = stick;
 
@@ -1422,6 +1470,17 @@ function set_stick_to_finetune(stick) {
         $("#left-stick-card").addClass("stick-card-active");
     } else {
         $("#right-stick-card").addClass("stick-card-active");
+    }
+}
+
+function handle_finetune_mode_switching(changes) {
+    // Handle automatic stick switching based on movement
+    if (changes.l1) {
+        toggle_finetune_mode('center');
+        clear_stick_input_highlights();
+    } else if (changes.r1) {
+        toggle_finetune_mode('circularity');
+        clear_stick_input_highlights();
     }
 }
 
@@ -1462,6 +1521,7 @@ function clear_active_stick() {
     $("#right-stick-card").removeClass("stick-card-active");
 
     active_stick = null; // Clear active stick
+    clear_stick_input_highlights();
 }
 
 function get_stick_quadrant(x, y) {
@@ -1475,6 +1535,15 @@ function get_stick_quadrant(x, y) {
 }
 
 function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
+    // This function should only be used in circularity mode
+    // In center mode, we don't care about quadrants - use direct axis mapping instead
+    if (finetune_mode === 'center') {
+        // This function shouldn't be called in center mode
+        console.warn('get_finetune_input_suffix_for_quadrant called in center mode - this should not happen');
+        return null;
+    }
+
+    // Circularity mode: map quadrants to specific calibration points
     if (stick === 'left') {
         switch (quadrant) {
             case 'left': return "LL";
@@ -1496,11 +1565,56 @@ function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
 function handle_finetune_dpad_adjustment(changes) {
     if(!active_stick) return;
 
+    if (finetune_mode === 'center') {
+        handle_center_mode_adjustment(changes);
+    } else {
+        handle_circularity_mode_adjustment(changes);
+    }
+}
+
+function handle_center_mode_adjustment(changes) {
+    const adjustmentStep = 5; // Use consistent step size for center mode
+
+    // Define button mappings for center mode
+    const buttonMappings = [
+        { buttons: ['left', 'square'], adjustment: adjustmentStep, axis: 'X' },
+        { buttons: ['right', 'circle'], adjustment: -adjustmentStep, axis: 'X' },
+        { buttons: ['up', 'triangle'], adjustment: adjustmentStep, axis: 'Y' },
+        { buttons: ['down', 'cross'], adjustment: -adjustmentStep, axis: 'Y' }
+    ];
+
+    // Check if any relevant button was released
+    const relevantButtons = ['left', 'right', 'square', 'circle', 'up', 'down', 'triangle', 'cross'];
+    if (relevantButtons.some(button => changes[button] === false)) {
+        stop_continuous_dpad_adjustment();
+        return;
+    }
+
+    // Check for button presses
+    for (const mapping of buttonMappings) {
+        if (mapping.buttons.some(button => changes[button])) {
+            clear_stick_input_highlights({center: true});
+
+            // Highlight the corresponding finetune input box directly
+            const inputSuffix = `${active_stick === 'left' ? 'L' : 'R'}${mapping.axis}`;
+            $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
+
+            // Also highlight the corresponding axis label
+            const labelSuffix = `${active_stick === 'left' ? "L" : "R"}${mapping.axis.toLowerCase()}`;
+            $(`#finetuneStickCanvas${labelSuffix}-lbl`).addClass("text-primary");
+
+            start_continuous_dpad_adjustment_center_mode(active_stick, mapping.axis, mapping.adjustment);
+            return;
+        }
+    }
+}
+
+function handle_circularity_mode_adjustment(changes) {
     const sticks = ds_button_states.sticks;
     const currentStick = sticks[active_stick];
 
     // Only adjust if stick is moved significantly from center
-    const deadzone = 0.1;
+    const deadzone = 0.5;
     if (Math.abs(currentStick.x) < deadzone && Math.abs(currentStick.y) < deadzone) {
         stop_continuous_dpad_adjustment();
         return;
@@ -1508,33 +1622,38 @@ function handle_finetune_dpad_adjustment(changes) {
 
     const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
 
-    // Check for button press events (not current state)
     // Use different step sizes based on quadrant - right/down values are much larger
     const adjustmentStep = (quadrant === 'right' || quadrant === 'down') ? 15 : 3;
+
+    // Define button mappings for each quadrant type
+    const horizontalButtons = ['left', 'right', 'square', 'circle'];
+    const verticalButtons = ['up', 'down', 'triangle', 'cross'];
+
     let adjustment = 0;
+    let relevantButtons = [];
 
     if (quadrant === 'left' || quadrant === 'right') {
         // Horizontal quadrants: left increases, right decreases
+        relevantButtons = horizontalButtons;
         if (changes.left || changes.square) {
             adjustment = adjustmentStep;
         } else if (changes.right || changes.circle) {
             adjustment = -adjustmentStep;
-        } else if ([changes.left, changes.right, changes.square, changes.circle].includes(false)) {
-            // Button was released
-            stop_continuous_dpad_adjustment();
-            return;
         }
     } else if (quadrant === 'up' || quadrant === 'down') {
         // Vertical quadrants: up increases, down decreases
+        relevantButtons = verticalButtons;
         if (changes.up || changes.triangle) {
             adjustment = adjustmentStep;
         } else if (changes.down || changes.cross) {
             adjustment = -adjustmentStep;
-        } else if ([changes.up, changes.down, changes.triangle, changes.cross].includes(false)) {
-            // Button was released
-            stop_continuous_dpad_adjustment();
-            return;
         }
+    }
+
+    // Check if any relevant button was released
+    if (relevantButtons.some(button => changes[button] === false)) {
+        stop_continuous_dpad_adjustment();
+        return;
     }
 
     // Start continuous adjustment on button press
@@ -1544,20 +1663,33 @@ function handle_finetune_dpad_adjustment(changes) {
 }
 
 function start_continuous_dpad_adjustment(active_stick, quadrant, adjustment) {
+    const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+    start_continuous_adjustment_with_suffix(inputSuffix, adjustment);
+}
+
+function start_continuous_dpad_adjustment_center_mode(active_stick, targetAxis, adjustment) {
+    // In center mode, directly map to X/Y axes
+    const inputSuffix = active_stick === 'left' ?
+        (targetAxis === 'X' ? 'LX' : 'LY') :
+        (targetAxis === 'X' ? 'RX' : 'RY');
+    start_continuous_adjustment_with_suffix(inputSuffix, adjustment);
+}
+
+function start_continuous_adjustment_with_suffix(inputSuffix, adjustment) {
     stop_continuous_dpad_adjustment();
 
-    const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
     const element = $(`#finetune${inputSuffix}`);
-
     if (!element.length) return;
 
     // Perform initial adjustment immediately...
     perform_dpad_adjustment(element, adjustment);
+    clear_circularity();
 
     // ...then prime continuous adjustment
     dpad_adjustment_timeout = setTimeout(() => {
         dpad_adjustment_interval = setInterval(() => {
             perform_dpad_adjustment(element, adjustment);
+            clear_circularity();
         }, 150);
     }, 400); // Initial delay before continuous adjustment starts (400ms)
 }
@@ -1593,18 +1725,58 @@ async function finetune_cancel() {
     finetune_close();
 }
 
+function toggle_finetune_mode(mode) {
+    finetune_mode = mode;
+    clear_circularity();
 
-var ll_updated = false;
+    const modal = document.getElementById('finetuneModal');
+    if (mode === 'center') {
+        $("#finetuneModeCenter").prop('checked', true);
+        modal.classList.remove('circularity-mode');
+    } else if (mode === 'circularity') {
+        $("#finetuneModeCircularity").prop('checked', true);
+        modal.classList.add('circularity-mode');
+    }
+}
 
-var ll_data=new Array(48);
-var rr_data=new Array(48);
-var enable_circ_test = false;
 
-function reset_circularity() {
+let ll_updated = false;
+const CIRCULARITY_DATA_SIZE = 48; // Number of angular positions to sample
+const ll_data=new Array(CIRCULARITY_DATA_SIZE);
+const rr_data=new Array(CIRCULARITY_DATA_SIZE);
+
+/**
+ * Collects circularity data for both analog sticks during testing mode.
+ * This function tracks the maximum distance reached at each angular position
+ * around the stick's circular range, creating a polar coordinate map of
+ * stick movement capabilities.
+ */
+function collectCircularityData(stickStates, leftData, rightData) {
+    const { left, right  } = stickStates = stickStates || {};
+    const MAX_N = CIRCULARITY_DATA_SIZE;
+
+    [[left, leftData], [right, rightData]].forEach(([stick, data]) => {
+        if (!stick) return; // Skip if no stick changed position
+
+        const { x, y } = stick;
+        // Calculate distance from center (magnitude of stick position vector)
+        const distance = Math.sqrt(x * x + y * y);
+        // Convert cartesian coordinates to angular index (0 to MAX_N-1)
+        // atan2 gives angle in radians, convert to array index with proper wrapping
+        const angleIndex = (parseInt(Math.round(Math.atan2(y, x) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
+        // Store maximum distance reached at this angle (for circularity analysis)
+        const oldValue = data[angleIndex] ?? 0;
+        data[angleIndex] = Math.max(oldValue, distance);
+    });
+}
+
+function clear_circularity() {
     ll_data.fill(0);
     rr_data.fill(0);
-    enable_circ_test = false;
     ll_updated = false;
+}
+function reset_circularity() {
+    clear_circularity();
     $("#normalMode").prop('checked', true);
     refresh_stick_pos();
 }
@@ -1635,11 +1807,11 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
 
     // Draw circularity visualization if data provided
     if (circularity_data?.length > 0) {
-        const MAX_N = circularity_data.length;
+        const MAX_N = CIRCULARITY_DATA_SIZE;
 
         for(let i = 0; i < MAX_N; i++) {
             const kd = circularity_data[i];
-            const kd1 = circularity_data[(i+1) % circularity_data.length];
+            const kd1 = circularity_data[(i+1) % CIRCULARITY_DATA_SIZE];
             if (kd === undefined || kd1 === undefined) continue;
             const ka = i * Math.PI * 2 / MAX_N;
             const ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
@@ -1661,6 +1833,24 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
             ctx.fillStyle = 'hsla(' + parseInt(hh) + ', 100%, 50%, 0.5)';
             ctx.fill();
         }
+    }
+
+    // Draw circularity error text if enough data provided
+    if (circularity_data?.filter(n => n > 0.3).length > 10) {
+        const circularityError = calculateCircularityError(circularity_data);
+
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 3;
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const text_y = center_y + sz * 0.5;
+        const text = `${circularityError.toFixed(1)} %`;
+
+        ctx.strokeText(text, center_x, text_y);
+        ctx.fillText(text, center_x, text_y);
     }
 
     // Draw crosshairs
@@ -1692,28 +1882,6 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
         ctx.beginPath();
         ctx.arc(center_x, center_y, sz * 0.5, 0, 2 * Math.PI);
         ctx.stroke();
-    }
-
-    // ctx.beginPath();
-    // ctx.moveTo(w-hb, yb-sz);
-    // ctx.lineTo(w-hb, yb+sz);
-    // ctx.closePath();
-    // ctx.stroke();
-
-    const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = ds_button_states.sticks;
-    if(enable_circ_test && circularity_data?.length > 0) {
-        const MAX_N = circularity_data.length;
-        var pld = Math.sqrt(plx*plx + ply*ply);
-        var pla = (parseInt(Math.round(Math.atan2(ply, plx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-        var old = ll_data[pla];
-        if(old === undefined) old = 0;
-        ll_data[pla] = Math.max(old, pld);
-
-        var prd = Math.sqrt(prx*prx + pry*pry);
-        var pra = (parseInt(Math.round(Math.atan2(pry, prx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-        var old = rr_data[pra];
-        if(old === undefined) old = 0;
-        rr_data[pra] = Math.max(old, prd);
     }
 
     ctx.fillStyle = '#000000';
@@ -1770,17 +1938,8 @@ function refresh_stick_pos() {
 
     const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = ds_button_states.sticks;
 
-    if(enable_circ_test) {
-        [[plx, ply, ll_data], [prx, pry, rr_data]].forEach(([px, py, circularity_data]) => {
-            const MAX_N = circularity_data.length;
-            const pa = (parseInt(Math.round(Math.atan2(py, px) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-            const pd = Math.sqrt(px*px + py*py);
-            const old = circularity_data[pa] ?? 0;
-            circularity_data[pa] = Math.max(old, pd);
-        });
-    }
-
     const enable_zoom_center = center_zoom_checked();
+    const enable_circ_test = circ_checked();
     // Draw left stick
     draw_stick_position(ctx, hb, yb, sz, plx, ply, {
         circularity_data: enable_circ_test ? ll_data : null,
@@ -1798,21 +1957,6 @@ function refresh_stick_pos() {
     $("#ly-lbl").text(float_to_str(ply, precision));
     $("#rx-lbl").text(float_to_str(prx, precision));
     $("#ry-lbl").text(float_to_str(pry, precision));
-
-    if(enable_circ_test) {
-        const olf = ll_data.reduce((acc, val) => val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
-        const lcounter = ll_data.filter(val => val > 0.2).length;
-        const ofl = lcounter > 0 ? Math.sqrt(olf / lcounter) * 100 : 0;
-
-        const orf = rr_data.reduce((acc, val) => val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
-        const rcounter = rr_data.filter(val => val > 0.2).length;
-        const ofr = rcounter > 0 ? Math.sqrt(orf / rcounter) * 100 : 0;
-
-        el = ofl.toFixed(2) + "%";
-        er = ofr.toFixed(2) + "%";
-        $("#el-lbl").text(el);
-        $("#er-lbl").text(er);
-    }
 
     // Move L3 and R3 SVG elements according to stick position
     try {
@@ -1866,9 +2010,8 @@ function apply_center_zoom(x, y) {
 }
 
 function on_stick_mode_change() {
-    enable_circ_test = circ_checked();
-    ll_data.fill(0);
-    rr_data.fill(0);
+    const enable_circ_test = circ_checked();
+    clear_circularity();
 
     if(enable_circ_test) {
         $("#circ-data").show();
@@ -2226,8 +2369,10 @@ function process_ds_input({data}) {
     // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
     const changes = record_ds_button_states(data, DS5_BUTTON_MAP, 7, 4, 5);
     if(current_active_tab === 'controller-tab') {
+        collectCircularityData(changes.sticks, ll_data, rr_data);
         if(finetune_visible) {
             refresh_finetune_sticks();
+            handle_finetune_mode_switching(changes);
             handle_finetune_stick_switching(changes);
             handle_finetune_dpad_adjustment(changes);
         } else {

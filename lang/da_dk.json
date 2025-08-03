@@ -242,7 +242,16 @@
     "left module": "venstre modul",
     "right module": "højre modul",
     "10x zoom": "",
+    "Calibration": "",
+    "Debug": "",
+    "Error triggering rumble: ": "",
+    "Info": "",
     "Normal": "",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "",
+    "Press L2 to test the strong (left) haptic motor": "",
+    "Press R2 to test the weak (right) haptic motor": "",
+    "Test the Haptic Motors": "",
+    "Tests": "",
+    "The motor strength will match how hard you press the trigger": "",
     "": ""
 }

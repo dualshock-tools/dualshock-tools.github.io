@@ -243,5 +243,14 @@
     "The Last of Us": "Обмежена серія The Last of Us",
     "10x zoom": "Приближення в 10x",
     "Normal": "Нормальна",
+    "Calibration": "",
+    "Debug": "",
+    "Error triggering rumble: ": "",
+    "Info": "",
+    "Press L2 to test the strong (left) haptic motor": "",
+    "Press R2 to test the weak (right) haptic motor": "",
+    "Test the Haptic Motors": "",
+    "Tests": "",
+    "The motor strength will match how hard you press the trigger": "",
     "": ""
 }

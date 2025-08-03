@@ -244,5 +244,14 @@
     "The Last of Us": "The Last of Us",
     "10x zoom": "Zoom 10x",
     "Normal": "Normale",
+    "Calibration": "Calibrazione",
+    "Debug": "Debug",
+    "Error triggering rumble: ": "Errore nell'avvio della vibrazione: ",
+    "Info": "Info",
+    "Press L2 to test the strong (left) haptic motor": "Premi L2 per testare il motore forte (sinistro)",
+    "Press R2 to test the weak (right) haptic motor": "Premi R2 per testare il motore debole (destro)",
+    "Test the Haptic Motors": "Testa la vibrazione",
+    "Tests": "Test",
+    "The motor strength will match how hard you press the trigger": "La forza della vibrazione sarà proporzionale alla pressione del trigger",
     "": ""
 }

@@ -139,8 +139,8 @@
     "This DualSense controller has outdated firmware.": "Прошивка цього контролера DualSense застаріла.",
     "Please update the firmware and try again.": "Будь ласка, оновіть прошивку та спробуйте знову.",
     "Joystick Info": "Інформація про джойстик",
-    "Err R:": "Помилка П:",
-    "Err L:": "Помилка Л:",
+    "Err R:": "Похибка правого",
+    "Err L:": "Похибка лівого",
     "Check circularity": "Перевірити округлість",
     "Can I reset a permanent calibration to previous calibration?": "Чи можу я скинути постійну калибровку до попередньої?",
     "No.": "Ні.",
@@ -241,7 +241,7 @@
     "Fortnite": "Обмежена серія Fortnite",
     "Spider-Man 2": "Обмежена серія Spider-Man 2",
     "The Last of Us": "Обмежена серія The Last of Us",
-    "10x zoom": "",
-    "Normal": "",
+    "10x zoom": "Приближення в 10x",
+    "Normal": "Нормальна",
     "": ""
 }

@@ -248,9 +248,9 @@
     "Error triggering rumble: ": "触发震动时出错",
     "Info": "信息",
     "Normal": "正常",
-    "Press L2 to test the strong (left) haptic motor": "按下L2键测试强（左）震动马达",
-    "Press R2 to test the weak (right) haptic motor": "按下R2键测试弱（右）震动马达",
-    "Test the Haptic Motors": "测试震动马达",
+    "Press L2 to test the strong (left) haptic motor": "按下L2键测试强（左）震动",
+    "Press R2 to test the weak (right) haptic motor": "按下R2键测试弱（右）震动",
+    "Test the Haptic Motors": "测试震动",
     "Tests": "测试",
     "The motor strength will match how hard you press the trigger": "震动马达的力度与你扣动扳机的力度相匹配",
     "": ""

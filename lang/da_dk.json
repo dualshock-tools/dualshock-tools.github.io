@@ -188,7 +188,7 @@
     "If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a": "Hvis dette værktøj har været nyttigt for dig, eller du gerne vil se DualSense Edge understøttelse komme hurtigere, så overvej venligst at støtte projektet med en",
     "Thank you for your generosity and support!": "Tak for din gavmildhed og støtte!",
     "30th Anniversary": "30th Anniversary",
-    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller": "<b>Eksternt</b>: ved at påføre +1,8V direkte på det synlige testpunkt uden at åbne controlleren.",
+    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.": "<b>Eksternt</b>: ved at påføre +1,8V direkte på det synlige testpunkt uden at åbne controlleren.",
     "<b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.": "<b>Intern</b>: ved at lodde en ledning fra en +1,8V kilde til skrivebeskyttelses-testpunktet (TP).",
     "Astro Bot": "Astro Bot",
     "Bluetooth Address": "Bluetooth Adresse",

@@ -162,7 +162,7 @@
     "Reboot controller": "Denetleyiciyi yeniden başlat",
     "(beta)": "(beta)",
     "30th Anniversary": "30. Yıl Dönümü",
-    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller": "<b>Harici olarak</b>: Denetleyiciyi açmadan görünür test noktasına doğrudan +1.8V uygulayarak",
+    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.": "<b>Harici olarak</b>: Denetleyiciyi açmadan görünür test noktasına doğrudan +1.8V uygulayarak",
     "<b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.": "<b>Dahili olarak</b>: +1.8V bir kaynaktan yazma koruma TP'sine bir kablo lehimleyerek.",
     "Astro Bot": "Astro Bot",
     "Battery Barcode": "Batarya Barkodu",

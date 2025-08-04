@@ -197,7 +197,7 @@
     "I'm actively working on adding compatibility, the primary challenge lies in storing data into the stick modules.": "Sto lavorando attivamente per renderlo compatibile, ma la sfida principale rimane salvare i dati nei moduli degli stick.",
     "If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a": "Se questo strumento ti è stato utile o desideri che il supporto per il DualSense Edge arrivi più rapidamente, considera di supportare il progetto con una",
     "Thank you for your generosity and support!": "Grazie per la tua generosità e per il supporto!",
-    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller": "<b>Esternamente</b>: applicando +1.8V direttamente al test point visibile senza aprire il controller",
+    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.": "<b>Esternamente</b>: applicando +1.8V direttamente al test point visibile senza aprire il controller",
     "<b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.": "<b>Internamente</b>: saldando un filo da un test point a +1.8V al test point di write-protect.",
     "Calibration is being stored in the stick modules.": "Sto salvando la calibrazione nei moduli degli stick.",
     "DualSense Edge Calibration": "Calibrazione del DualSense Edge",

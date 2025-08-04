@@ -200,7 +200,7 @@
     "If this tool has been helpful to you or you want to see DualSense Edge support arrive faster, please consider supporting the project with a": "Jeśli uważasz że to narzędzie było dla ciebie pomocne, lub chcesz aby wsparcie DualSense Edge pojawiło się szybciej, rozważ wsparcie projektu poprzez",
     "Thank you for your generosity and support!": "Dziękujemy za hojność i wsparcie!",
     "30th Anniversary": "30th Anniversary",
-    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller": "<b>Zewnętrznie</b>: poprzez podanie +1.8V bezpośrednio do widocznego punktu testowego bez otwierania kontrolera.",
+    "<b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.": "<b>Zewnętrznie</b>: poprzez podanie +1.8V bezpośrednio do widocznego punktu testowego bez otwierania kontrolera.",
     "<b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.": "<b>Wewnętrznie</b>: przez przylutowanie przewodu z źródła +1.8V do punktu testowego ochrony przed zapisem.",
     "Astro Bot": "Astro Bot",
     "Calibration is being stored in the stick modules.": "Kalibracja jest zapisywana w modułach drążków.",

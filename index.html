@@ -289,6 +289,7 @@ dl.row dd { font-family: monospace; }
             <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
             <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range()">Calibrate stick range</button>
             <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
+            <button id="btnmcs" type="button" class="btn btn-outline-secondary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
             <hr>
             <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_flash()" id="resetBtn">Save changes permanently</button>
             <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reboot controller</button>
@@ -431,7 +432,6 @@ dl.row dd { font-family: monospace; }
                   <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
                   <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
                 </div>
-                <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
               </div>
             </div>
           </div>
@@ -1034,7 +1034,7 @@ dl.row dd { font-family: monospace; }
 <div class="container">
   <footer>
     <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.12</a> (2025-08-03) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.13</a> (2025-08-04) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
       <ul class="list-unstyled d-flex">
         <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

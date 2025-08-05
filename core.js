@@ -198,8 +198,7 @@ async function ds4_flash() {
         await ds4_nvunlock();
         await ds4_nvlock();
 
-        show_popup(l("Changes saved successfully"));
-
+        successAlert(l("Changes saved successfully"));
     } catch(error) {
         show_popup(l("Error while saving changes:") + " " + str(error));
     }
@@ -211,7 +210,7 @@ async function ds5_flash() {
         await ds5_nvunlock();
         await ds5_nvlock();
 
-        show_popup(l("Changes saved successfully"));
+        successAlert(l("Changes saved successfully"));
     } catch(error) {
         show_popup(l("Error while saving changes: ") + toString(error));
     }
@@ -291,7 +290,7 @@ async function ds4_calibrate_range_end() {
     
         update_nvs_changes_status(1);
         close_calibrate_window();
-        show_popup(l("Range calibration completed"));
+        successAlert(l("Range calibration completed"));
     } catch(e) {
         la("ds4_calibrate_range_end_failed", {"r": e});
         await new Promise(r => setTimeout(r, 500));
@@ -441,7 +440,7 @@ async function ds4_calibrate_sticks() {
         set_progress(100);
         await new Promise(r => setTimeout(r, 500));
         close_calibrate_window()
-        show_popup(l("Stick calibration completed"));
+        successAlert(l("Stick calibration completed"));
     } catch(e) {
         la("ds4_calibrate_sticks_failed", {"r": e});
         await new Promise(r => setTimeout(r, 500));
@@ -937,7 +936,7 @@ async function ds5_calibrate_range_end() {
     
         update_nvs_changes_status(1);
         close_calibrate_window();
-        show_popup(l("Range calibration completed"));
+        successAlert(l("Range calibration completed"));
     } catch(e) {
         la("ds5_calibrate_range_end_failed", {"r": e});
         await new Promise(r => setTimeout(r, 500));
@@ -1098,6 +1097,7 @@ async function disconnect() {
     device.close();
     device = null;
     disable_btn = 0;
+    last_disable_btn = 0;
     reset_circularity();
     $("#offlinebar").show();
     $("#onlinebar").hide();
@@ -2810,4 +2810,78 @@ function parse_battery_status(data, {byte, is_ds4 = false}) {
         }
     }
     return { bat_capacity, cable_connected, is_charging, is_error };
+}
+
+// Alert Management Functions
+let alertCounter = 0;
+
+/**
+ * Push a new alert message to the bottom of the screen
+ * @param {string} message - The message to display
+ * @param {string} type - Bootstrap alert type: 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'
+ * @param {number} duration - Auto-dismiss duration in milliseconds (0 = no auto-dismiss)
+ * @param {boolean} dismissible - Whether the alert can be manually dismissed
+ * @returns {string} - The ID of the created alert element
+ */
+function pushAlert(message, type = 'info', duration = 0, dismissible = true) {
+    const alertContainer = document.getElementById('alert-container');
+    if (!alertContainer) {
+        console.error('Alert container not found');
+        return null;
+    }
+
+    const alertId = `alert-${++alertCounter}`;
+    const alertDiv = document.createElement('div');
+    alertDiv.id = alertId;
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+        ${message}
+        ${dismissible ? '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
+    `;
+
+    alertContainer.appendChild(alertDiv);
+
+    if (duration > 0) {
+        setTimeout(() => {
+            dismissAlert(alertId);
+        }, duration);
+    }
+
+    return alertId;
+}
+
+function dismissAlert(alertId) {
+    const alertElement = document.getElementById(alertId);
+    if (alertElement) {
+        const bsAlert = new bootstrap.Alert(alertElement);
+        bsAlert.close();
+    }
+}
+
+function clearAllAlerts() {
+    const alertContainer = document.getElementById('alert-container');
+    if (alertContainer) {
+        const alerts = alertContainer.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }
+}
+
+function successAlert(message, duration = 3000) {
+    return pushAlert(message, 'success', duration);
+}
+
+function errorAlert(message, duration = 15000) {
+    return pushAlert(message, 'danger', duration);
+}
+
+function warningAlert(message, duration = 8000) {
+    return pushAlert(message, 'warning', duration);
+}
+
+function infoAlert(message, duration = 5000) {
+    return pushAlert(message, 'info', duration);
 }

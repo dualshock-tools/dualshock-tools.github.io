@@ -65,15 +65,13 @@ dl.row dd { font-family: monospace; }
 
 /* Styling for finetune input boxes - base state to prevent layout shift */
 input[id^="finetune"] {
-    border: 2px solid transparent !important;
+    border: 1px solid transparent !important;
     width: 90px !important;
     min-width: 90px !important;
+    color: #969696 !important;
 }
 
-/* Styling for highlighted finetune input boxes */
-input[id^="finetune"].border-primary {
-    border: 2px solid #0d6efd !important;
-}
+
 
 /* Styling for highlighted coordinate labels */
 #finetuneStickCanvasLx-lbl.text-primary,
@@ -137,6 +135,41 @@ input[id^="finetune"].border-primary {
 #finetuneModal.circularity-mode .finetune-circularity-mode {
   display: block;
 }
+
+/* Hide raw numbers mode - hide input boxes when checkbox is unchecked */
+#finetuneModal.hide-raw-numbers .finetune-top,
+#finetuneModal.hide-raw-numbers .finetune-left,
+#finetuneModal.hide-raw-numbers .finetune-right,
+#finetuneModal.hide-raw-numbers .finetune-bottom {
+  display: none;
+}
+
+/* Adjust grid layout when raw numbers are hidden - center the canvas */
+#finetuneModal.hide-raw-numbers .finetune-grid {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "center";
+}
+
+/* when element with id finetuneModal has class hide-raw-numbers, hide all elements with id finetuneStickCanvasL and finetuneStickCanvasR */
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasL,
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasR {
+  display: none;
+}
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasL,
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasR {
+  display: block;
+}
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasL_large,
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasR_large
+ {
+  display: block;
+}
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasL_large,
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasR_large {
+  display: none;
+}
+
 </style>
 
 </head>
@@ -550,25 +583,46 @@ input[id^="finetune"].border-primary {
         <div class="alert alert-info finetune-center-mode" role="alert">
           <i class="fas fa-info-circle"></i>&nbsp;&nbsp;
           <span class="ds-i18n">
-            Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. 
+            Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. Flick it and adjust it again if it is off center or flickers.
+          </span>
+        </div>
+        <div class="alert alert-warning finetune-center-mode" role="alert" id="finetuneCenterWarning" style="display: none;">
+          <i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">
+            Please release the stick to center position before adjusting with D-pad buttons.
+          </span>
+        </div>
+        <div class="alert alert-success finetune-center-mode" role="alert" id="finetuneCenterSuccess" style="display: none;">
+          <i class="fas fa-check-circle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">
+            Press the D-pad or face buttons in the direction you want the stick position to move.
           </span>
         </div>
         <div class="alert alert-info finetune-circularity-mode" role="alert">
           <i class="fas fa-info-circle"></i>&nbsp;&nbsp;
           <span class="ds-i18n">
-            While holding the stick to be adjusted straight up/down/left/right, observe the highlighted value at the bottom of the dialog, then use the D-pad buttons to adjust the finetune value:
-          </span><br/>
-          <small class="ds-i18n">
-            • Move the stick position towards the center until it is just smaller than 1.00 (or larger than -1.00) then move back to 1.00 (or -1.00)<br>
-            • Repeat the adjustment for the left/right and up/down pairs several times until you can move away from 1.00 with only one button press.
-          </small>
+            While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>,
+            then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).
+          </span>
+        </div>
+        <div class="alert alert-warning finetune-circularity-mode" role="alert" id="finetuneCircularityWarning" style="display: none;">
+          <i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">
+            Push the stick straight up/down/left/right as far as possible.
+          </span>
+        </div>
+        <div class="alert alert-success finetune-circularity-mode" role="alert" id="finetuneCircularitySuccess" style="display: none;">
+          <i class="fas fa-check-circle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">
+            Press the D-pad or face buttons in the direction you want the stick position to move.
+          </span>
         </div>
         <div style="width: 100%; display: flex; justify-content: center;">
           <div class="container-fluid">
             <div class="row">
               <div class="col col-lg-6 col-12">
 
-                <div class="card text-bg-light" id="left-stick-card">
+                <div class="card text-bg-light" id="left-stick-card" style="height: 340px;">
                   <div class="card-header"><span class="ds-i18n">Left stick</span></div>
                   <div class="card-body">
                     <div class="container-fluid">
@@ -586,7 +640,8 @@ input[id^="finetune"].border-primary {
                           <input id="finetuneLX" type="number" class="form-control" min="0" max="65535" value="0">
                         </div>
                         <div class="finetune-center">
-                          <canvas id="finetuneStickCanvasL" width="150" height="150"></canvas>
+                          <canvas id="finetuneStickCanvasL" width="150px" height="150px"></canvas>
+                          <canvas id="finetuneStickCanvasL_large" width="210px" height="210px"></canvas>
                         </div>
                         <div class="finetune-right finetune-circularity-mode">
                           <input id="finetuneLR" type="number" class="form-control" min="0" max="65535" value="0">
@@ -601,12 +656,12 @@ input[id^="finetune"].border-primary {
                       <div class="hstack">
                         <div class="vstack" style="text-align: center;">
                           <span>LX:</span>
-                          <pre id="finetuneStickCanvasLx-lbl" style="min-width: 80px;"></pre>
+                          <strong><pre id="finetuneStickCanvasLx-lbl" style="min-width: 80px;"></pre></strong>
                         </div>
 
                         <div class="vstack" style="text-align: center;">
                           <span>LY:</span>
-                          <pre id="finetuneStickCanvasLy-lbl" style="min-width: 80px;"></pre>
+                          <strong><pre id="finetuneStickCanvasLy-lbl" style="min-width: 80px;"></pre></strong>
                         </div>
                       </div>
                     </div>
@@ -616,7 +671,7 @@ input[id^="finetune"].border-primary {
               </div> <!-- col -->
 
               <div class="col col-lg-6 col-12">
-                <div class="card text-bg-light" id="right-stick-card">
+                <div class="card text-bg-light" id="right-stick-card" style="height: 340px;">
                   <div class="card-header"><span class="ds-i18n">Right stick</span></div>
                   <div class="card-body">
                     <div class="container-fluid">
@@ -634,7 +689,8 @@ input[id^="finetune"].border-primary {
                           <input id="finetuneRX" type="number" class="form-control" min="0" max="65535" value="0">
                         </div>
                         <div class="finetune-center">
-                          <canvas id="finetuneStickCanvasR" width="150" height="150"></canvas>
+                          <canvas id="finetuneStickCanvasR" width="150px" height="150px"></canvas>
+                          <canvas id="finetuneStickCanvasR_large" width="210px" height="210px"></canvas>
                         </div>
                         <div class="finetune-right finetune-circularity-mode">
                           <input id="finetuneRR" type="number" class="form-control" min="0" max="65535" value="0">
@@ -648,12 +704,12 @@ input[id^="finetune"].border-primary {
                         <div class="hstack">
                           <div class="vstack" style="text-align: center;">
                             <span>RX:</span>
-                            <pre id="finetuneStickCanvasRx-lbl" style="min-width: 80px;"></pre>
+                            <strong><pre id="finetuneStickCanvasRx-lbl" style="min-width: 80px;"></pre></strong>
                           </div>
 
                           <div class="vstack" style="text-align: center;">
                             <span>RY:</span>
-                            <pre id="finetuneStickCanvasRy-lbl" style="min-width: 80px;"></pre>
+                            <strong><pre id="finetuneStickCanvasRy-lbl" style="min-width: 80px;"></pre></strong>
                           </div>
                         </div>
                       </div>
@@ -666,7 +722,12 @@ input[id^="finetune"].border-primary {
 
           </div>
         </div>
+
         <div class="modal-footer">
+          <div class="form-check me-auto">
+            <input class="form-check-input" type="checkbox" id="showRawNumbersCheckbox">
+            <label class="form-check-label ds-i18n" for="showRawNumbersCheckbox">Show raw numbers</label>
+          </div>
           <button direction="button" class="btn btn-outline-secondary ds-i18n" onclick="finetune_cancel()">Cancel</button>
           <button type="button" class="btn btn-primary ds-i18n" onclick="finetune_save()">Save</button>
         </div>

@@ -1280,9 +1280,16 @@ async function ds5_finetune() {
         }
     });
 
+    $("#showRawNumbersCheckbox").on('change', function() {
+        show_raw_numbers_changed();
+    });
+
     // Initialize in center mode
     toggle_finetune_mode('center');
     set_stick_to_finetune('left');
+
+    // Initialize the raw numbers display state
+    show_raw_numbers_changed();
 
     finetune_original_data = data
     finetune_visible = true
@@ -1350,25 +1357,35 @@ function refresh_finetune_sticks() {
     setTimeout(ds5_finetune_update_all, 10);
 }
 
+function update_finetune_warning_messages() {
+    if(!active_stick) return;
+
+    const currentStick = ds_button_states.sticks[active_stick];
+    if (finetune_mode === 'center') {
+        const isNearCenter = Math.abs(currentStick.x) <= 0.5 && Math.abs(currentStick.y) <= 0.5;
+        $(`#finetuneCenter${isNearCenter? 'Warning' : 'Success'}`).hide();
+        $(`#finetuneCenter${isNearCenter? 'Success' : 'Warning'}`).show();
+    }
+
+    if (finetune_mode === 'circularity') {
+        // Check if stick is in extreme position (close to edges)
+        const isInExtremePosition = (Math.abs(currentStick.x) >= 0.7 || Math.abs(currentStick.y) >= 0.7);
+        $(`#finetuneCircularity${isInExtremePosition? 'Warning' : 'Success'}`).hide();
+        $(`#finetuneCircularity${isInExtremePosition? 'Success' : 'Warning'}`).show();
+    }
+}
+
 function ds5_finetune_update_all() {
     const { left, right } = ds_button_states.sticks;
     ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
     ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
 
-    // Highlight the active finetune input based on stick position
-    highlight_active_finetune_input();
+    update_finetune_warning_messages();
+    highlight_active_finetune_axis();
 }
 
-function clear_stick_input_highlights(to_clear = {center: true, circularity: true}) {
+function clear_finetune_axis_highlights(to_clear = {center: true, circularity: true}) {
     const { center, circularity } = to_clear;
-    const stickInputs = [
-        center ? ["LX", "LY", "RX", "RY"] : null,
-        circularity ? ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB"] : null,
-    ].flat().filter(Boolean);
-
-    stickInputs.forEach(suffix => {
-        $(`#finetune${suffix}`).removeClass("border-primary border-2");
-    });
 
     if(finetune_mode === 'center' && center || finetune_mode === 'circularity' && circularity) {
         // Clear label highlights
@@ -1379,27 +1396,30 @@ function clear_stick_input_highlights(to_clear = {center: true, circularity: tru
     }
 }
 
-function highlight_active_finetune_input() {
+function highlight_active_finetune_axis(opts = {}) {
     if(!active_stick) return;
 
-    clear_stick_input_highlights({circularity: true});
     if (finetune_mode === 'center') {
-        // Center mode: highlighting is handled directly in handle_center_mode_adjustment
+        const { axis } = opts;
+        if(!axis) return;
+
+        clear_finetune_axis_highlights({center: true});
+
+        const labelSuffix = `${active_stick === 'left' ? "L" : "R"}${axis.toLowerCase()}`;
+        $(`#finetuneStickCanvas${labelSuffix}-lbl`).addClass("text-primary");
     } else {
-        // Circularity mode: highlight based on stick position (original logic)
+        clear_finetune_axis_highlights({circularity: true});
+
         const sticks = ds_button_states.sticks;
-        const deadzone = 0.5;
         const currentStick = sticks[active_stick];
 
         // Only highlight if stick is moved significantly from center
+        const deadzone = 0.5;
         if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
             const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
             const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
             if (inputSuffix) {
-                // Highlight the corresponding finetune input box
-                $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
-
-                // Also highlight the corresponding LX/LY label to observe
+                // Highlight the corresponding LX/LY label to observe
                 const labelId = `finetuneStickCanvas${
                     active_stick === 'left' ? 'L' : 'R'}${
                     quadrant === 'left' || quadrant === 'right' ? 'x' : 'y'}-lbl`;
@@ -1411,25 +1431,43 @@ function highlight_active_finetune_input() {
 
 function ds5_finetune_update(name, plx, ply) {
     on_finetune_updating = false
-    var c = document.getElementById(name);
-    var ctx = c.getContext("2d");
-    var sz = 60;
-    var hb = 15 + sz;
-    var yb = 15 + sz;
-    var w = c.width;
+    const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
+    const c = document.getElementById(`${name}${showRawNumbers ? '' : '_large'}`);
+    const ctx = c.getContext("2d");
+
+    const margins = showRawNumbers ? 15 : 5;
+    const radius = c.width / 2 - margins;
+    const sz = c.width/2 - margins;
+    const hb = radius + margins;
+    const yb = radius + margins;
     ctx.clearRect(0, 0, c.width, c.height);
 
+    const isLeftStick = name === "finetuneStickCanvasL";
+    const highlight = active_stick == (isLeftStick ? 'left' : 'right') && !!dpad_adjustment_timeout;
     if (finetune_mode === 'circularity') {
         // Draw stick position with circle
-        const isLeftStick = name === "finetuneStickCanvasL";
-        draw_stick_position(ctx, hb, yb, sz, plx, ply, { circularity_data: isLeftStick ? ll_data : rr_data });
+        draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+            circularity_data: isLeftStick ? ll_data : rr_data,
+            highlight
+        });
     } else {
         // Draw stick position with crosshair
-        draw_stick_position(ctx, hb, yb, sz, plx, ply, { enable_zoom_center: true });
+        draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+            enable_zoom_center: true,
+            highlight
+        });
     }
 
     $("#"+ name + "x-lbl").text(float_to_str(plx, 3));
     $("#"+ name + "y-lbl").text(float_to_str(ply, 3));
+}
+
+function show_raw_numbers_changed() {
+    const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
+    const modal = $("#finetuneModal");
+    modal.toggleClass("hide-raw-numbers", !showRawNumbers);
+
+    refresh_finetune_sticks();
 }
 
 function finetune_close() {
@@ -1444,6 +1482,7 @@ function finetune_close() {
 
     $("#finetuneModeCenter").off('change');
     $("#finetuneModeCircularity").off('change');
+    $("#showRawNumbersCheckbox").off('change');
 
     clear_active_stick();
     stop_continuous_dpad_adjustment();
@@ -1457,30 +1496,23 @@ function set_stick_to_finetune(stick) {
 
     // Stop any continuous adjustments when switching sticks
     stop_continuous_dpad_adjustment();
-    clear_stick_input_highlights();
+    clear_finetune_axis_highlights();
 
     active_stick = stick;
 
-    // Remove active class from both cards
-    $("#left-stick-card").removeClass("stick-card-active");
-    $("#right-stick-card").removeClass("stick-card-active");
-
-    // Add active class to the selected card
-    if (stick === 'left') {
-        $("#left-stick-card").addClass("stick-card-active");
-    } else {
-        $("#right-stick-card").addClass("stick-card-active");
-    }
+    const other_stick = stick === 'left' ? 'right' : 'left';
+    $(`#${active_stick}-stick-card`).addClass("stick-card-active");
+    $(`#${other_stick}-stick-card`).removeClass("stick-card-active");
 }
 
 function handle_finetune_mode_switching(changes) {
     // Handle automatic stick switching based on movement
     if (changes.l1) {
         toggle_finetune_mode('center');
-        clear_stick_input_highlights();
+        clear_finetune_axis_highlights();
     } else if (changes.r1) {
         toggle_finetune_mode('circularity');
-        clear_stick_input_highlights();
+        clear_finetune_axis_highlights();
     }
 }
 
@@ -1521,7 +1553,7 @@ function clear_active_stick() {
     $("#right-stick-card").removeClass("stick-card-active");
 
     active_stick = null; // Clear active stick
-    clear_stick_input_highlights();
+    clear_finetune_axis_highlights();
 }
 
 function get_stick_quadrant(x, y) {
@@ -1592,24 +1624,44 @@ function handle_center_mode_adjustment(changes) {
 
     // Check for button presses
     for (const mapping of buttonMappings) {
+        // Check if active stick is away from center (> 0.5)
+        const sticks = ds_button_states.sticks;
+        const currentStick = sticks[active_stick];
+        const stickAwayFromCenter = Math.abs(currentStick.x) > 0.5 || Math.abs(currentStick.y) > 0.5;
+        if (stickAwayFromCenter && is_navigation_key_pressed()) {
+            flash_finetune_warning();
+            return;
+        }
+
         if (mapping.buttons.some(button => changes[button])) {
-            clear_stick_input_highlights({center: true});
-
-            // Highlight the corresponding finetune input box directly
-            const inputSuffix = `${active_stick === 'left' ? 'L' : 'R'}${mapping.axis}`;
-            $(`#finetune${inputSuffix}`).addClass("border-primary border-2");
-
-            // Also highlight the corresponding axis label
-            const labelSuffix = `${active_stick === 'left' ? "L" : "R"}${mapping.axis.toLowerCase()}`;
-            $(`#finetuneStickCanvas${labelSuffix}-lbl`).addClass("text-primary");
-
+            highlight_active_finetune_axis({axis: mapping.axis});
             start_continuous_dpad_adjustment_center_mode(active_stick, mapping.axis, mapping.adjustment);
             return;
         }
     }
 }
 
-function handle_circularity_mode_adjustment(changes) {
+function is_navigation_key_pressed() {
+    const nav_buttons = ['left', 'right', 'up', 'down', 'square', 'circle', 'triangle', 'cross'];
+    return nav_buttons.some(button => ds_button_states[button] === true);
+}
+
+let flash_finetune_warning_timeout = null;
+function flash_finetune_warning() {
+    function toggle() {
+        $("#finetuneCenterWarning").toggleClass(['alert-warning', 'alert-danger']);
+        $("#finetuneCircularityWarning").toggleClass(['alert-warning', 'alert-danger']);
+    }
+
+    if(!flash_finetune_warning_timeout) {
+        toggle();   // on
+        flash_finetune_warning_timeout = setTimeout(() => {
+            toggle();   // off
+            flash_finetune_warning_timeout = null;
+        }, 300);
+    }
+}
+function handle_circularity_mode_adjustment({sticks: _, ...changes}) {
     const sticks = ds_button_states.sticks;
     const currentStick = sticks[active_stick];
 
@@ -1617,6 +1669,9 @@ function handle_circularity_mode_adjustment(changes) {
     const deadzone = 0.5;
     if (Math.abs(currentStick.x) < deadzone && Math.abs(currentStick.y) < deadzone) {
         stop_continuous_dpad_adjustment();
+        if(is_navigation_key_pressed()) {
+            flash_finetune_warning();
+        }
         return;
     }
 
@@ -1729,13 +1784,13 @@ function toggle_finetune_mode(mode) {
     finetune_mode = mode;
     clear_circularity();
 
-    const modal = document.getElementById('finetuneModal');
+    const modal = $('#finetuneModal');
     if (mode === 'center') {
         $("#finetuneModeCenter").prop('checked', true);
-        modal.classList.remove('circularity-mode');
+        modal.removeClass('circularity-mode');
     } else if (mode === 'circularity') {
         $("#finetuneModeCircularity").prop('checked', true);
-        modal.classList.add('circularity-mode');
+        modal.addClass('circularity-mode');
     }
 }
 
@@ -1782,7 +1837,7 @@ function reset_circularity() {
 }
 
 function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
-    const { circularity_data = null, enable_zoom_center = false } = opts;
+    const { circularity_data = null, enable_zoom_center = false, highlight } = opts;
 
     // Draw base circle
     ctx.lineWidth = 1;
@@ -1924,6 +1979,10 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
     // Draw filled circle at stick position
     ctx.beginPath();
     ctx.arc(center_x+display_x*sz, center_y+display_y*sz, 3, 0, 2*Math.PI);
+
+    if (typeof highlight === 'boolean') {
+        ctx.fillStyle = highlight ? '#2989f7ff' : '#030b84ff';
+    }
     ctx.fill();
 }
 

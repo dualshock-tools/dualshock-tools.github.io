@@ -16,12 +16,6 @@ var lang_cur_direction = "ltr";
 var gj = 0;
 var gu = 0;
 
-// DS5 finetuning
-var finetune_original_data = []
-var last_written_finetune_data = []
-var finetune_visible = false
-var on_finetune_updating = false
-
 // Global object to keep track of button states
 const ds_button_states = {
     // e.g. 'square': false, 'cross': false, ...
@@ -76,6 +70,16 @@ function dec2hex32(i) {
 
 function dec2hex8(i) {
    return (i+0x100).toString(16).substr(-2).toUpperCase();
+}
+
+function calculateCircularityError(data) {
+    // Sum of squared deviations from ideal distance of 1.0, only for values > 0.2
+    const sumSquaredDeviations = data.reduce((acc, val) =>
+        val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
+
+    // Calculate RMS deviation as percentage
+    const validDataCount = data.filter(val => val > 0.2).length;
+    return validDataCount > 0 ? Math.sqrt(sumSquaredDeviations / validDataCount) * 100 : 0;
 }
 
 function ds5_hw_to_bm(hw_ver) {
@@ -1184,6 +1188,8 @@ function gboot() {
         welcome_modal();
         $("input[name='displayMode']").on('change', on_stick_mode_change);
         on_stick_mode_change();
+        init_finetune_event_listeners();
+        restore_show_raw_numbers_checkbox();
     });
 
     if (!("hid" in navigator)) {
@@ -1212,18 +1218,49 @@ function alloc_req(id, data=[]) {
     return out;
 }
 
-async function on_finetune_change(x) {
-    list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
-    
-    out=[]
-
-    for(let i=0;i<12;i++) {
-        let el = $("#finetune" + list[i]);
-        let v = parseInt(el.val())
-        out.push(v)
-    }
-    await write_finetune_data(out)
+async function on_finetune_change() {
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
+    const out = list.map((suffix) => {
+        const el = $("#finetune" + suffix);
+        const v = parseInt(el.val());
+        return isNaN(v) ? 0 : v;
+    });
+    await write_finetune_data(out);
 }
+
+// DS5 finetuning
+const finetune = {
+    _mode: 'center', // 'center' or 'circularity'
+    original_data: [],
+    last_written_data: [],
+    visible: false,
+    active_stick: null, // 'left', 'right', or null
+
+    get mode() {
+        return this._mode;
+    },
+
+    set mode(mode) {
+        if (mode !== 'center' && mode !== 'circularity') {
+            throw new Error(`Invalid finetune mode: ${mode}. Must be 'center' or 'circularity'`);
+        }
+        this._mode = mode;
+        this._updateUI();
+    },
+
+    _updateUI() {
+        clear_circularity();
+
+        const modal = $('#finetuneModal');
+        if (this._mode === 'center') {
+            $("#finetuneModeCenter").prop('checked', true);
+            modal.removeClass('circularity-mode');
+        } else if (this._mode === 'circularity') {
+            $("#finetuneModeCircularity").prop('checked', true);
+            modal.addClass('circularity-mode');
+        }
+    }
+};
 
 async function ds5_finetune() {
     // Lock NVS before
@@ -1246,16 +1283,54 @@ async function ds5_finetune() {
     curModal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
     curModal.show();
 
-    let list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
-    for(i=0;i<12;i++) {
-        $("#finetune" + list[i]).val(data[i])
-        $("#finetune" + list[i]).on('change', on_finetune_change)
-    }
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
+    list.forEach((suffix, i) => {
+        $("#finetune" + suffix).val(data[i]);
+    });
 
-    finetune_original_data = data
-    finetune_visible = true
+    // Initialize in center mode
+    set_finetune_mode('center');
+    set_stick_to_finetune('left');
 
-    refresh_finetune()
+    // Initialize the raw numbers display state
+    show_raw_numbers_changed();
+
+    finetune.original_data = data
+    finetune.visible = true
+
+    refresh_finetune_sticks();
+}
+
+function init_finetune_event_listeners() {
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
+    list.forEach((suffix) => {
+        $("#finetune" + suffix).on('change', on_finetune_change);
+    });
+
+    // Set up mode toggle event listeners
+    $("#finetuneModeCenter").on('change', function() {
+        if (this.checked) {
+            set_finetune_mode('center');
+        }
+    });
+
+    $("#finetuneModeCircularity").on('change', function() {
+        if (this.checked) {
+            set_finetune_mode('circularity');
+        }
+    });
+
+    $("#showRawNumbersCheckbox").on('change', function() {
+        show_raw_numbers_changed();
+    });
+
+    $("#left-stick-card").on('click', function() {
+        set_stick_to_finetune('left');
+    });
+
+    $("#right-stick-card").on('click', function() {
+        set_stick_to_finetune('right');
+    });
 }
 
 async function ds5_get_inmemory_module_data() {
@@ -1291,7 +1366,7 @@ async function read_finetune_data() {
         return null;
     }
 
-    last_written_finetune_data = data;
+    finetune.last_written_data = data;
     return data;
 }
 
@@ -1300,58 +1375,459 @@ async function write_finetune_data(data) {
         return;
     }
 
-    if (data == last_written_finetune_data) {
+    const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    if (deepEqual(data, finetune.last_written_data)) {
         return;
     }
 
-    last_written_finetune_data = data
-    pkg = [12,1]
-    for(i=0;i<data.length;i++) {
-        x = data[i]
-        pkg.push(x & 0xff)
-        pkg.push(x >> 8)
-    }
+    finetune.last_written_data = data
+    const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);
     await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
 }
 
-function refresh_finetune() {
-    if (!finetune_visible)
-        return;
-    if (on_finetune_updating)
-        return;
+const refresh_finetune_sticks = (() => {
+    let timeout = null;
 
-    on_finetune_updating = true
-    setTimeout(ds5_finetune_update_all, 10);
+    return function() {
+        if (timeout) return;
+
+        timeout = setTimeout(() => {
+            const { left, right } = ds_button_states.sticks;
+            ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
+            ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
+
+            update_finetune_warning_messages();
+            highlight_active_finetune_axis();
+
+            timeout = null;
+        }, 10);
+    };
+})();
+
+const update_finetune_warning_messages = (() => {
+    let timeout = null; // to stop unnecessary flicker in center mode
+
+    return function() {
+        if(!finetune.active_stick) return;
+
+        const currentStick = ds_button_states.sticks[finetune.active_stick];
+        if (finetune.mode === 'center') {
+            const isNearCenter = Math.abs(currentStick.x) <= 0.5 && Math.abs(currentStick.y) <= 0.5;
+            if(!isNearCenter && timeout) return;
+
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                $(`#finetuneCenter${isNearCenter? 'Warning' : 'Success'}`).hide();
+                $(`#finetuneCenter${isNearCenter? 'Success' : 'Warning'}`).show();
+                timeout = null;
+            }, isNearCenter ? 0 : 200);
+        }
+
+        if (finetune.mode === 'circularity') {
+            // Check if stick is in extreme position (close to edges)
+            const isInExtremePosition = (Math.abs(currentStick.x) >= 0.7 || Math.abs(currentStick.y) >= 0.7);
+            $(`#finetuneCircularity${isInExtremePosition? 'Warning' : 'Success'}`).hide();
+            $(`#finetuneCircularity${isInExtremePosition? 'Success' : 'Warning'}`).show();
+        }
+    };
+})();
+
+
+
+function clear_finetune_axis_highlights(to_clear = {center: true, circularity: true}) {
+    const { center, circularity } = to_clear;
+
+    if(finetune.mode === 'center' && center || finetune.mode === 'circularity' && circularity) {
+        // Clear label highlights
+        const labelIds = ["Lx-lbl", "Ly-lbl", "Rx-lbl", "Ry-lbl"];
+        labelIds.forEach(suffix => {
+            $(`#finetuneStickCanvas${suffix}`).removeClass("text-primary");
+        });
+    }
 }
 
-function ds5_finetune_update_all() {
-    const { left, right } = ds_button_states.sticks;
-    ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
-    ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
+function highlight_active_finetune_axis(opts = {}) {
+    if(!finetune.active_stick) return;
+
+    if (finetune.mode === 'center') {
+        const { axis } = opts;
+        if(!axis) return;
+
+        clear_finetune_axis_highlights({center: true});
+
+        const labelSuffix = `${finetune.active_stick === 'left' ? "L" : "R"}${axis.toLowerCase()}`;
+        $(`#finetuneStickCanvas${labelSuffix}-lbl`).addClass("text-primary");
+    } else {
+        clear_finetune_axis_highlights({circularity: true});
+
+        const sticks = ds_button_states.sticks;
+        const currentStick = sticks[finetune.active_stick];
+
+        // Only highlight if stick is moved significantly from center
+        const deadzone = 0.5;
+        if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
+            const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+            const inputSuffix = get_finetune_input_suffix_for_quadrant(finetune.active_stick, quadrant);
+            if (inputSuffix) {
+                // Highlight the corresponding LX/LY label to observe
+                const labelId = `finetuneStickCanvas${
+                    finetune.active_stick === 'left' ? 'L' : 'R'}${
+                    quadrant === 'left' || quadrant === 'right' ? 'x' : 'y'}-lbl`;
+                $(`#${labelId}`).addClass("text-primary");
+            }
+        }
+    }
 }
 
 function ds5_finetune_update(name, plx, ply) {
-    on_finetune_updating = false
-    var c = document.getElementById(name);
-    var ctx = c.getContext("2d");
-    var sz = 60;
-    var hb = 20 + sz;
-    var yb = 15 + sz;
-    var w = c.width;
+    const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
+    const c = document.getElementById(`${name}${showRawNumbers ? '' : '_large'}`);
+    const ctx = c.getContext("2d");
+
+    const margins = showRawNumbers ? 15 : 5;
+    const radius = c.width / 2 - margins;
+    const sz = c.width/2 - margins;
+    const hb = radius + margins;
+    const yb = radius + margins;
     ctx.clearRect(0, 0, c.width, c.height);
 
-    // Draw stick position with circle
-    draw_stick_position(ctx, hb, yb, sz, plx, ply, { enable_zoom_center: true });
+    const isLeftStick = name === "finetuneStickCanvasL";
+    const highlight = finetune.active_stick == (isLeftStick ? 'left' : 'right') && is_dpad_adjustment_active();
+    if (finetune.mode === 'circularity') {
+        // Draw stick position with circle
+        draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+            circularity_data: isLeftStick ? ll_data : rr_data,
+            highlight
+        });
+    } else {
+        // Draw stick position with crosshair
+        draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+            enable_zoom_center: true,
+            highlight
+        });
+    }
 
     $("#"+ name + "x-lbl").text(float_to_str(plx, 3));
     $("#"+ name + "y-lbl").text(float_to_str(ply, 3));
 }
 
+function show_raw_numbers_changed() {
+    const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
+    const modal = $("#finetuneModal");
+    modal.toggleClass("hide-raw-numbers", !showRawNumbers);
+    localStorage.setItem('showRawNumbersCheckbox', showRawNumbers);
+
+    refresh_finetune_sticks();
+}
+
+function restore_show_raw_numbers_checkbox() {
+    // Restore the checkbox state from localStorage
+    const savedState = localStorage.getItem('showRawNumbersCheckbox');
+    if (savedState !== null) {
+        const isChecked = savedState === 'true';
+        $("#showRawNumbersCheckbox").prop('checked', isChecked);
+    }
+}
+
 function finetune_close() {
     $("#finetuneModal").modal("hide");
-    finetune_visible = false
+    finetune.visible = false;
 
-    finetune_original_data = []
+    clear_active_stick();
+    stop_continuous_dpad_adjustment();
+    finetune.original_data = [];
+}
+
+function set_stick_to_finetune(stick) {
+    if(finetune.active_stick === stick) {
+        return;
+    }
+
+    // Stop any continuous adjustments when switching sticks
+    stop_continuous_dpad_adjustment();
+    clear_finetune_axis_highlights();
+
+    finetune.active_stick = stick;
+
+    const other_stick = stick === 'left' ? 'right' : 'left';
+    $(`#${finetune.active_stick}-stick-card`).addClass("stick-card-active");
+    $(`#${other_stick}-stick-card`).removeClass("stick-card-active");
+}
+
+function handle_finetune_mode_switching(changes) {
+    // Handle automatic stick switching based on movement
+    if (changes.l1) {
+        set_finetune_mode('center');
+        clear_finetune_axis_highlights();
+    } else if (changes.r1) {
+        set_finetune_mode('circularity');
+        clear_finetune_axis_highlights();
+    }
+}
+
+function handle_finetune_stick_switching(changes) {
+    // Handle automatic stick switching based on movement
+    if (changes.sticks) {
+        update_active_stick_based_on_movement();
+    }
+}
+
+function is_stick_away_from_center(stick_pos, deadzone = 0.2) {
+    return Math.abs(stick_pos.x) >= deadzone || Math.abs(stick_pos.y) >= deadzone;
+}
+
+function update_active_stick_based_on_movement() {
+    const sticks = ds_button_states.sticks;
+    const deadzone = 0.2;
+
+    const left_is_away = is_stick_away_from_center(sticks.left, deadzone);
+    const right_is_away = is_stick_away_from_center(sticks.right, deadzone);
+
+    if (left_is_away && right_is_away) {
+        // Both sticks are away from center - clear highlighting
+        clear_active_stick();
+    } else if (left_is_away && !right_is_away) {
+        // Only left stick is away from center
+        set_stick_to_finetune('left');
+    } else if (right_is_away && !left_is_away) {
+        // Only right stick is away from center
+        set_stick_to_finetune('right');
+    }
+    // If both sticks are centered, keep current active stick (no change)
+}
+
+function clear_active_stick() {
+    // Remove active class from both cards
+    $("#left-stick-card").removeClass("stick-card-active");
+    $("#right-stick-card").removeClass("stick-card-active");
+
+    finetune.active_stick = null; // Clear active stick
+    clear_finetune_axis_highlights();
+}
+
+function get_stick_quadrant(x, y) {
+    // Determine which quadrant the stick is in based on x,y coordinates
+    // x and y are normalized values between -1 and 1
+    if (Math.abs(x) > Math.abs(y)) {
+        return x > 0 ? 'right' : 'left';
+    } else {
+        return y > 0 ? 'down' : 'up';
+    }
+}
+
+function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
+    // This function should only be used in circularity mode
+    // In center mode, we don't care about quadrants - use direct axis mapping instead
+    if (finetune.mode === 'center') {
+        // This function shouldn't be called in center mode
+        console.warn('get_finetune_input_suffix_for_quadrant called in center mode - this should not happen');
+        return null;
+    }
+
+    // Circularity mode: map quadrants to specific calibration points
+    if (stick === 'left') {
+        switch (quadrant) {
+            case 'left': return "LL";
+            case 'up': return "LT";
+            case 'right': return "LR";
+            case 'down': return "LB";
+        }
+    } else if (stick === 'right') {
+        switch (quadrant) {
+            case 'left': return "RL";
+            case 'up': return "RT";
+            case 'right': return "RR";
+            case 'down': return "RB";
+        }
+    }
+    return null; // Invalid
+}
+
+function handle_finetune_dpad_adjustment(changes) {
+    if(!finetune.active_stick) return;
+
+    if (finetune.mode === 'center') {
+        handle_center_mode_adjustment(changes);
+    } else {
+        handle_circularity_mode_adjustment(changes);
+    }
+}
+
+function handle_center_mode_adjustment(changes) {
+    const adjustmentStep = 5; // Use consistent step size for center mode
+
+    // Define button mappings for center mode
+    const buttonMappings = [
+        { buttons: ['left', 'square'], adjustment: adjustmentStep, axis: 'X' },
+        { buttons: ['right', 'circle'], adjustment: -adjustmentStep, axis: 'X' },
+        { buttons: ['up', 'triangle'], adjustment: adjustmentStep, axis: 'Y' },
+        { buttons: ['down', 'cross'], adjustment: -adjustmentStep, axis: 'Y' }
+    ];
+
+    // Check if any relevant button was released
+    const relevantButtons = ['left', 'right', 'square', 'circle', 'up', 'down', 'triangle', 'cross'];
+    if (relevantButtons.some(button => changes[button] === false)) {
+        stop_continuous_dpad_adjustment();
+        return;
+    }
+
+    // Check for button presses
+    for (const mapping of buttonMappings) {
+        // Check if active stick is away from center (> 0.5)
+        const sticks = ds_button_states.sticks;
+        const currentStick = sticks[finetune.active_stick];
+        const stickAwayFromCenter = Math.abs(currentStick.x) > 0.5 || Math.abs(currentStick.y) > 0.5;
+        if (stickAwayFromCenter && is_navigation_key_pressed()) {
+            flash_finetune_warning();
+            return;
+        }
+
+        if (mapping.buttons.some(button => changes[button])) {
+            highlight_active_finetune_axis({axis: mapping.axis});
+            start_continuous_dpad_adjustment_center_mode(finetune.active_stick, mapping.axis, mapping.adjustment);
+            return;
+        }
+    }
+}
+
+function is_navigation_key_pressed() {
+    const nav_buttons = ['left', 'right', 'up', 'down', 'square', 'circle', 'triangle', 'cross'];
+    return nav_buttons.some(button => ds_button_states[button] === true);
+}
+
+const flash_finetune_warning = (() => {
+    let timeout = null;
+
+    return function() {
+        function toggle() {
+            $("#finetuneCenterWarning").toggleClass(['alert-warning', 'alert-danger']);
+            $("#finetuneCircularityWarning").toggleClass(['alert-warning', 'alert-danger']);
+        }
+
+        if(timeout) return;
+
+        toggle();   // on
+        timeout = setTimeout(() => {
+            toggle();   // off
+            timeout = null;
+        }, 300);
+    };
+})();
+
+function handle_circularity_mode_adjustment({sticks: _, ...changes}) {
+    const sticks = ds_button_states.sticks;
+    const currentStick = sticks[finetune.active_stick];
+
+    // Only adjust if stick is moved significantly from center
+    const deadzone = 0.5;
+    if (Math.abs(currentStick.x) < deadzone && Math.abs(currentStick.y) < deadzone) {
+        stop_continuous_dpad_adjustment();
+        if(is_navigation_key_pressed()) {
+            flash_finetune_warning();
+        }
+        return;
+    }
+
+    const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
+
+    // Use different step sizes based on quadrant - right/down values are much larger
+    const adjustmentStep = (quadrant === 'right' || quadrant === 'down') ? 15 : 3;
+
+    // Define button mappings for each quadrant type
+    const horizontalButtons = ['left', 'right', 'square', 'circle'];
+    const verticalButtons = ['up', 'down', 'triangle', 'cross'];
+
+    let adjustment = 0;
+    let relevantButtons = [];
+
+    if (quadrant === 'left' || quadrant === 'right') {
+        // Horizontal quadrants: left increases, right decreases
+        relevantButtons = horizontalButtons;
+        if (changes.left || changes.square) {
+            adjustment = adjustmentStep;
+        } else if (changes.right || changes.circle) {
+            adjustment = -adjustmentStep;
+        }
+    } else if (quadrant === 'up' || quadrant === 'down') {
+        // Vertical quadrants: up increases, down decreases
+        relevantButtons = verticalButtons;
+        if (changes.up || changes.triangle) {
+            adjustment = adjustmentStep;
+        } else if (changes.down || changes.cross) {
+            adjustment = -adjustmentStep;
+        }
+    }
+
+    // Check if any relevant button was released
+    if (relevantButtons.some(button => changes[button] === false)) {
+        stop_continuous_dpad_adjustment();
+        return;
+    }
+
+    // Start continuous adjustment on button press
+    if (adjustment !== 0) {
+        start_continuous_dpad_adjustment(finetune.active_stick, quadrant, adjustment);
+    }
+}
+
+function start_continuous_dpad_adjustment(stick, quadrant, adjustment) {
+    const inputSuffix = get_finetune_input_suffix_for_quadrant(stick, quadrant);
+    start_continuous_adjustment_with_suffix(inputSuffix, adjustment);
+}
+
+function start_continuous_dpad_adjustment_center_mode(stick, targetAxis, adjustment) {
+    // In center mode, directly map to X/Y axes
+    const inputSuffix = stick === 'left' ?
+        (targetAxis === 'X' ? 'LX' : 'LY') :
+        (targetAxis === 'X' ? 'RX' : 'RY');
+    start_continuous_adjustment_with_suffix(inputSuffix, adjustment);
+}
+
+const { start_continuous_adjustment_with_suffix, stop_continuous_dpad_adjustment, is_dpad_adjustment_active } = (() => {
+    let repeat_delay = null;
+    let initial_delay = null;
+
+    function start_continuous_adjustment_with_suffix(inputSuffix, adjustment) {
+        stop_continuous_dpad_adjustment();
+
+        const element = $(`#finetune${inputSuffix}`);
+        if (!element.length) return;
+
+        // Perform initial adjustment immediately...
+        perform_dpad_adjustment(element, adjustment);
+        clear_circularity();
+
+        // ...then prime continuous adjustment
+        initial_delay = setTimeout(() => {
+            repeat_delay = setInterval(() => {
+                perform_dpad_adjustment(element, adjustment);
+                clear_circularity();
+            }, 150);
+        }, 400); // Initial delay before continuous adjustment starts (400ms)
+    }
+
+    function stop_continuous_dpad_adjustment() {
+        clearInterval(repeat_delay);
+        repeat_delay = null;
+
+        clearTimeout(initial_delay);
+        initial_delay = null;
+    }
+
+    function is_dpad_adjustment_active() {
+        return !!initial_delay;
+    }
+
+    return { start_continuous_adjustment_with_suffix, stop_continuous_dpad_adjustment, is_dpad_adjustment_active };
+})();
+
+async function perform_dpad_adjustment(element, adjustment) {
+    const currentValue = parseInt(element.val()) || 0;
+    const newValue = Math.max(0, Math.min(65535, currentValue + adjustment));
+    element.val(newValue);
+
+    // Trigger the change event to update the finetune data
+    await on_finetune_change();
 }
 
 function finetune_save() {
@@ -1362,30 +1838,60 @@ function finetune_save() {
 }
 
 async function finetune_cancel() {
-    if(finetune_original_data.length == 12)
-        await write_finetune_data(finetune_original_data)
+    if(finetune.original_data.length == 12)
+        await write_finetune_data(finetune.original_data)
 
     finetune_close();
 }
 
+function set_finetune_mode(mode) {
+    finetune.mode = mode;
+}
 
-var ll_updated = false;
 
-var ll_data=new Array(48);
-var rr_data=new Array(48);
-var enable_circ_test = false;
+let ll_updated = false;
+const CIRCULARITY_DATA_SIZE = 48; // Number of angular positions to sample
+const ll_data=new Array(CIRCULARITY_DATA_SIZE);
+const rr_data=new Array(CIRCULARITY_DATA_SIZE);
 
-function reset_circularity() {
+/**
+ * Collects circularity data for both analog sticks during testing mode.
+ * This function tracks the maximum distance reached at each angular position
+ * around the stick's circular range, creating a polar coordinate map of
+ * stick movement capabilities.
+ */
+function collectCircularityData(stickStates, leftData, rightData) {
+    const { left, right  } = stickStates = stickStates || {};
+    const MAX_N = CIRCULARITY_DATA_SIZE;
+
+    [[left, leftData], [right, rightData]].forEach(([stick, data]) => {
+        if (!stick) return; // Skip if no stick changed position
+
+        const { x, y } = stick;
+        // Calculate distance from center (magnitude of stick position vector)
+        const distance = Math.sqrt(x * x + y * y);
+        // Convert cartesian coordinates to angular index (0 to MAX_N-1)
+        // atan2 gives angle in radians, convert to array index with proper wrapping
+        const angleIndex = (parseInt(Math.round(Math.atan2(y, x) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
+        // Store maximum distance reached at this angle (for circularity analysis)
+        const oldValue = data[angleIndex] ?? 0;
+        data[angleIndex] = Math.max(oldValue, distance);
+    });
+}
+
+function clear_circularity() {
     ll_data.fill(0);
     rr_data.fill(0);
-    enable_circ_test = false;
     ll_updated = false;
+}
+function reset_circularity() {
+    clear_circularity();
     $("#normalMode").prop('checked', true);
     refresh_stick_pos();
 }
 
 function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
-    const { circularity_data = null, enable_zoom_center = false } = opts;
+    const { circularity_data = null, enable_zoom_center = false, highlight } = opts;
 
     // Draw base circle
     ctx.lineWidth = 1;
@@ -1410,11 +1916,11 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
 
     // Draw circularity visualization if data provided
     if (circularity_data?.length > 0) {
-        const MAX_N = circularity_data.length;
+        const MAX_N = CIRCULARITY_DATA_SIZE;
 
         for(let i = 0; i < MAX_N; i++) {
             const kd = circularity_data[i];
-            const kd1 = circularity_data[(i+1) % circularity_data.length];
+            const kd1 = circularity_data[(i+1) % CIRCULARITY_DATA_SIZE];
             if (kd === undefined || kd1 === undefined) continue;
             const ka = i * Math.PI * 2 / MAX_N;
             const ka1 = ((i+1)%MAX_N) * 2 * Math.PI / MAX_N;
@@ -1436,6 +1942,24 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
             ctx.fillStyle = 'hsla(' + parseInt(hh) + ', 100%, 50%, 0.5)';
             ctx.fill();
         }
+    }
+
+    // Draw circularity error text if enough data provided
+    if (circularity_data?.filter(n => n > 0.3).length > 10) {
+        const circularityError = calculateCircularityError(circularity_data);
+
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 3;
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const text_y = center_y + sz * 0.5;
+        const text = `${circularityError.toFixed(1)} %`;
+
+        ctx.strokeText(text, center_x, text_y);
+        ctx.fillText(text, center_x, text_y);
     }
 
     // Draw crosshairs
@@ -1467,28 +1991,6 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
         ctx.beginPath();
         ctx.arc(center_x, center_y, sz * 0.5, 0, 2 * Math.PI);
         ctx.stroke();
-    }
-
-    // ctx.beginPath();
-    // ctx.moveTo(w-hb, yb-sz);
-    // ctx.lineTo(w-hb, yb+sz);
-    // ctx.closePath();
-    // ctx.stroke();
-
-    const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = ds_button_states.sticks;
-    if(enable_circ_test && circularity_data?.length > 0) {
-        const MAX_N = circularity_data.length;
-        var pld = Math.sqrt(plx*plx + ply*ply);
-        var pla = (parseInt(Math.round(Math.atan2(ply, plx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-        var old = ll_data[pla];
-        if(old === undefined) old = 0;
-        ll_data[pla] = Math.max(old, pld);
-
-        var prd = Math.sqrt(prx*prx + pry*pry);
-        var pra = (parseInt(Math.round(Math.atan2(pry, prx) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-        var old = rr_data[pra];
-        if(old === undefined) old = 0;
-        rr_data[pra] = Math.max(old, prd);
     }
 
     ctx.fillStyle = '#000000';
@@ -1531,6 +2033,10 @@ function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts
     // Draw filled circle at stick position
     ctx.beginPath();
     ctx.arc(center_x+display_x*sz, center_y+display_y*sz, 3, 0, 2*Math.PI);
+
+    if (typeof highlight === 'boolean') {
+        ctx.fillStyle = highlight ? '#2989f7ff' : '#030b84ff';
+    }
     ctx.fill();
 }
 
@@ -1545,17 +2051,8 @@ function refresh_stick_pos() {
 
     const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = ds_button_states.sticks;
 
-    if(enable_circ_test) {
-        [[plx, ply, ll_data], [prx, pry, rr_data]].forEach(([px, py, circularity_data]) => {
-            const MAX_N = circularity_data.length;
-            const pa = (parseInt(Math.round(Math.atan2(py, px) * MAX_N / 2.0 / Math.PI)) + MAX_N) % MAX_N;
-            const pd = Math.sqrt(px*px + py*py);
-            const old = circularity_data[pa] ?? 0;
-            circularity_data[pa] = Math.max(old, pd);
-        });
-    }
-
     const enable_zoom_center = center_zoom_checked();
+    const enable_circ_test = circ_checked();
     // Draw left stick
     draw_stick_position(ctx, hb, yb, sz, plx, ply, {
         circularity_data: enable_circ_test ? ll_data : null,
@@ -1573,21 +2070,6 @@ function refresh_stick_pos() {
     $("#ly-lbl").text(float_to_str(ply, precision));
     $("#rx-lbl").text(float_to_str(prx, precision));
     $("#ry-lbl").text(float_to_str(pry, precision));
-
-    if(enable_circ_test) {
-        const olf = ll_data.reduce((acc, val) => val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
-        const lcounter = ll_data.filter(val => val > 0.2).length;
-        const ofl = lcounter > 0 ? Math.sqrt(olf / lcounter) * 100 : 0;
-
-        const orf = rr_data.reduce((acc, val) => val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);
-        const rcounter = rr_data.filter(val => val > 0.2).length;
-        const ofr = rcounter > 0 ? Math.sqrt(orf / rcounter) * 100 : 0;
-
-        el = ofl.toFixed(2) + "%";
-        er = ofr.toFixed(2) + "%";
-        $("#el-lbl").text(el);
-        $("#er-lbl").text(er);
-    }
 
     // Move L3 and R3 SVG elements according to stick position
     try {
@@ -1641,9 +2123,8 @@ function apply_center_zoom(x, y) {
 }
 
 function on_stick_mode_change() {
-    enable_circ_test = circ_checked();
-    ll_data.fill(0);
-    rr_data.fill(0);
+    const enable_circ_test = circ_checked();
+    clear_circularity();
 
     if(enable_circ_test) {
         $("#circ-data").show();
@@ -1658,52 +2139,20 @@ function float_to_str(f, precision = 2) {
     return (f<0?"":"+") + f.toFixed(precision);
 }
 
-var on_delay = false;
+const refresh_sticks = (() => {
+    let delay = null;
+    return function() {
+        if(delay) return;
 
-function timeout_ok() {
-    on_delay = false;
-    if(ll_updated)
         refresh_stick_pos();
-}
+        delay = setTimeout(() => {
+            delay = null;
+            if(ll_updated)
+                refresh_stick_pos();
+        }, 20);
+    };
+})();
 
-function refresh_sticks() {
-    if(on_delay)
-        return;
-
-    refresh_stick_pos();
-    on_delay = true;
-    setTimeout(timeout_ok, 20);
-}
-
-var last_bat_txt = "";
-var last_bat_disable = null;
-
-function bat_percent_to_text(bat_charge, is_charging, is_error) {
-    var icon_txt = "";
-
-    if(bat_charge < 20) {
-        icon_txt = 'fa-battery-empty';
-    } else if(bat_charge < 40) {
-        icon_txt = 'fa-battery-quarter';
-    } else if(bat_charge < 60) {
-        icon_txt = 'fa-battery-half';
-    } else if(bat_charge < 80) {
-        icon_txt = 'fa-battery-three-quarters';
-    } else {
-        icon_txt = 'fa-battery-full';
-    }
-
-    var icon_full = '<i class="fa-solid ' + icon_txt + '"></i>';
-    var bolt_txt = '';
-    if(is_charging)
-        bolt_txt = '<i class="fa-solid fa-bolt"></i>';
-    bat_txt = bat_charge + "%" + ' ' + bolt_txt + ' ' + icon_full;
-
-    if(is_error) {
-        bat_txt = '<font color="red">' + l("error") + '</font>';
-    }
-    return bat_txt;
-}
 
 function update_nvs_changes_status(new_value) {
     if (new_value == has_changes_to_write)
@@ -1720,13 +2169,10 @@ function update_nvs_changes_status(new_value) {
     has_changes_to_write = new_value;
 }
 
-function update_battery_status({bat_capacity, cable_connected, is_charging, is_error}) {
-    const bat_txt = bat_percent_to_text(bat_capacity, is_charging);
-    const can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
-
-    if(bat_txt != last_bat_txt) {
+function update_battery_status({/* bat_capacity, cable_connected, is_charging, is_error, */ bat_txt, changed}) {
+    // const can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
+    if(changed) {
         $("#d-bat").html(bat_txt);
-        last_bat_txt = bat_txt;
     }
 }
 
@@ -1847,9 +2293,6 @@ function update_stick_graphics(changes, {is_ds5}) {
     if (!changes || !changes.sticks) return;
 
     refresh_sticks();
-    if (is_ds5) {
-        refresh_finetune();
-    }
 }
 
 function update_ds_button_svg(changes, BUTTON_MAP) {
@@ -2003,13 +2446,20 @@ function process_ds_input({data}) {
 
     // Use DS5 map: dpad byte 7, L2 analog 4, R2 analog 5
     const changes = record_ds_button_states(data, DS5_BUTTON_MAP, 7, 4, 5);
-
     if(current_active_tab === 'controller-tab') {
-        update_stick_graphics(changes, { is_ds5: true });
-        update_ds_button_svg(changes, DS5_BUTTON_MAP);
+        collectCircularityData(changes.sticks, ll_data, rr_data);
+        if(finetune.visible) {
+            refresh_finetune_sticks();
+            handle_finetune_mode_switching(changes);
+            handle_finetune_stick_switching(changes);
+            handle_finetune_dpad_adjustment(changes);
+        } else {
+            update_stick_graphics(changes, { is_ds5: true });
+            update_ds_button_svg(changes, DS5_BUTTON_MAP);
 
-        const points = parse_touch_points(data, 32);
-        update_touchpad_circles(points);
+            const points = parse_touch_points(data, 32);
+            update_touchpad_circles(points);
+        }
     }
 
     if(current_active_tab === 'tests-tab') {
@@ -2202,7 +2652,7 @@ async function connect() {
 
     reset_circularity();
     la("begin");
-    last_bat_txt = "";
+    parse_battery_status.reset_cache();
     try {
         $("#btnconnect").prop("disabled", true);
         $("#connectspinner").show();
@@ -2363,7 +2813,7 @@ function close_calibrate_window() {
     }
 
     $("#calibCenterModal").modal("hide");
-    cur_calib = 0;
+    reset_calib();
     return;
 }
 
@@ -2444,7 +2894,7 @@ function board_model_info() {
 
 function close_new_calib() {
     $("#calibCenterModal").modal("hide");
-    cur_calib = 0;
+    reset_calib();
 }
 
 async function calib_step(i) {
@@ -2512,25 +2962,34 @@ async function calib_step(i) {
 
 }
 
-var cur_calib = 0;
-async function calib_open() {
-    la("calib_open");
-    cur_calib = 0;
-    await calib_next();
-    new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
-}
+const { calib_open, calib_next, reset_calib } = (() => {
+    let cur_calib = 0;
 
-async function calib_next() {
-    la("calib_next");
-    if(cur_calib == 6) {
-        close_new_calib()
-        return;
+    async function calib_open() {
+        la("calib_open");
+        cur_calib = 0;
+        await calib_next();
+        new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
     }
-    if(cur_calib < 6) {
-        cur_calib += 1;
-        await calib_step(cur_calib);
+
+    async function calib_next() {
+        la("calib_next");
+        if(cur_calib == 6) {
+            close_new_calib()
+            return;
+        }
+        if(cur_calib < 6) {
+            cur_calib += 1;
+            await calib_step(cur_calib);
+        }
     }
-}
+
+    function reset_calib() {
+        cur_calib = 0;
+    }
+
+    return { calib_open, calib_next, reset_calib };
+})();
 
 function la(k,v={}) {
     $.ajax({type: 'POST', url:"https://the.al/ds4_a/l", 
@@ -2699,35 +3158,38 @@ function lerp_color(a, b, t) {
     return rgb2hex(c[0], c[1], c[2]);
 }
 
-let haptic_timeout = undefined;
-let haptic_last_trigger = 0;
-async function trigger_haptic_motors(strong_motor /*left*/, weak_motor /*right*/) {
-    // The DS4 contoller has a strong (left) and a weak (right) motor.
-    // The DS5 emulates the same behavior, but the left and right motors are the same.
+const trigger_haptic_motors = (() => {
+    let haptic_timeout = undefined;
+    let haptic_last_trigger = 0;
 
-    const now = Date.now();
-    if (now - haptic_last_trigger < 200) {
-        return; // Rate limited - ignore calls within 200ms
-    }
+    return async function(strong_motor /*left*/, weak_motor /*right*/) {
+        // The DS4 contoller has a strong (left) and a weak (right) motor.
+        // The DS5 emulates the same behavior, but the left and right motors are the same.
 
-    haptic_last_trigger = now;
-
-    try {
-        if (mode == 1) { // DS4
-            const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
-            await device.sendReport(0x05, data);
-        } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
-            const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
-            await device.sendReport(0x02, data);
+        const now = Date.now();
+        if (now - haptic_last_trigger < 200) {
+            return; // Rate limited - ignore calls within 200ms
         }
 
-        // Stop rumble after duration
-        clearTimeout(haptic_timeout);
-        haptic_timeout = setTimeout(stop_haptic_motors, 250);
-    } catch(e) {
-        show_popup(l("Error triggering rumble: ") + e);
-    }
-}
+        haptic_last_trigger = now;
+
+        try {
+            if (mode == 1) { // DS4
+                const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
+                await device.sendReport(0x05, data);
+            } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+                const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
+                await device.sendReport(0x02, data);
+            }
+
+            // Stop rumble after duration
+            clearTimeout(haptic_timeout);
+            haptic_timeout = setTimeout(stop_haptic_motors, 250);
+        } catch(e) {
+            show_popup(l("Error triggering rumble: ") + e);
+        }
+    };
+})();
 
 async function stop_haptic_motors() {
     if (mode == 1) { // DS4
@@ -2761,53 +3223,95 @@ function lerp_color(a, b, t) {
 }
 
 
-function parse_battery_status(data, {byte, is_ds4 = false}) {
-    const bat = data.getUint8(byte);
-    let bat_capacity = 0, cable_connected = false, is_charging = false, is_error = false;
+const parse_battery_status = (() => {
+    let last_bat_txt = "";
 
-    if (is_ds4) {
-        // DS4: bat_data = low 4 bits, bat_status = bit 4
-        const bat_data = bat & 0x0f;
-        const bat_status = (bat >> 4) & 1;
-        if (bat_status == 1) {
-            cable_connected = true;
-            if (bat_data < 10) {
-                bat_capacity = Math.min(bat_data * 10 + 5, 100);
-                is_charging = true;
-            } else if (bat_data == 10) {
-                bat_capacity = 100;
-                is_charging = true;
-            } else if (bat_data == 11) {
-                bat_capacity = 100;
-                // charged
+    function reset_battery_cache() {
+        last_bat_txt = "";
+    }
+
+    function parse(data, {byte, is_ds4 = false}) {
+        const bat = data.getUint8(byte);
+        let bat_capacity = 0, cable_connected = false, is_charging = false, is_error = false;
+
+        if (is_ds4) {
+            // DS4: bat_data = low 4 bits, bat_status = bit 4
+            const bat_data = bat & 0x0f;
+            const bat_status = (bat >> 4) & 1;
+            if (bat_status == 1) {
+                cable_connected = true;
+                if (bat_data < 10) {
+                    bat_capacity = Math.min(bat_data * 10 + 5, 100);
+                    is_charging = true;
+                } else if (bat_data == 10) {
+                    bat_capacity = 100;
+                    is_charging = true;
+                } else if (bat_data == 11) {
+                    bat_capacity = 100;
+                    // charged
+                } else {
+                    bat_capacity = 0;
+                    is_error = true;
+                }
             } else {
-                bat_capacity = 0;
+                cable_connected = false;
+                if (bat_data < 10) {
+                    bat_capacity = bat_data * 10 + 5;
+                } else {
+                    bat_capacity = 100;
+                }
+            }
+        } else {
+            // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
+            const bat_charge = bat & 0x0f;
+            const bat_status = bat >> 4;
+            if (bat_status == 0) {
+                bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+            } else if (bat_status == 1) {
+                bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+                is_charging = true;
+                cable_connected = true;
+            } else if (bat_status == 2) {
+                bat_capacity = 100;
+                cable_connected = true;
+            } else {
                 is_error = true;
             }
-        } else {
-            cable_connected = false;
-            if (bat_data < 10) {
-                bat_capacity = bat_data * 10 + 5;
-            } else {
-                bat_capacity = 100;
+        }
+
+        function bat_percent_to_text(bat_charge, is_charging, is_error) {
+            if(is_error) {
+                return '<font color="red">' + l("error") + '</font>';
             }
+
+            const batteryIcons = [
+                { threshold: 20, icon: 'fa-battery-empty' },
+                { threshold: 40, icon: 'fa-battery-quarter' },
+                { threshold: 60, icon: 'fa-battery-half' },
+                { threshold: 80, icon: 'fa-battery-three-quarters' },
+            ];
+
+            const icon_txt = batteryIcons.find(item => bat_charge < item.threshold)?.icon || 'fa-battery-full';
+            const icon_full = '<i class="fa-solid ' + icon_txt + '"></i>';
+            const bolt_txt = is_charging ? '<i class="fa-solid fa-bolt"></i>' : '';
+            return bat_charge + "%" + ' ' + bolt_txt + ' ' + icon_full;
         }
-    } else {
-        // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
-        const bat_charge = bat & 0x0f;
-        const bat_status = bat >> 4;
-        if (bat_status == 0) {
-            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-        } else if (bat_status == 1) {
-            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-            is_charging = true;
-            cable_connected = true;
-        } else if (bat_status == 2) {
-            bat_capacity = 100;
-            cable_connected = true;
-        } else {
-            is_error = true;
-        }
+
+        // Check if battery text has changed
+        const bat_txt = bat_percent_to_text(bat_capacity, is_charging, is_error);
+        const changed = bat_txt !== last_bat_txt;
+        last_bat_txt = bat_txt;
+
+        return {
+            bat_txt,
+            changed,
+            bat_capacity,
+            cable_connected,
+            is_charging,
+            is_error,
+        };
     }
-    return { bat_capacity, cable_connected, is_charging, is_error };
-}
+
+    parse.reset_cache = reset_battery_cache;
+    return parse;
+})();

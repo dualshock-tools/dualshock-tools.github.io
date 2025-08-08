@@ -1202,6 +1202,8 @@ function gboot() {
         welcome_modal();
         $("input[name='displayMode']").on('change', on_stick_mode_change);
         on_stick_mode_change();
+        init_finetune_event_listeners();
+        restore_show_raw_numbers_checkbox();
     });
 
     if (!("hid" in navigator)) {
@@ -1264,28 +1266,10 @@ async function ds5_finetune() {
     const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
     list.forEach((suffix, i) => {
         $("#finetune" + suffix).val(data[i]);
-        $("#finetune" + suffix).on('change', on_finetune_change);
-    });
-
-    // Set up mode toggle event listeners
-    $("#finetuneModeCenter").on('change', function() {
-        if (this.checked) {
-            toggle_finetune_mode('center');
-        }
-    });
-
-    $("#finetuneModeCircularity").on('change', function() {
-        if (this.checked) {
-            toggle_finetune_mode('circularity');
-        }
-    });
-
-    $("#showRawNumbersCheckbox").on('change', function() {
-        show_raw_numbers_changed();
     });
 
     // Initialize in center mode
-    toggle_finetune_mode('center');
+    set_finetune_mode('center');
     set_stick_to_finetune('left');
 
     // Initialize the raw numbers display state
@@ -1295,6 +1279,38 @@ async function ds5_finetune() {
     finetune_visible = true
 
     refresh_finetune_sticks();
+}
+
+function init_finetune_event_listeners() {
+    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
+    list.forEach((suffix) => {
+        $("#finetune" + suffix).on('change', on_finetune_change);
+    });
+
+    // Set up mode toggle event listeners
+    $("#finetuneModeCenter").on('change', function() {
+        if (this.checked) {
+            set_finetune_mode('center');
+        }
+    });
+
+    $("#finetuneModeCircularity").on('change', function() {
+        if (this.checked) {
+            set_finetune_mode('circularity');
+        }
+    });
+
+    $("#showRawNumbersCheckbox").on('change', function() {
+        show_raw_numbers_changed();
+    });
+
+    $("#left-stick-card").on('click', function() {
+        set_stick_to_finetune('left');
+    });
+
+    $("#right-stick-card").on('click', function() {
+        set_stick_to_finetune('right');
+    });
 }
 
 async function ds5_get_inmemory_module_data() {
@@ -1466,23 +1482,23 @@ function show_raw_numbers_changed() {
     const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
     const modal = $("#finetuneModal");
     modal.toggleClass("hide-raw-numbers", !showRawNumbers);
+    localStorage.setItem('showRawNumbersCheckbox', showRawNumbers);
 
     refresh_finetune_sticks();
+}
+
+function restore_show_raw_numbers_checkbox() {
+    // Restore the checkbox state from localStorage
+    const savedState = localStorage.getItem('showRawNumbersCheckbox');
+    if (savedState !== null) {
+        const isChecked = savedState === 'true';
+        $("#showRawNumbersCheckbox").prop('checked', isChecked);
+    }
 }
 
 function finetune_close() {
     $("#finetuneModal").modal("hide");
     finetune_visible = false;
-
-    // Remove event listeners from finetune inputs
-    const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"]
-    list.forEach(suffix => {
-        $("#finetune" + suffix).off('change');
-    });
-
-    $("#finetuneModeCenter").off('change');
-    $("#finetuneModeCircularity").off('change');
-    $("#showRawNumbersCheckbox").off('change');
 
     clear_active_stick();
     stop_continuous_dpad_adjustment();
@@ -1508,10 +1524,10 @@ function set_stick_to_finetune(stick) {
 function handle_finetune_mode_switching(changes) {
     // Handle automatic stick switching based on movement
     if (changes.l1) {
-        toggle_finetune_mode('center');
+        set_finetune_mode('center');
         clear_finetune_axis_highlights();
     } else if (changes.r1) {
-        toggle_finetune_mode('circularity');
+        set_finetune_mode('circularity');
         clear_finetune_axis_highlights();
     }
 }
@@ -1780,7 +1796,7 @@ async function finetune_cancel() {
     finetune_close();
 }
 
-function toggle_finetune_mode(mode) {
+function set_finetune_mode(mode) {
     finetune_mode = mode;
     clear_circularity();
 

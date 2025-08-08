@@ -16,20 +16,6 @@ var lang_cur_direction = "ltr";
 var gj = 0;
 var gu = 0;
 
-// DS5 finetuning
-let finetune_mode = 'center'; // 'center' or 'circularity'
-let finetune_original_data = []
-let last_written_finetune_data = []
-let finetune_visible = false
-let on_finetune_updating = false
-
-// Active stick tracking for finetune modal
-let active_stick = null; // 'left', 'right', or null
-
-// Continuous D-pad adjustment tracking
-let dpad_adjustment_interval = null
-let dpad_adjustment_timeout = null
-
 // Global object to keep track of button states
 const ds_button_states = {
     // e.g. 'square': false, 'cross': false, ...
@@ -1242,6 +1228,40 @@ async function on_finetune_change() {
     await write_finetune_data(out);
 }
 
+// DS5 finetuning
+const finetune = {
+    _mode: 'center', // 'center' or 'circularity'
+    original_data: [],
+    last_written_data: [],
+    visible: false,
+    active_stick: null, // 'left', 'right', or null
+
+    get mode() {
+        return this._mode;
+    },
+
+    set mode(mode) {
+        if (mode !== 'center' && mode !== 'circularity') {
+            throw new Error(`Invalid finetune mode: ${mode}. Must be 'center' or 'circularity'`);
+        }
+        this._mode = mode;
+        this._updateUI();
+    },
+
+    _updateUI() {
+        clear_circularity();
+
+        const modal = $('#finetuneModal');
+        if (this._mode === 'center') {
+            $("#finetuneModeCenter").prop('checked', true);
+            modal.removeClass('circularity-mode');
+        } else if (this._mode === 'circularity') {
+            $("#finetuneModeCircularity").prop('checked', true);
+            modal.addClass('circularity-mode');
+        }
+    }
+};
+
 async function ds5_finetune() {
     // Lock NVS before
     nvs = await ds5_nvstatus();
@@ -1275,8 +1295,8 @@ async function ds5_finetune() {
     // Initialize the raw numbers display state
     show_raw_numbers_changed();
 
-    finetune_original_data = data
-    finetune_visible = true
+    finetune.original_data = data
+    finetune.visible = true
 
     refresh_finetune_sticks();
 }
@@ -1346,7 +1366,7 @@ async function read_finetune_data() {
         return null;
     }
 
-    last_written_finetune_data = data;
+    finetune.last_written_data = data;
     return data;
 }
 
@@ -1356,54 +1376,68 @@ async function write_finetune_data(data) {
     }
 
     const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-    if (deepEqual(data, last_written_finetune_data)) {
+    if (deepEqual(data, finetune.last_written_data)) {
         return;
     }
 
-    last_written_finetune_data = data
+    finetune.last_written_data = data
     const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);
     await device.sendFeatureReport(0x80, alloc_req(0x80, pkg))
 }
 
-function refresh_finetune_sticks() {
-    if (on_finetune_updating)
-        return;
+const refresh_finetune_sticks = (() => {
+    let timeout = null;
 
-    on_finetune_updating = true
-    setTimeout(ds5_finetune_update_all, 10);
-}
+    return function() {
+        if (timeout) return;
 
-function update_finetune_warning_messages() {
-    if(!active_stick) return;
+        timeout = setTimeout(() => {
+            const { left, right } = ds_button_states.sticks;
+            ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
+            ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
 
-    const currentStick = ds_button_states.sticks[active_stick];
-    if (finetune_mode === 'center') {
-        const isNearCenter = Math.abs(currentStick.x) <= 0.5 && Math.abs(currentStick.y) <= 0.5;
-        $(`#finetuneCenter${isNearCenter? 'Warning' : 'Success'}`).hide();
-        $(`#finetuneCenter${isNearCenter? 'Success' : 'Warning'}`).show();
-    }
+            update_finetune_warning_messages();
+            highlight_active_finetune_axis();
 
-    if (finetune_mode === 'circularity') {
-        // Check if stick is in extreme position (close to edges)
-        const isInExtremePosition = (Math.abs(currentStick.x) >= 0.7 || Math.abs(currentStick.y) >= 0.7);
-        $(`#finetuneCircularity${isInExtremePosition? 'Warning' : 'Success'}`).hide();
-        $(`#finetuneCircularity${isInExtremePosition? 'Success' : 'Warning'}`).show();
-    }
-}
+            timeout = null;
+        }, 10);
+    };
+})();
 
-function ds5_finetune_update_all() {
-    const { left, right } = ds_button_states.sticks;
-    ds5_finetune_update("finetuneStickCanvasL", left.x, left.y);
-    ds5_finetune_update("finetuneStickCanvasR", right.x, right.y);
+const update_finetune_warning_messages = (() => {
+    let timeout = null; // to stop unnecessary flicker in center mode
 
-    update_finetune_warning_messages();
-    highlight_active_finetune_axis();
-}
+    return function() {
+        if(!finetune.active_stick) return;
+
+        const currentStick = ds_button_states.sticks[finetune.active_stick];
+        if (finetune.mode === 'center') {
+            const isNearCenter = Math.abs(currentStick.x) <= 0.5 && Math.abs(currentStick.y) <= 0.5;
+            if(!isNearCenter && timeout) return;
+
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                $(`#finetuneCenter${isNearCenter? 'Warning' : 'Success'}`).hide();
+                $(`#finetuneCenter${isNearCenter? 'Success' : 'Warning'}`).show();
+                timeout = null;
+            }, isNearCenter ? 0 : 200);
+        }
+
+        if (finetune.mode === 'circularity') {
+            // Check if stick is in extreme position (close to edges)
+            const isInExtremePosition = (Math.abs(currentStick.x) >= 0.7 || Math.abs(currentStick.y) >= 0.7);
+            $(`#finetuneCircularity${isInExtremePosition? 'Warning' : 'Success'}`).hide();
+            $(`#finetuneCircularity${isInExtremePosition? 'Success' : 'Warning'}`).show();
+        }
+    };
+})();
+
+
 
 function clear_finetune_axis_highlights(to_clear = {center: true, circularity: true}) {
     const { center, circularity } = to_clear;
 
-    if(finetune_mode === 'center' && center || finetune_mode === 'circularity' && circularity) {
+    if(finetune.mode === 'center' && center || finetune.mode === 'circularity' && circularity) {
         // Clear label highlights
         const labelIds = ["Lx-lbl", "Ly-lbl", "Rx-lbl", "Ry-lbl"];
         labelIds.forEach(suffix => {
@@ -1413,31 +1447,31 @@ function clear_finetune_axis_highlights(to_clear = {center: true, circularity: t
 }
 
 function highlight_active_finetune_axis(opts = {}) {
-    if(!active_stick) return;
+    if(!finetune.active_stick) return;
 
-    if (finetune_mode === 'center') {
+    if (finetune.mode === 'center') {
         const { axis } = opts;
         if(!axis) return;
 
         clear_finetune_axis_highlights({center: true});
 
-        const labelSuffix = `${active_stick === 'left' ? "L" : "R"}${axis.toLowerCase()}`;
+        const labelSuffix = `${finetune.active_stick === 'left' ? "L" : "R"}${axis.toLowerCase()}`;
         $(`#finetuneStickCanvas${labelSuffix}-lbl`).addClass("text-primary");
     } else {
         clear_finetune_axis_highlights({circularity: true});
 
         const sticks = ds_button_states.sticks;
-        const currentStick = sticks[active_stick];
+        const currentStick = sticks[finetune.active_stick];
 
         // Only highlight if stick is moved significantly from center
         const deadzone = 0.5;
         if (Math.abs(currentStick.x) >= deadzone || Math.abs(currentStick.y) >= deadzone) {
             const quadrant = get_stick_quadrant(currentStick.x, currentStick.y);
-            const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+            const inputSuffix = get_finetune_input_suffix_for_quadrant(finetune.active_stick, quadrant);
             if (inputSuffix) {
                 // Highlight the corresponding LX/LY label to observe
                 const labelId = `finetuneStickCanvas${
-                    active_stick === 'left' ? 'L' : 'R'}${
+                    finetune.active_stick === 'left' ? 'L' : 'R'}${
                     quadrant === 'left' || quadrant === 'right' ? 'x' : 'y'}-lbl`;
                 $(`#${labelId}`).addClass("text-primary");
             }
@@ -1446,7 +1480,6 @@ function highlight_active_finetune_axis(opts = {}) {
 }
 
 function ds5_finetune_update(name, plx, ply) {
-    on_finetune_updating = false
     const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
     const c = document.getElementById(`${name}${showRawNumbers ? '' : '_large'}`);
     const ctx = c.getContext("2d");
@@ -1459,8 +1492,8 @@ function ds5_finetune_update(name, plx, ply) {
     ctx.clearRect(0, 0, c.width, c.height);
 
     const isLeftStick = name === "finetuneStickCanvasL";
-    const highlight = active_stick == (isLeftStick ? 'left' : 'right') && !!dpad_adjustment_timeout;
-    if (finetune_mode === 'circularity') {
+    const highlight = finetune.active_stick == (isLeftStick ? 'left' : 'right') && is_dpad_adjustment_active();
+    if (finetune.mode === 'circularity') {
         // Draw stick position with circle
         draw_stick_position(ctx, hb, yb, sz, plx, ply, {
             circularity_data: isLeftStick ? ll_data : rr_data,
@@ -1498,15 +1531,15 @@ function restore_show_raw_numbers_checkbox() {
 
 function finetune_close() {
     $("#finetuneModal").modal("hide");
-    finetune_visible = false;
+    finetune.visible = false;
 
     clear_active_stick();
     stop_continuous_dpad_adjustment();
-    finetune_original_data = [];
+    finetune.original_data = [];
 }
 
 function set_stick_to_finetune(stick) {
-    if(active_stick === stick) {
+    if(finetune.active_stick === stick) {
         return;
     }
 
@@ -1514,10 +1547,10 @@ function set_stick_to_finetune(stick) {
     stop_continuous_dpad_adjustment();
     clear_finetune_axis_highlights();
 
-    active_stick = stick;
+    finetune.active_stick = stick;
 
     const other_stick = stick === 'left' ? 'right' : 'left';
-    $(`#${active_stick}-stick-card`).addClass("stick-card-active");
+    $(`#${finetune.active_stick}-stick-card`).addClass("stick-card-active");
     $(`#${other_stick}-stick-card`).removeClass("stick-card-active");
 }
 
@@ -1568,7 +1601,7 @@ function clear_active_stick() {
     $("#left-stick-card").removeClass("stick-card-active");
     $("#right-stick-card").removeClass("stick-card-active");
 
-    active_stick = null; // Clear active stick
+    finetune.active_stick = null; // Clear active stick
     clear_finetune_axis_highlights();
 }
 
@@ -1585,7 +1618,7 @@ function get_stick_quadrant(x, y) {
 function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
     // This function should only be used in circularity mode
     // In center mode, we don't care about quadrants - use direct axis mapping instead
-    if (finetune_mode === 'center') {
+    if (finetune.mode === 'center') {
         // This function shouldn't be called in center mode
         console.warn('get_finetune_input_suffix_for_quadrant called in center mode - this should not happen');
         return null;
@@ -1611,9 +1644,9 @@ function get_finetune_input_suffix_for_quadrant(stick, quadrant) {
 }
 
 function handle_finetune_dpad_adjustment(changes) {
-    if(!active_stick) return;
+    if(!finetune.active_stick) return;
 
-    if (finetune_mode === 'center') {
+    if (finetune.mode === 'center') {
         handle_center_mode_adjustment(changes);
     } else {
         handle_circularity_mode_adjustment(changes);
@@ -1642,7 +1675,7 @@ function handle_center_mode_adjustment(changes) {
     for (const mapping of buttonMappings) {
         // Check if active stick is away from center (> 0.5)
         const sticks = ds_button_states.sticks;
-        const currentStick = sticks[active_stick];
+        const currentStick = sticks[finetune.active_stick];
         const stickAwayFromCenter = Math.abs(currentStick.x) > 0.5 || Math.abs(currentStick.y) > 0.5;
         if (stickAwayFromCenter && is_navigation_key_pressed()) {
             flash_finetune_warning();
@@ -1651,7 +1684,7 @@ function handle_center_mode_adjustment(changes) {
 
         if (mapping.buttons.some(button => changes[button])) {
             highlight_active_finetune_axis({axis: mapping.axis});
-            start_continuous_dpad_adjustment_center_mode(active_stick, mapping.axis, mapping.adjustment);
+            start_continuous_dpad_adjustment_center_mode(finetune.active_stick, mapping.axis, mapping.adjustment);
             return;
         }
     }
@@ -1662,24 +1695,28 @@ function is_navigation_key_pressed() {
     return nav_buttons.some(button => ds_button_states[button] === true);
 }
 
-let flash_finetune_warning_timeout = null;
-function flash_finetune_warning() {
-    function toggle() {
-        $("#finetuneCenterWarning").toggleClass(['alert-warning', 'alert-danger']);
-        $("#finetuneCircularityWarning").toggleClass(['alert-warning', 'alert-danger']);
-    }
+const flash_finetune_warning = (() => {
+    let timeout = null;
 
-    if(!flash_finetune_warning_timeout) {
+    return function() {
+        function toggle() {
+            $("#finetuneCenterWarning").toggleClass(['alert-warning', 'alert-danger']);
+            $("#finetuneCircularityWarning").toggleClass(['alert-warning', 'alert-danger']);
+        }
+
+        if(timeout) return;
+
         toggle();   // on
-        flash_finetune_warning_timeout = setTimeout(() => {
+        timeout = setTimeout(() => {
             toggle();   // off
-            flash_finetune_warning_timeout = null;
+            timeout = null;
         }, 300);
-    }
-}
+    };
+})();
+
 function handle_circularity_mode_adjustment({sticks: _, ...changes}) {
     const sticks = ds_button_states.sticks;
-    const currentStick = sticks[active_stick];
+    const currentStick = sticks[finetune.active_stick];
 
     // Only adjust if stick is moved significantly from center
     const deadzone = 0.5;
@@ -1729,49 +1766,60 @@ function handle_circularity_mode_adjustment({sticks: _, ...changes}) {
 
     // Start continuous adjustment on button press
     if (adjustment !== 0) {
-        start_continuous_dpad_adjustment(active_stick, quadrant, adjustment);
+        start_continuous_dpad_adjustment(finetune.active_stick, quadrant, adjustment);
     }
 }
 
-function start_continuous_dpad_adjustment(active_stick, quadrant, adjustment) {
-    const inputSuffix = get_finetune_input_suffix_for_quadrant(active_stick, quadrant);
+function start_continuous_dpad_adjustment(stick, quadrant, adjustment) {
+    const inputSuffix = get_finetune_input_suffix_for_quadrant(stick, quadrant);
     start_continuous_adjustment_with_suffix(inputSuffix, adjustment);
 }
 
-function start_continuous_dpad_adjustment_center_mode(active_stick, targetAxis, adjustment) {
+function start_continuous_dpad_adjustment_center_mode(stick, targetAxis, adjustment) {
     // In center mode, directly map to X/Y axes
-    const inputSuffix = active_stick === 'left' ?
+    const inputSuffix = stick === 'left' ?
         (targetAxis === 'X' ? 'LX' : 'LY') :
         (targetAxis === 'X' ? 'RX' : 'RY');
     start_continuous_adjustment_with_suffix(inputSuffix, adjustment);
 }
 
-function start_continuous_adjustment_with_suffix(inputSuffix, adjustment) {
-    stop_continuous_dpad_adjustment();
+const { start_continuous_adjustment_with_suffix, stop_continuous_dpad_adjustment, is_dpad_adjustment_active } = (() => {
+    let repeat_delay = null;
+    let initial_delay = null;
 
-    const element = $(`#finetune${inputSuffix}`);
-    if (!element.length) return;
+    function start_continuous_adjustment_with_suffix(inputSuffix, adjustment) {
+        stop_continuous_dpad_adjustment();
 
-    // Perform initial adjustment immediately...
-    perform_dpad_adjustment(element, adjustment);
-    clear_circularity();
+        const element = $(`#finetune${inputSuffix}`);
+        if (!element.length) return;
 
-    // ...then prime continuous adjustment
-    dpad_adjustment_timeout = setTimeout(() => {
-        dpad_adjustment_interval = setInterval(() => {
-            perform_dpad_adjustment(element, adjustment);
-            clear_circularity();
-        }, 150);
-    }, 400); // Initial delay before continuous adjustment starts (400ms)
-}
+        // Perform initial adjustment immediately...
+        perform_dpad_adjustment(element, adjustment);
+        clear_circularity();
 
-function stop_continuous_dpad_adjustment() {
-    clearInterval(dpad_adjustment_interval);
-    dpad_adjustment_interval = null;
+        // ...then prime continuous adjustment
+        initial_delay = setTimeout(() => {
+            repeat_delay = setInterval(() => {
+                perform_dpad_adjustment(element, adjustment);
+                clear_circularity();
+            }, 150);
+        }, 400); // Initial delay before continuous adjustment starts (400ms)
+    }
 
-    clearTimeout(dpad_adjustment_timeout);
-    dpad_adjustment_timeout = null;
-}
+    function stop_continuous_dpad_adjustment() {
+        clearInterval(repeat_delay);
+        repeat_delay = null;
+
+        clearTimeout(initial_delay);
+        initial_delay = null;
+    }
+
+    function is_dpad_adjustment_active() {
+        return !!initial_delay;
+    }
+
+    return { start_continuous_adjustment_with_suffix, stop_continuous_dpad_adjustment, is_dpad_adjustment_active };
+})();
 
 async function perform_dpad_adjustment(element, adjustment) {
     const currentValue = parseInt(element.val()) || 0;
@@ -1790,24 +1838,14 @@ function finetune_save() {
 }
 
 async function finetune_cancel() {
-    if(finetune_original_data.length == 12)
-        await write_finetune_data(finetune_original_data)
+    if(finetune.original_data.length == 12)
+        await write_finetune_data(finetune.original_data)
 
     finetune_close();
 }
 
 function set_finetune_mode(mode) {
-    finetune_mode = mode;
-    clear_circularity();
-
-    const modal = $('#finetuneModal');
-    if (mode === 'center') {
-        $("#finetuneModeCenter").prop('checked', true);
-        modal.removeClass('circularity-mode');
-    } else if (mode === 'circularity') {
-        $("#finetuneModeCircularity").prop('checked', true);
-        modal.addClass('circularity-mode');
-    }
+    finetune.mode = mode;
 }
 
 
@@ -2101,52 +2139,20 @@ function float_to_str(f, precision = 2) {
     return (f<0?"":"+") + f.toFixed(precision);
 }
 
-var on_delay = false;
+const refresh_sticks = (() => {
+    let delay = null;
+    return function() {
+        if(delay) return;
 
-function timeout_ok() {
-    on_delay = false;
-    if(ll_updated)
         refresh_stick_pos();
-}
+        delay = setTimeout(() => {
+            delay = null;
+            if(ll_updated)
+                refresh_stick_pos();
+        }, 20);
+    };
+})();
 
-function refresh_sticks() {
-    if(on_delay)
-        return;
-
-    refresh_stick_pos();
-    on_delay = true;
-    setTimeout(timeout_ok, 20);
-}
-
-var last_bat_txt = "";
-var last_bat_disable = null;
-
-function bat_percent_to_text(bat_charge, is_charging, is_error) {
-    var icon_txt = "";
-
-    if(bat_charge < 20) {
-        icon_txt = 'fa-battery-empty';
-    } else if(bat_charge < 40) {
-        icon_txt = 'fa-battery-quarter';
-    } else if(bat_charge < 60) {
-        icon_txt = 'fa-battery-half';
-    } else if(bat_charge < 80) {
-        icon_txt = 'fa-battery-three-quarters';
-    } else {
-        icon_txt = 'fa-battery-full';
-    }
-
-    var icon_full = '<i class="fa-solid ' + icon_txt + '"></i>';
-    var bolt_txt = '';
-    if(is_charging)
-        bolt_txt = '<i class="fa-solid fa-bolt"></i>';
-    bat_txt = bat_charge + "%" + ' ' + bolt_txt + ' ' + icon_full;
-
-    if(is_error) {
-        bat_txt = '<font color="red">' + l("error") + '</font>';
-    }
-    return bat_txt;
-}
 
 function update_nvs_changes_status(new_value) {
     if (new_value == has_changes_to_write)
@@ -2163,13 +2169,10 @@ function update_nvs_changes_status(new_value) {
     has_changes_to_write = new_value;
 }
 
-function update_battery_status({bat_capacity, cable_connected, is_charging, is_error}) {
-    const bat_txt = bat_percent_to_text(bat_capacity, is_charging);
-    const can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
-
-    if(bat_txt != last_bat_txt) {
+function update_battery_status({/* bat_capacity, cable_connected, is_charging, is_error, */ bat_txt, changed}) {
+    // const can_use_tool = (bat_capacity >= 30 && cable_connected && !is_error); // is this even being used?
+    if(changed) {
         $("#d-bat").html(bat_txt);
-        last_bat_txt = bat_txt;
     }
 }
 
@@ -2445,7 +2448,7 @@ function process_ds_input({data}) {
     const changes = record_ds_button_states(data, DS5_BUTTON_MAP, 7, 4, 5);
     if(current_active_tab === 'controller-tab') {
         collectCircularityData(changes.sticks, ll_data, rr_data);
-        if(finetune_visible) {
+        if(finetune.visible) {
             refresh_finetune_sticks();
             handle_finetune_mode_switching(changes);
             handle_finetune_stick_switching(changes);
@@ -2649,7 +2652,7 @@ async function connect() {
 
     reset_circularity();
     la("begin");
-    last_bat_txt = "";
+    parse_battery_status.reset_cache();
     try {
         $("#btnconnect").prop("disabled", true);
         $("#connectspinner").show();
@@ -2810,7 +2813,7 @@ function close_calibrate_window() {
     }
 
     $("#calibCenterModal").modal("hide");
-    cur_calib = 0;
+    reset_calib();
     return;
 }
 
@@ -2891,7 +2894,7 @@ function board_model_info() {
 
 function close_new_calib() {
     $("#calibCenterModal").modal("hide");
-    cur_calib = 0;
+    reset_calib();
 }
 
 async function calib_step(i) {
@@ -2959,25 +2962,34 @@ async function calib_step(i) {
 
 }
 
-var cur_calib = 0;
-async function calib_open() {
-    la("calib_open");
-    cur_calib = 0;
-    await calib_next();
-    new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
-}
+const { calib_open, calib_next, reset_calib } = (() => {
+    let cur_calib = 0;
 
-async function calib_next() {
-    la("calib_next");
-    if(cur_calib == 6) {
-        close_new_calib()
-        return;
+    async function calib_open() {
+        la("calib_open");
+        cur_calib = 0;
+        await calib_next();
+        new bootstrap.Modal(document.getElementById('calibCenterModal'), {}).show()
     }
-    if(cur_calib < 6) {
-        cur_calib += 1;
-        await calib_step(cur_calib);
+
+    async function calib_next() {
+        la("calib_next");
+        if(cur_calib == 6) {
+            close_new_calib()
+            return;
+        }
+        if(cur_calib < 6) {
+            cur_calib += 1;
+            await calib_step(cur_calib);
+        }
     }
-}
+
+    function reset_calib() {
+        cur_calib = 0;
+    }
+
+    return { calib_open, calib_next, reset_calib };
+})();
 
 function la(k,v={}) {
     $.ajax({type: 'POST', url:"https://the.al/ds4_a/l", 
@@ -3146,35 +3158,38 @@ function lerp_color(a, b, t) {
     return rgb2hex(c[0], c[1], c[2]);
 }
 
-let haptic_timeout = undefined;
-let haptic_last_trigger = 0;
-async function trigger_haptic_motors(strong_motor /*left*/, weak_motor /*right*/) {
-    // The DS4 contoller has a strong (left) and a weak (right) motor.
-    // The DS5 emulates the same behavior, but the left and right motors are the same.
+const trigger_haptic_motors = (() => {
+    let haptic_timeout = undefined;
+    let haptic_last_trigger = 0;
 
-    const now = Date.now();
-    if (now - haptic_last_trigger < 200) {
-        return; // Rate limited - ignore calls within 200ms
-    }
+    return async function(strong_motor /*left*/, weak_motor /*right*/) {
+        // The DS4 contoller has a strong (left) and a weak (right) motor.
+        // The DS5 emulates the same behavior, but the left and right motors are the same.
 
-    haptic_last_trigger = now;
-
-    try {
-        if (mode == 1) { // DS4
-            const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
-            await device.sendReport(0x05, data);
-        } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
-            const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
-            await device.sendReport(0x02, data);
+        const now = Date.now();
+        if (now - haptic_last_trigger < 200) {
+            return; // Rate limited - ignore calls within 200ms
         }
 
-        // Stop rumble after duration
-        clearTimeout(haptic_timeout);
-        haptic_timeout = setTimeout(stop_haptic_motors, 250);
-    } catch(e) {
-        show_popup(l("Error triggering rumble: ") + e);
-    }
-}
+        haptic_last_trigger = now;
+
+        try {
+            if (mode == 1) { // DS4
+                const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
+                await device.sendReport(0x05, data);
+            } else if (mode == 2 || mode == 3) { // DS5 or DS5 Edge
+                const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
+                await device.sendReport(0x02, data);
+            }
+
+            // Stop rumble after duration
+            clearTimeout(haptic_timeout);
+            haptic_timeout = setTimeout(stop_haptic_motors, 250);
+        } catch(e) {
+            show_popup(l("Error triggering rumble: ") + e);
+        }
+    };
+})();
 
 async function stop_haptic_motors() {
     if (mode == 1) { // DS4
@@ -3186,75 +3201,95 @@ async function stop_haptic_motors() {
     }
 }
 
-function lerp_color(a, b, t) {
-    // a, b: hex color strings, t: 0.0-1.0
-    function hex2rgb(hex) {
-        hex = hex.replace('#', '');
-        if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
-        const num = parseInt(hex, 16);
-        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+const parse_battery_status = (() => {
+    let last_bat_txt = "";
+
+    function reset_battery_cache() {
+        last_bat_txt = "";
     }
-    function rgb2hex(r, g, b) {
-        return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-    }
-    const c1 = hex2rgb(a);
-    const c2 = hex2rgb(b);
-    const c = [
-        Math.round(c1[0] + (c2[0] - c1[0]) * t),
-        Math.round(c1[1] + (c2[1] - c1[1]) * t),
-        Math.round(c1[2] + (c2[2] - c1[2]) * t)
-    ];
-    return rgb2hex(c[0], c[1], c[2]);
-}
 
+    function parse(data, {byte, is_ds4 = false}) {
+        const bat = data.getUint8(byte);
+        let bat_capacity = 0, cable_connected = false, is_charging = false, is_error = false;
 
-function parse_battery_status(data, {byte, is_ds4 = false}) {
-    const bat = data.getUint8(byte);
-    let bat_capacity = 0, cable_connected = false, is_charging = false, is_error = false;
-
-    if (is_ds4) {
-        // DS4: bat_data = low 4 bits, bat_status = bit 4
-        const bat_data = bat & 0x0f;
-        const bat_status = (bat >> 4) & 1;
-        if (bat_status == 1) {
-            cable_connected = true;
-            if (bat_data < 10) {
-                bat_capacity = Math.min(bat_data * 10 + 5, 100);
-                is_charging = true;
-            } else if (bat_data == 10) {
-                bat_capacity = 100;
-                is_charging = true;
-            } else if (bat_data == 11) {
-                bat_capacity = 100;
-                // charged
+        if (is_ds4) {
+            // DS4: bat_data = low 4 bits, bat_status = bit 4
+            const bat_data = bat & 0x0f;
+            const bat_status = (bat >> 4) & 1;
+            if (bat_status == 1) {
+                cable_connected = true;
+                if (bat_data < 10) {
+                    bat_capacity = Math.min(bat_data * 10 + 5, 100);
+                    is_charging = true;
+                } else if (bat_data == 10) {
+                    bat_capacity = 100;
+                    is_charging = true;
+                } else if (bat_data == 11) {
+                    bat_capacity = 100;
+                    // charged
+                } else {
+                    bat_capacity = 0;
+                    is_error = true;
+                }
             } else {
-                bat_capacity = 0;
+                cable_connected = false;
+                if (bat_data < 10) {
+                    bat_capacity = bat_data * 10 + 5;
+                } else {
+                    bat_capacity = 100;
+                }
+            }
+        } else {
+            // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
+            const bat_charge = bat & 0x0f;
+            const bat_status = bat >> 4;
+            if (bat_status == 0) {
+                bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+            } else if (bat_status == 1) {
+                bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+                is_charging = true;
+                cable_connected = true;
+            } else if (bat_status == 2) {
+                bat_capacity = 100;
+                cable_connected = true;
+            } else {
                 is_error = true;
             }
-        } else {
-            cable_connected = false;
-            if (bat_data < 10) {
-                bat_capacity = bat_data * 10 + 5;
-            } else {
-                bat_capacity = 100;
+        }
+
+        function bat_percent_to_text(bat_charge, is_charging, is_error) {
+            if(is_error) {
+                return '<font color="red">' + l("error") + '</font>';
             }
+
+            const batteryIcons = [
+                { threshold: 20, icon: 'fa-battery-empty' },
+                { threshold: 40, icon: 'fa-battery-quarter' },
+                { threshold: 60, icon: 'fa-battery-half' },
+                { threshold: 80, icon: 'fa-battery-three-quarters' },
+            ];
+
+            const icon_txt = batteryIcons.find(item => bat_charge < item.threshold)?.icon || 'fa-battery-full';
+            const icon_full = '<i class="fa-solid ' + icon_txt + '"></i>';
+            const bolt_txt = is_charging ? '<i class="fa-solid fa-bolt"></i>' : '';
+            return bat_charge + "%" + ' ' + bolt_txt + ' ' + icon_full;
         }
-    } else {
-        // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
-        const bat_charge = bat & 0x0f;
-        const bat_status = bat >> 4;
-        if (bat_status == 0) {
-            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-        } else if (bat_status == 1) {
-            bat_capacity = Math.min(bat_charge * 10 + 5, 100);
-            is_charging = true;
-            cable_connected = true;
-        } else if (bat_status == 2) {
-            bat_capacity = 100;
-            cable_connected = true;
-        } else {
-            is_error = true;
-        }
+
+        // Check if battery text has changed
+        const bat_txt = bat_percent_to_text(bat_capacity, is_charging, is_error);
+        const changed = bat_txt !== last_bat_txt;
+        last_bat_txt = bat_txt;
+
+        return {
+            bat_txt,
+            changed,
+            bat_capacity,
+            cable_connected,
+            is_charging,
+            is_error,
+        };
     }
-    return { bat_capacity, cable_connected, is_charging, is_error };
-}
+
+    parse.reset_cache = reset_battery_cache;
+    return parse;
+})();

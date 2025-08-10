@@ -1,20 +1,21 @@
-var device = null;
-var devname = "";
-var mode = 0;
+'use strict';
+let device = null;
+let devname = "";
+let mode = 0;
 
 // bitmask: 1: clone, 2: update ds5 firmware, 4: battery low, 8: ds-edge not supported
-var disable_btn = 0;
-var last_disable_btn = 0;
+let disable_btn = 0;
+let last_disable_btn = 0;
 
 // 1 if there is any change that can be stored permanently
-var has_changes_to_write = 0;
+let has_changes_to_write = 0;
 
-var lang_orig_text = {};
-var lang_cur = {};
-var lang_disabled = true;
-var lang_cur_direction = "ltr";
-var gj = 0;
-var gu = 0;
+const lang_orig_text = {};
+let lang_cur = {};
+let lang_disabled = true;
+let lang_cur_direction = "ltr";
+let gj = 0;
+let gu = 0;
 
 // Global object to keep track of button states
 const ds_button_states = {
@@ -32,7 +33,7 @@ const ds_button_states = {
 };
 
 // Alphabetical order
-var available_langs = {
+const available_langs = {
     "ar_ar": { "name": "العربية", "file": "ar_ar.json", "direction": "rtl"},
     "bg_bg": { "name": "Български", "file": "bg_bg.json", "direction": "ltr"},
     "cz_cz": { "name": "Čeština", "file": "cz_cz.json", "direction": "ltr"},
@@ -72,6 +73,15 @@ function dec2hex8(i) {
    return (i+0x100).toString(16).substr(-2).toUpperCase();
 }
 
+function format_mac_from_view(view, start_index_inclusive) {
+    const bytes = [];
+    for (let i = 0; i < 6; i++) {
+        const idx = start_index_inclusive + (5 - i);
+        bytes.push(dec2hex8(view.getUint8(idx, false)));
+    }
+    return bytes.join(":");
+}
+
 function calculateCircularityError(data) {
     // Sum of squared deviations from ideal distance of 1.0, only for values > 0.2
     const sumSquaredDeviations = data.reduce((acc, val) =>
@@ -83,7 +93,7 @@ function calculateCircularityError(data) {
 }
 
 function ds5_hw_to_bm(hw_ver) {
-    a = (hw_ver >> 8) & 0xff;
+    const a = (hw_ver >> 8) & 0xff;
     if(a == 0x03) {
         return "BDM-010";
     } else if(a == 0x04) {
@@ -100,7 +110,7 @@ function ds5_hw_to_bm(hw_ver) {
 }
 
 function ds4_hw_to_bm(hw_ver) {
-    a = hw_ver >> 8;
+    const a = hw_ver >> 8;
     if(a == 0x31) {
         return "JDM-001";
     } else if(a == 0x43) {
@@ -125,19 +135,20 @@ function ds4_hw_to_bm(hw_ver) {
 }
 
 function is_rare(hw_ver) {
-    a = hw_ver >> 8;
-    b = a >> 4;
+    const a = hw_ver >> 8;
+    const b = a >> 4;
     return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93 && a != 0x90));
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_info() {
     try {
-        var ooc = l("unknown");
-        var is_clone = false;
+        let ooc = l("unknown");
+        let is_clone = false;
 
         const view = lf("ds4_info", await device.receiveFeatureReport(0xa3));
 
-        var cmd = view.getUint8(0, true);
+        const cmd = view.getUint8(0, true);
 
         if(cmd != 0xa3 || view.buffer.byteLength < 49) {
             if(view.buffer.byteLength != 49) {
@@ -146,15 +157,13 @@ async function ds4_info() {
             }
         }
 
-        var k1 = new TextDecoder().decode(view.buffer.slice(1, 0x10));
-        var k2 = new TextDecoder().decode(view.buffer.slice(0x10, 0x20));
-        k1=k1.replace(/\0/g, '');
-        k2=k2.replace(/\0/g, '');
+        const k1 = new TextDecoder().decode(view.buffer.slice(1, 0x10)).replace(/\0/g, '');
+        const k2 = new TextDecoder().decode(view.buffer.slice(0x10, 0x20)).replace(/\0/g, '');
 
-        var hw_ver_major= view.getUint16(0x21, true)
-        var hw_ver_minor= view.getUint16(0x23, true)
-        var sw_ver_major= view.getUint32(0x25, true)
-        var sw_ver_minor= view.getUint16(0x25+4, true)
+        const hw_ver_major= view.getUint16(0x21, true)
+        const hw_ver_minor= view.getUint16(0x23, true)
+        const sw_ver_major= view.getUint32(0x25, true)
+        const sw_ver_minor= view.getUint16(0x25+4, true)
         try {
             if(!is_clone) {
                 const view = await device.receiveFeatureReport(0x81);
@@ -173,16 +182,17 @@ async function ds4_info() {
         append_info(l("SW Version"), dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor));
         append_info(l("Device Type"), ooc);
         if(!is_clone) {
-            b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
+            const b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' +
                     '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
             append_info(l("Board Model"), ds4_hw_to_bm(hw_ver_minor) + b_info);
 
             // All ok, safe to lock NVS, query it and get BD Addr
-            nvstatus = await ds4_nvstatus();
+            const nv = await query_nvstatus_ds4();
+            render_nvstatus_to_dom(nv);
 
-            if(nvstatus == 0)
+            if(nv.locked === false)
                 await ds4_nvlock();
-            bd_addr = await ds4_getbdaddr();
+            const bd_addr = await ds4_getbdaddr();
             append_info(l("Bluetooth Address"), bd_addr);
 
             if(is_rare(hw_ver_minor)) {
@@ -205,7 +215,7 @@ async function ds4_flash() {
         show_popup(l("Changes saved successfully"));
 
     } catch(error) {
-        show_popup(l("Error while saving changes:") + " " + str(error));
+        show_popup(l("Error while saving changes:") + " " + String(error));
     }
 }
 
@@ -217,19 +227,19 @@ async function ds5_flash() {
 
         show_popup(l("Changes saved successfully"));
     } catch(error) {
-        show_popup(l("Error while saving changes: ") + toString(error));
+        show_popup(l("Error while saving changes: ") + String(error));
     }
 }
 
 async function ds5_edge_flash() {
     la("ds5_edge_flash");
     try {
-        ret = await ds5_edge_flash_modules();
+        const ret = await ds5_edge_flash_modules();
         if(ret) {
             show_popup("<b>" + l("Changes saved successfully") + "</b>.<br><br>" + l("If the calibration is not stored permanently, please double-check the wirings of the hardware mod."), true);
         }
     } catch(error) {
-        show_popup(l("Error while saving changes: ") + toString(error));
+        show_popup(l("Error while saving changes: ") + String(error));
     }
 }
 
@@ -249,19 +259,20 @@ async function ds5_reset() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_calibrate_range_begin() {
     la("ds4_calibrate_range_begin");
-    var err = l("Range calibration failed: ");
+    const err = l("Range calibration failed: ");
     try {
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,2]))
         await new Promise(r => setTimeout(r, 200));
-    
+
         // Assert
-        data = await device.receiveFeatureReport(0x91)
-        data2 = await device.receiveFeatureReport(0x92)
-        d1 = data.getUint32(0, false);
-        d2 = data2.getUint32(0, false);
+        const data = await device.receiveFeatureReport(0x91)
+        const data2 = await device.receiveFeatureReport(0x92)
+        const d1 = data.getUint32(0, false);
+        const d2 = data2.getUint32(0, false);
         if(d1 != 0x91010201 || d2 != 0x920102ff) {
             la("ds4_calibrate_range_begin_failed", {"d1": d1, "d2": d2});
             close_calibrate_window();
@@ -275,24 +286,25 @@ async function ds4_calibrate_range_begin() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_calibrate_range_end() {
     la("ds4_calibrate_range_end");
-    var err = l("Range calibration failed: ");
+    const err = l("Range calibration failed: ");
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,2]))
         await new Promise(r => setTimeout(r, 200));
-    
-        data = await device.receiveFeatureReport(0x91)
-        data2 = await device.receiveFeatureReport(0x92)
-        d1 = data.getUint32(0, false);
-        d2 = data2.getUint32(0, false);
+
+        const data = await device.receiveFeatureReport(0x91)
+        const data2 = await device.receiveFeatureReport(0x92)
+        const d1 = data.getUint32(0, false);
+        const d2 = data2.getUint32(0, false);
         if(d1 != 0x91010202 || d2 != 0x92010201) {
             la("ds4_calibrate_range_end_failed", {"d1": d1, "d2": d2});
             close_calibrate_window();
             return show_popup(err + l("Error 3"));
         }
-    
+
         update_nvs_changes_status(1);
         close_calibrate_window();
         show_popup(l("Range calibration completed"));
@@ -304,19 +316,20 @@ async function ds4_calibrate_range_end() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_calibrate_sticks_begin() {
     la("ds4_calibrate_sticks_begin");
-    var err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
         await new Promise(r => setTimeout(r, 200));
 
         // Assert
-        data = await device.receiveFeatureReport(0x91);
-        data2 = await device.receiveFeatureReport(0x92);
-        d1 = data.getUint32(0, false);
-        d2 = data2.getUint32(0, false);
+        const data = await device.receiveFeatureReport(0x91);
+        const data2 = await device.receiveFeatureReport(0x92);
+        const d1 = data.getUint32(0, false);
+        const d2 = data2.getUint32(0, false);
         if(d1 != 0x91010101 || d2 != 0x920101ff) {
             la("ds4_calibrate_sticks_begin_failed", {"d1": d1, "d2": d2});
             show_popup(err + l("Error 1"));
@@ -332,23 +345,24 @@ async function ds4_calibrate_sticks_begin() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_calibrate_sticks_sample() {
     la("ds4_calibrate_sticks_sample");
-    var err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         // Sample
         await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
         await new Promise(r => setTimeout(r, 200));
 
         // Assert
-        data = await device.receiveFeatureReport(0x91);
-        data2 = await device.receiveFeatureReport(0x92);
+        const data = await device.receiveFeatureReport(0x91);
+        const data2 = await device.receiveFeatureReport(0x92);
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
             close_calibrate_window();
-            d1 = dec2hex32(data.getUint32(0, false));
-            d2 = dec2hex32(data2.getUint32(0, false));
+            const d1 = dec2hex32(data.getUint32(0, false));
+            const d2 = dec2hex32(data2.getUint32(0, false));
             la("ds4_calibrate_sticks_sample_failed", {"d1": d1, "d2": d2});
-            show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
+            show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + ")");
             return false;
         }
         return true;
@@ -359,21 +373,22 @@ async function ds4_calibrate_sticks_sample() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_calibrate_sticks_end() {
     la("ds4_calibrate_sticks_end");
-    var err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
         await new Promise(r => setTimeout(r, 200));
 
-        data = await device.receiveFeatureReport(0x91);
-        data2 = await device.receiveFeatureReport(0x92);
+        const data = await device.receiveFeatureReport(0x91);
+        const data2 = await device.receiveFeatureReport(0x92);
         if(data.getUint32(0, false) != 0x91010102 || data2.getUint32(0, false) != 0x92010101) {
-            d1 = dec2hex32(data.getUint32(0, false));
-            d2 = dec2hex32(data2.getUint32(0, false));
+            const d1 = dec2hex32(data.getUint32(0, false));
+            const d2 = dec2hex32(data2.getUint32(0, false));
             la("ds4_calibrate_sticks_end_failed", {"d1": d1, "d2": d2});
-            show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
+            show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + ")");
             return false;
         }
 
@@ -387,61 +402,62 @@ async function ds4_calibrate_sticks_end() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds4_calibrate_sticks() {
     la("ds4_calibrate_sticks");
-    let err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         set_progress(0);
-    
+
         // Begin
         await device.sendFeatureReport(0x90, alloc_req(0x90, [1,1,1]))
         await new Promise(r => setTimeout(r, 200));
-    
+
         // Assert
-        let data = await device.receiveFeatureReport(0x91);
-        let data2 = await device.receiveFeatureReport(0x92);
-        let d1 = data.getUint32(0, false);
-        let d2 = data2.getUint32(0, false);
+        const data = await device.receiveFeatureReport(0x91);
+        const data2 = await device.receiveFeatureReport(0x92);
+        const d1 = data.getUint32(0, false);
+        const d2 = data2.getUint32(0, false);
         if(d1 != 0x91010101 || d2 != 0x920101ff) {
             la("ds4_calibrate_sticks_failed", {"s": 1, "d1": d1, "d2": d2});
             close_calibrate_window();
             return show_popup(err + l("Error 1"));
         }
-    
+
         set_progress(10);
         await new Promise(r => setTimeout(r, 200));
-    
-        for(var i=0;i<3;i++) {
+
+        for(let i=0;i<3;i++) {
             // Sample
             await device.sendFeatureReport(0x90, alloc_req(0x90, [3,1,1]))
             await new Promise(r => setTimeout(r, 200));
-    
+
             // Assert
-            let data = await device.receiveFeatureReport(0x91);
-            let data2 = await device.receiveFeatureReport(0x92);
+            const data = await device.receiveFeatureReport(0x91);
+            const data2 = await device.receiveFeatureReport(0x92);
             if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
-                let d1 = dec2hex32(data.getUint32(0, false));
-                let d2 = dec2hex32(data2.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
+                const d2 = dec2hex32(data2.getUint32(0, false));
                 la("ds4_calibrate_sticks_failed", {"s": 2, "i": i, "d1": d1, "d2": d2});
                 close_calibrate_window();
-                return show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
+                return show_popup(err + l("Error 2") + " (" + d1 + ", " + d2 + ")");
             }
-    
+
             await new Promise(r => setTimeout(r, 500));
             set_progress(20 + i * 30);
         }
-    
+
         // Write
         await device.sendFeatureReport(0x90, alloc_req(0x90, [2,1,1]))
         await new Promise(r => setTimeout(r, 200));
         if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101FF) {
-            let d1 = dec2hex32(data.getUint32(0, false));
-            let d2 = dec2hex32(data2.getUint32(0, false));
+            const d1 = dec2hex32(data.getUint32(0, false));
+            const d2 = dec2hex32(data2.getUint32(0, false));
             la("ds4_calibrate_sticks_failed", {"s": 3, "d1": d1, "d2": d2});
             close_calibrate_window();
-            return show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + " at i=" + i + ")");
+            return show_popup(err + l("Error 3") + " (" + d1 + ", " + d2 + ")");
         }
-    
+
         set_progress(100);
         await new Promise(r => setTimeout(r, 500));
         close_calibrate_window()
@@ -454,66 +470,88 @@ async function ds4_calibrate_sticks() {
     }
 }
 
-async function ds4_nvstatus() {
+// Unified NV status helpers
+async function query_nvstatus_ds4() {
     try {
-        await device.sendFeatureReport(0x08, alloc_req(0x08, [0xff,0, 12]))
-        data = lf("ds4_nvstatus", await device.receiveFeatureReport(0x11))
-        // 1: temporary, 0: permanent
-        ret = data.getUint8(1, false);
-        if(ret == 1) {
-            $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
-            return 1;
-        } else if(ret == 0) {
-            $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
-            return 0;
+        await device.sendFeatureReport(0x08, alloc_req(0x08, [0xff,0, 12]));
+        const data = lf("ds4_nvstatus", await device.receiveFeatureReport(0x11));
+        const ret = data.getUint8(1, false);
+        if (ret === 1) {
+            return { device: 'ds4', status: 'locked', locked: true, mode: 'temporary', code: 1 };
+        } else if (ret === 0) {
+            return { device: 'ds4', status: 'unlocked', locked: false, mode: 'permanent', code: 0 };
         } else {
-            $("#d-nvstatus").html("<font color='purple'>unk " + ret + "</font>");
-            if(ret == 0 || ret == 1)
-                return 2;
-            return ret;
+            return { device: 'ds4', status: 'unknown', locked: null, code: ret };
         }
-        return ret;
-    } catch(e) {
-        $("#d-nvstatus").html("<font color='red'>" + l("error") + "</font>");
-        return 2; // error
+    } catch (e) {
+        return { device: 'ds4', status: 'error', locked: null, code: 2, error: e };
     }
 }
 
-async function ds5_nvstatus() {
+async function query_nvstatus_ds5() {
     try {
-        await device.sendFeatureReport(0x80, alloc_req(0x80, [3,3]))
-        data = lf("ds5_nvstatus", await device.receiveFeatureReport(0x81))
-        ret = data.getUint32(1, false);
-        if(ret == 0x15010100) {
-            return 4;
+        await device.sendFeatureReport(0x80, alloc_req(0x80, [3,3]));
+        const data = lf("ds5_nvstatus", await device.receiveFeatureReport(0x81));
+        const ret = data.getUint32(1, false);
+        if (ret === 0x15010100) {
+            return { device: 'ds5', status: 'pending_reboot', locked: null, code: 4, raw: ret };
         }
-        if(ret == 0x03030201) {
-            $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
-            return 1; // temporary
-        } else if(ret == 0x03030200) {
-            $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
-            return 0; // permanent
+        if (ret === 0x03030201) {
+            return { device: 'ds5', status: 'locked', locked: true, mode: 'temporary', code: 1, raw: ret };
+        } else if (ret === 0x03030200) {
+            return { device: 'ds5', status: 'unlocked', locked: false, mode: 'permanent', code: 0, raw: ret };
         } else {
-            $("#d-nvstatus").html("<font color='purple'>unk " + dec2hex32(ret) + "</font>");
-            if(ret == 0 || ret == 1)
-                return 2;
-            return ret; // unknown
+            return { device: 'ds5', status: 'unknown', locked: null, code: ret, raw: ret };
         }
-    } catch(e) {
-        $("#d-nvstatus").html("<font color='red'>" + l("error") + "</font>");
-        return 2; // error
+    } catch (e) {
+        return { device: 'ds5', status: 'error', locked: null, code: 2, error: e };
     }
+}
+
+function render_nvstatus_to_dom(nv) {
+    if (!nv) return;
+    if (nv.status === 'locked') {
+        $("#d-nvstatus").html("<font color='green'>" + l("locked") + "</font>");
+        return;
+    }
+    if (nv.status === 'unlocked') {
+        $("#d-nvstatus").html("<font color='red'>" + l("unlocked") + "</font>");
+        return;
+    }
+    if (nv.status === 'pending_reboot') {
+        // Keep consistent styling with unknown/purple, but indicate reboot pending if possible
+        const txt = nv.raw !== undefined ? ("0x" + dec2hex32(nv.raw)) : String(nv.code ?? '');
+        $("#d-nvstatus").html("<font color='purple'>unk " + txt + "</font>");
+        return;
+    }
+    if (nv.status === 'unknown') {
+        const txt = nv.device === 'ds5' && nv.raw !== undefined ? ("0x" + dec2hex32(nv.raw)) : String(nv.code ?? '');
+        $("#d-nvstatus").html("<font color='purple'>unk " + txt + "</font>");
+        return;
+    }
+    if (nv.status === 'error') {
+        $("#d-nvstatus").html("<font color='red'>" + l("error") + "</font>");
+        return;
+    }
+}
+
+async function refresh_nvstatus() {
+    if (mode === 1) {
+        const nv = await query_nvstatus_ds4();
+        render_nvstatus_to_dom(nv);
+        return nv;
+    } else if (mode === 2 || mode === 3) {
+        const nv = await query_nvstatus_ds5();
+        render_nvstatus_to_dom(nv);
+        return nv;
+    }
+    return null;
 }
 
 async function ds4_getbdaddr() {
     try {
-        data = lf("ds4_getbdaddr", await device.receiveFeatureReport(0x12));
-        out = ""
-        for(i=0;i<6;i++) {
-            if(i >= 1) out += ":";
-            out += dec2hex8(data.getUint8(6-i, false));
-        }
-        return out;
+        const data = lf("ds4_getbdaddr", await device.receiveFeatureReport(0x12));
+        return format_mac_from_view(data, 1);
     } catch(e) {
         return "error";
     }
@@ -524,11 +562,11 @@ async function ds5_edge_get_barcode() {
         await device.sendFeatureReport(0x80, alloc_req(0x80, [21,34]));
         await new Promise(r => setTimeout(r, 100));
 
-        data = lf("ds5_edge_get_barcode", await device.receiveFeatureReport(0x81));
-        td = new TextDecoder()
+        const data = lf("ds5_edge_get_barcode", await device.receiveFeatureReport(0x81));
+        const td = new TextDecoder()
 
-        r_bc = td.decode(data.buffer.slice(21, 21+17));
-        l_bc = td.decode(data.buffer.slice(40, 40+17));
+        const r_bc = td.decode(data.buffer.slice(21, 21+17));
+        const l_bc = td.decode(data.buffer.slice(40, 40+17));
         return [r_bc, l_bc];
     } catch(e) {
         return "error";
@@ -538,13 +576,8 @@ async function ds5_edge_get_barcode() {
 async function ds5_getbdaddr() {
     try {
         await device.sendFeatureReport(0x80, alloc_req(0x80, [9,2]));
-        data = lf("ds5_getbdaddr", await device.receiveFeatureReport(0x81));
-        out = ""
-        for(i=0;i<6;i++) {
-            if(i >= 1) out += ":";
-            out += dec2hex8(data.getUint8(4 + 5 - i, false));
-        }
-        return out;
+        const data = lf("ds5_getbdaddr", await device.receiveFeatureReport(0x81));
+        return format_mac_from_view(data, 4);
     } catch(e) {
         return "error";
     }
@@ -562,7 +595,7 @@ async function ds4_nvunlock() {
 
 async function ds5_system_info(base, num, length, decode = true) {
     await device.sendFeatureReport(128, alloc_req(128, [base,num]))
-    var pcba_id = lf("ds5_pcba_id", await device.receiveFeatureReport(129));
+    const pcba_id = lf("ds5_pcba_id", await device.receiveFeatureReport(129));
     if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
         return l("error");
     } else {
@@ -608,38 +641,39 @@ function reverse_str(s) {
 }
 
 
+// [DEVICE_AND_DOM]
 async function ds5_info(is_edge) {
     try {
         const view = lf("ds5_info", await device.receiveFeatureReport(0x20));
 
-        var cmd = view.getUint8(0, true);
+        const cmd = view.getUint8(0, true);
         if(cmd != 0x20 || view.buffer.byteLength != 64)
             return false;
 
-        var build_date = new TextDecoder().decode(view.buffer.slice(1, 1+11));
-        var build_time = new TextDecoder().decode(view.buffer.slice(12, 20));
+        const build_date = new TextDecoder().decode(view.buffer.slice(1, 1+11));
+        const build_time = new TextDecoder().decode(view.buffer.slice(12, 20));
 
-        var fwtype     = view.getUint16(20, true);
-        var swseries   = view.getUint16(22, true);
-        var hwinfo     = view.getUint32(24, true);
-        var fwversion  = view.getUint32(28, true);
+        const fwtype     = view.getUint16(20, true);
+        const swseries   = view.getUint16(22, true);
+        const hwinfo     = view.getUint32(24, true);
+        const fwversion  = view.getUint32(28, true);
 
-        var deviceinfo = new TextDecoder().decode(view.buffer.slice(32, 32+12));
-        var updversion = view.getUint16(44, true);
-        var unk        = view.getUint8(46, true);
+        const deviceinfo = new TextDecoder().decode(view.buffer.slice(32, 32+12));
+        const updversion = view.getUint16(44, true);
+        const unk        = view.getUint8(46, true);
 
-        var fwversion1 = view.getUint32(48, true);
-        var fwversion2 = view.getUint32(52, true);
-        var fwversion3 = view.getUint32(56, true);
+        const fwversion1 = view.getUint32(48, true);
+        const fwversion2 = view.getUint32(52, true);
+        const fwversion3 = view.getUint32(56, true);
 
         clear_info();
 
-        b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' + 
+        const b_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' +
                 '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
-        c_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="edge_color_info()">' + 
+        const c_info = '&nbsp;<a class="link-body-emphasis" href="#" onclick="edge_color_info()">' +
                  '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
 
-        serial_number = await ds5_system_info(1, 19, 17);
+        const serial_number = await ds5_system_info(1, 19, 17);
         append_info(l("Serial Number"), serial_number, "hw");
         append_info_extra(l("MCU Unique ID"), await ds5_system_info(1, 9, 9, false), "hw");
         append_info_extra(l("PCBA ID"), reverse_str(await ds5_system_info(1, 17, 14)), "hw");
@@ -647,7 +681,7 @@ async function ds5_info(is_edge) {
         append_info_extra(l("VCM Left Barcode"), await ds5_system_info(1, 26, 16), "hw");
         append_info_extra(l("VCM Right Barcode"), await ds5_system_info(1, 28, 16), "hw");
 
-        color = ds5_color(serial_number);
+        const color = ds5_color(serial_number);
         append_info(l("Color"), color + c_info, "hw");
 
         if(!is_edge) {
@@ -668,18 +702,19 @@ async function ds5_info(is_edge) {
         append_info_extra(l("Touchpad ID"), await ds5_system_info(5, 2, 8, false), "hw");
         append_info_extra(l("Touchpad FW Version"), await ds5_system_info(5, 4, 8, false), "fw");
 
-        old_controller = build_date.search(/ 2020| 2021/);
+        const old_controller = build_date.search(/ 2020| 2021/);
         if(old_controller != -1) {
             la("ds5_info_error", {"r": "old"})
             disable_btn |= 2;
             return true;
         }
 
-        nvstatus = await ds5_nvstatus();
-        if(nvstatus == 0)
+        const nv = await query_nvstatus_ds5();
+        render_nvstatus_to_dom(nv);
+        if(nv.locked === false)
             await ds5_nvlock();
 
-        bd_addr = await ds5_getbdaddr();
+        const bd_addr = await ds5_getbdaddr();
         append_info(l("Bluetooth Address"), bd_addr, "hw");
     } catch(e) {
         la("ds5_info_error", {"r": e})
@@ -690,28 +725,28 @@ async function ds5_info(is_edge) {
 }
 
 async function ds5_load_modules_info() {
-    empty = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    const empty = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00';
     // DS Edge
-    sticks_barcode = await ds5_edge_get_barcode();
-    for(i=0;i<2;i++) {
-        if(sticks_barcode[i] == empty)
-            sticks_barcode[i] = l("Unknown")
-    }
+    const sticks_barcode =
+        (await ds5_edge_get_barcode())
+        .map(barcode => barcode === empty ? l("Unknown") : barcode);
+
     append_info(l("Left Module Barcode"), sticks_barcode[1], "fw");
     append_info(l("Right Module Barcode"), sticks_barcode[0], "fw");
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_calibrate_sticks_begin() {
     la("ds5_calibrate_sticks_begin");
-    var err = l("Range calibration failed: ");
+    const err = l("Range calibration failed: ");
     try {
         // Begin
         await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,1]))
-    
+
         // Assert
-        data = await device.receiveFeatureReport(0x83)
+        const data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
-            d1 = dec2hex32(data.getUint32(0, false));
+            const d1 = dec2hex32(data.getUint32(0, false));
             la("ds5_calibrate_sticks_begin_failed", {"d1": d1});
             show_popup(err + l("Error 1") + " (" + d1 + ").");
             return false;
@@ -725,17 +760,18 @@ async function ds5_calibrate_sticks_begin() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_calibrate_sticks_sample() {
     la("ds5_calibrate_sticks_sample");
-    var err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         // Sample
         await device.sendFeatureReport(0x82, alloc_req(0x82, [3,1,1]))
-        
+
         // Assert
-        data = await device.receiveFeatureReport(0x83)
+        const data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010101) {
-            d1 = dec2hex32(data.getUint32(0, false));
+            const d1 = dec2hex32(data.getUint32(0, false));
             la("ds5_calibrate_sticks_sample_failed", {"d1": d1});
             show_popup(err + l("Error 2") + " (" + d1 + ").");
             return false;
@@ -749,25 +785,26 @@ async function ds5_calibrate_sticks_sample() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_calibrate_sticks_end() {
     la("ds5_calibrate_sticks_end");
-    var err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         // Write
         await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,1]))
 
-        data = await device.receiveFeatureReport(0x83)
-        
+        let data = await device.receiveFeatureReport(0x83)
+
         if(mode == 2) {
             if(data.getUint32(0, false) != 0x83010102) {
-                d1 = dec2hex32(data.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
                 la("ds5_calibrate_sticks_failed", {"s": 3, "d1": d1});
                 close_calibrate_window();
                 return show_popup(err + l("Error 3") + " (" + d1 + ").");
             }
         } else if(mode == 3) {
             if(data.getUint32(0, false) != 0x83010101) {
-                d1 = dec2hex32(data.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
                 la("ds5_calibrate_sticks_failed", {"s": 3, "d1": d1});
                 close_calibrate_window();
                 return show_popup(err + l("Error 4") + " (" + d1 + ").");
@@ -776,7 +813,7 @@ async function ds5_calibrate_sticks_end() {
             await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,1]))
             data = await device.receiveFeatureReport(0x83)
             if(data.getUint32(0, false) != 0x83010103 && data.getUint32(0, false) != 0x83010312) {
-                d1 = dec2hex32(data.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
                 la("ds5_calibrate_sticks_failed", {"s": 3, "d1": d1});
                 close_calibrate_window();
                 return show_popup(err + l("Error 5") + " (" + d1 + ").");
@@ -793,32 +830,34 @@ async function ds5_calibrate_sticks_end() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_calibrate_sticks() {
     la("ds5_fast_calibrate_sticks");
-    var err = l("Stick calibration failed: ");
+    const err = l("Stick calibration failed: ");
     try {
         set_progress(0);
-    
+
         // Begin
         await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,1]))
-    
+
         // Assert
-        data = await device.receiveFeatureReport(0x83)
+        let data = await device.receiveFeatureReport(0x83)
+        let d1;
         if(data.getUint32(0, false) != 0x83010101) {
             d1 = dec2hex32(data.getUint32(0, false));
             la("ds5_calibrate_sticks_failed", {"s": 1, "d1": d1});
             close_calibrate_window();
             return show_popup(err + l("Error 1") + " (" + d1 + ").");
         }
-    
+
         set_progress(10);
-    
+
         await new Promise(r => setTimeout(r, 100));
-    
-        for(var i=0;i<3;i++) {
+
+        for(let i=0;i<3;i++) {
             // Sample
             await device.sendFeatureReport(0x82, alloc_req(0x82, [3,1,1]))
-    
+
             // Assert
             data = await device.receiveFeatureReport(0x83)
             if(data.getUint32(0, false) != 0x83010101) {
@@ -827,17 +866,17 @@ async function ds5_calibrate_sticks() {
                 close_calibrate_window();
                 return show_popup(err + l("Error 2") + " (" + d1 + ").");
             }
-    
+
             await new Promise(r => setTimeout(r, 500));
             set_progress(20 + i * 20);
         }
-    
+
         await new Promise(r => setTimeout(r, 200));
         set_progress(80);
-    
+
         // Write
         await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,1]))
-    
+
         data = await device.receiveFeatureReport(0x83)
 
         if(mode == 2) {
@@ -865,13 +904,13 @@ async function ds5_calibrate_sticks() {
             }
 
         }
-    
+
         set_progress(100);
         update_nvs_changes_status(1);
-        
+
         await new Promise(r => setTimeout(r, 500));
         close_calibrate_window()
-    
+
         show_popup(l("Stick calibration completed"));
     } catch(e) {
         la("ds5_calibrate_sticks_failed", {"r": e});
@@ -881,17 +920,18 @@ async function ds5_calibrate_sticks() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_calibrate_range_begin() {
     la("ds5_calibrate_range_begin");
-    var err = l("Range calibration failed: ");
+    const err = l("Range calibration failed: ");
     try {
         // Begin
         await device.sendFeatureReport(0x82, alloc_req(0x82, [1,1,2]))
-    
+
         // Assert
-        data = await device.receiveFeatureReport(0x83)
+        const data = await device.receiveFeatureReport(0x83)
         if(data.getUint32(0, false) != 0x83010201) {
-            d1 = dec2hex32(data.getUint32(0, false));
+            const d1 = dec2hex32(data.getUint32(0, false));
             la("ds5_calibrate_range_begin_failed", {"d1": d1});
             close_calibrate_window();
             return show_popup(err + l("Error 1") + " (" + d1 + ").");
@@ -904,26 +944,27 @@ async function ds5_calibrate_range_begin() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_calibrate_range_end() {
     la("ds5_calibrate_range_end");
-    var err = l("Range calibration failed: ");
+    const err = l("Range calibration failed: ");
     try {
         // Write
         await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,2]))
-    
+
         // Assert
-        data = await device.receiveFeatureReport(0x83)
+        let data = await device.receiveFeatureReport(0x83)
 
         if(mode == 2) {
             if(data.getUint32(0, false) != 0x83010202) {
-                d1 = dec2hex32(data.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
                 la("ds5_calibrate_range_end_failed", {"d1": d1});
                 close_calibrate_window();
                 return show_popup(err + l("Error 3") + " (" + d1 + ").");
             }
         } else {
             if(data.getUint32(0, false) != 0x83010201) {
-                d1 = dec2hex32(data.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
                 la("ds5_calibrate_range_end_failed", {"d1": d1});
                 close_calibrate_window();
                 return show_popup(err + l("Error 4") + " (" + d1 + ").");
@@ -932,13 +973,13 @@ async function ds5_calibrate_range_end() {
             await device.sendFeatureReport(0x82, alloc_req(0x82, [2,1,2]))
             data = await device.receiveFeatureReport(0x83)
             if(data.getUint32(0, false) != 0x83010203) {
-                d1 = dec2hex32(data.getUint32(0, false));
+                const d1 = dec2hex32(data.getUint32(0, false));
                 la("ds5_calibrate_range_end_failed", {"d1": d1});
                 close_calibrate_window();
                 return show_popup(err + l("Error 5") + " (" + d1 + ").");
             }
         }
-    
+
         update_nvs_changes_status(1);
         close_calibrate_window();
         show_popup(l("Range calibration completed"));
@@ -950,11 +991,12 @@ async function ds5_calibrate_range_end() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_nvlock() {
     la("ds5_nvlock");
     try {
         await device.sendFeatureReport(0x80, alloc_req(0x80, [3,1]))
-        data = await device.receiveFeatureReport(0x81)
+        const data = await device.receiveFeatureReport(0x81)
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
         close_calibrate_window();
@@ -963,11 +1005,11 @@ async function ds5_nvlock() {
 }
 
 async function wait_until_written(expected) {
-    for(it=0;it<10;it++) {
-        data = await device.receiveFeatureReport(0x81)
+    for(let it=0;it<10;it++) {
+        const data = await device.receiveFeatureReport(0x81)
 
-        again = false
-        for(i=0;i<expected.length;i++) {
+        let again = false
+        for(let i=0;i<expected.length;i++) {
             if(data.getUint8(1+i, true) != expected[i]) {
                 again = true;
                 break;
@@ -986,33 +1028,33 @@ function set_edge_progress(score) {
 }
 
 async function ds5_edge_unlock_module(i) {
-    m_name = i == 0 ? "left module" : "right module";
+    const m_name = i == 0 ? "left module" : "right module";
 
     await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 6, i, 11]))
     await new Promise(r => setTimeout(r, 200));
-    ret = await wait_until_written([21, 6, 2])
+    const ret = await wait_until_written([21, 6, 2])
     if(!ret) {
         throw new Error(l("Cannot unlock") + " " + l(m_name));
     }
 }
 
 async function ds5_edge_lock_module(i) {
-    m_name = i == 0 ? "left module" : "right module";
+    const m_name = i == 0 ? "left module" : "right module";
 
     await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 4, i, 8]))
     await new Promise(r => setTimeout(r, 200));
-    ret = await wait_until_written([21, 4, 2])
+    const ret = await wait_until_written([21, 4, 2])
     if(!ret) {
         throw new Error(l("Cannot lock") + " " + l(m_name));
     }
 }
 
 async function ds5_edge_store_data_into(i) {
-    m_name = i == 0 ? "left module" : "right module";
+    const m_name = i == 0 ? "left module" : "right module";
 
     await device.sendFeatureReport(0x80, alloc_req(0x80, [21, 5, i]))
     await new Promise(r => setTimeout(r, 200));
-    ret = await wait_until_written([21, 5, 2])
+    const ret = await wait_until_written([21, 5, 2])
     if(!ret) {
         throw new Error(l("Cannot store data into") + " " + l(m_name));
     }
@@ -1021,7 +1063,7 @@ async function ds5_edge_store_data_into(i) {
 
 async function ds5_edge_flash_modules() {
     la("ds5_edge_flash_modules");
-    var modal = null;
+    let modal = null;
 
     if (device == null)
         return;
@@ -1047,7 +1089,7 @@ async function ds5_edge_flash_modules() {
         set_edge_progress(45);
 
         // This should trigger write into modules
-        data = await ds5_get_inmemory_module_data()
+        const data = await ds5_get_inmemory_module_data()
         await new Promise(r => setTimeout(r, 50));
         set_edge_progress(60);
         await write_finetune_data(data)
@@ -1080,11 +1122,12 @@ async function ds5_edge_flash_modules() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function ds5_nvunlock() {
     la("ds5_nvunlock");
     try {
         await device.sendFeatureReport(0x80, alloc_req(0x80, [3,2, 101, 50, 64, 12]))
-        data = await device.receiveFeatureReport(0x81)
+        const data = await device.receiveFeatureReport(0x81)
     } catch(e) {
         await new Promise(r => setTimeout(r, 500));
         close_calibrate_window();
@@ -1092,6 +1135,7 @@ async function ds5_nvunlock() {
     }
 }
 
+// [DEVICE_AND_DOM]
 async function disconnect() {
     la("disconnect");
     if(device == null)
@@ -1118,10 +1162,10 @@ function handleDisconnectedDevice(e) {
 }
 
 function createCookie(name, value, days) {
-    var expires;
+    let expires;
 
     if (days) {
-        var date = new Date();
+        const date = new Date();
         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
         expires = "; expires=" + date.toGMTString();
     } else {
@@ -1131,10 +1175,10 @@ function createCookie(name, value, days) {
 }
 
 function readCookie(name) {
-    var nameEQ = encodeURIComponent(name) + "=";
-    var ca = document.cookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
+    const nameEQ = encodeURIComponent(name) + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
         while (c.charAt(0) === ' ')
             c = c.substring(1, c.length);
         if (c.indexOf(nameEQ) === 0)
@@ -1148,7 +1192,7 @@ function eraseCookie(name) {
 }
 
 function welcome_modal() {
-    var already_accepted = readCookie("welcome_accepted");
+    const already_accepted = readCookie("welcome_accepted");
     if(already_accepted == "1")
         return;
 
@@ -1204,15 +1248,15 @@ function gboot() {
 }
 
 function alloc_req(id, data=[]) {
-    len = data.length;
+    let len = data.length;
     try {
-        fr = device.collections[0].featureReports;
+        const fr = device.collections[0].featureReports;
         fr.forEach((e) => { if(e.reportId == id) { len = e.items[0].reportCount; }});
     } catch(e) {
         console.log(e);
     }
-    out = new Uint8Array(len);
-    for(i=0;i<data.length && i < len;i++) {
+    const out = new Uint8Array(len);
+    for(let i=0;i<data.length && i < len;i++) {
         out[i] = data[i];
     }
     return out;
@@ -1264,19 +1308,23 @@ const finetune = {
 
 async function ds5_finetune() {
     // Lock NVS before
-    nvs = await ds5_nvstatus();
-    if(nvs == 0) {
+    const nv = await query_nvstatus_ds5();
+    render_nvstatus_to_dom(nv);
+    if(nv.locked === false) {
         await ds5_nvlock();
-        nvs = await ds5_nvstatus();
-        if(nvs != 1) {
-            show_popup("ERROR: Cannot lock NVS (" + nvs + ")");
+        const nv2 = await query_nvstatus_ds5();
+        render_nvstatus_to_dom(nv2);
+        if(!nv2.locked) {
+            const errTxt = "0x" + dec2hex32(nv2.raw);
+            show_popup("ERROR: Cannot lock NVS (" + errTxt + ")");
             return;
         }
-    } else if(nvs != 1) {
+    } else if(nv.status !== 'locked') {
         show_popup("ERROR: Cannot read NVS status. Finetuning is not safe on this device.");
+        return;
     }
 
-    data = await read_finetune_data();
+    const data = await read_finetune_data();
     if (data == null)
         return;
 
@@ -1346,23 +1394,23 @@ async function ds5_get_inmemory_module_data() {
 
     }
     await new Promise(r => setTimeout(r, 100));
-    var data = await device.receiveFeatureReport(0x81)
-    var cmd = data.getUint8(0, true);
-    var p1 = data.getUint8(1, true);
-    var p2 = data.getUint8(2, true);
-    var p3 = data.getUint8(3, true);
+    const data = await device.receiveFeatureReport(0x81)
+    const cmd = data.getUint8(0, true);
+    const p1 = data.getUint8(1, true);
+    const p2 = data.getUint8(2, true);
+    const p3 = data.getUint8(3, true);
 
     if(cmd != 129 || p1 != 12 || (p2 != 2 && p2 != 4) || p3 != 2)
         return null;
 
-    var out = []
-    for(i=0;i<12;i++)
+    const out = []
+    for(let i=0;i<12;i++)
         out.push(data.getUint16(4+i*2, true))
     return out;
 }
 
 async function read_finetune_data() {
-    data = ds5_get_inmemory_module_data(); //mm there's also a missing await here
+    const data = await ds5_get_inmemory_module_data(); //mm there's also a missing await here
     if(data == null) {
         finetune_close();
         show_popup("ERROR: Cannot read calibration data");
@@ -2278,7 +2326,7 @@ function record_ds_button_states(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2
         down:  (hat === 3 || hat === 4 || hat === 5),
         left:  (hat === 5 || hat === 6 || hat === 7)
     };
-    for (let dir of ['up', 'right', 'down', 'left']) {
+    for (const dir of ['up', 'right', 'down', 'left']) {
         const pressed = dpad_map[dir];
         if (ds_button_states[dir] !== pressed) {
             ds_button_states[dir] = pressed;
@@ -2287,7 +2335,7 @@ function record_ds_button_states(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2
     }
 
     // Other buttons
-    for (let btn of BUTTON_MAP) {
+    for (const btn of BUTTON_MAP) {
         if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
         const pressed = (data.getUint8(btn.byte) & btn.mask) !== 0;
         if (ds_button_states[btn.name] !== pressed) {
@@ -2324,7 +2372,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     });
 
     // Update dpad buttons
-    for (let dir of ['up', 'right', 'down', 'left']) {
+    for (const dir of ['up', 'right', 'down', 'left']) {
         if (changes.hasOwnProperty(dir)) {
             const pressed = changes[dir];
             const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
@@ -2333,7 +2381,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     }
 
     // Update other buttons
-    for (let btn of BUTTON_MAP) {
+    for (const btn of BUTTON_MAP) {
         if (['up', 'right', 'down', 'left'].includes(btn.name)) continue; // Dpad handled above
         if (changes.hasOwnProperty(btn.name) && btn.svg) {
             const pressed = changes[btn.name];
@@ -2345,7 +2393,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
 
 function set_svg_group_color(group, color) {
     if (group) {
-        let elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+        const elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
         elements.forEach(el => {
             // Set up a smooth transition for fill and stroke if not already set
             if (!el.style.transition) {
@@ -2512,9 +2560,9 @@ function set_mute_visibility(show) {
 async function continue_connection(report) {
     try {
         device.oninputreport = null;
-        var reportLen = report.data.byteLength;
+        const reportLen = report.data.byteLength;
 
-        var connected = false;
+        let connected = false;
 
         // Detect if the controller is connected via USB
         if(reportLen != 63) {
@@ -2576,8 +2624,9 @@ async function continue_connection(report) {
             }
 
 
-            n = await ds5_nvstatus();
-            if(n == 4) {
+            const nv_edge = await query_nvstatus_ds5();
+            render_nvstatus_to_dom(nv_edge);
+            if(nv_edge.status === 'pending_reboot') {
                 // dualsense edge with pending reboot
                 $("#btnconnect").prop("disabled", false);
                 $("#connectspinner").hide();
@@ -2668,33 +2717,33 @@ async function connect() {
         $("#btnconnect").prop("disabled", true);
         $("#connectspinner").show();
         await new Promise(r => setTimeout(r, 100));
-    
-        let ds4v1 = { vendorId: 0x054c, productId: 0x05c4 };
-        let ds4v2 = { vendorId: 0x054c, productId: 0x09cc };
-        let ds5 = { vendorId: 0x054c, productId: 0x0ce6 };
-        let ds5edge = { vendorId: 0x054c, productId: 0x0df2 };
-        let requestParams = { filters: [ds4v1,ds4v2,ds5,ds5edge] };
-    
-        var devices = await navigator.hid.getDevices();
+
+        const ds4v1 = { vendorId: 0x054c, productId: 0x05c4 };
+        const ds4v2 = { vendorId: 0x054c, productId: 0x09cc };
+        const ds5 = { vendorId: 0x054c, productId: 0x0ce6 };
+        const ds5edge = { vendorId: 0x054c, productId: 0x0df2 };
+        const requestParams = { filters: [ds4v1,ds4v2,ds5,ds5edge] };
+
+        let devices = await navigator.hid.getDevices();
         if (devices.length == 0) {
             devices = await navigator.hid.requestDevice(requestParams);
         }
-        
+
         if (devices.length == 0) {
             $("#btnconnect").prop("disabled", false);
             $("#connectspinner").hide();
             return;
         }
-    
+
         if (devices.length > 1) {
             $("#btnconnect").prop("disabled", false);
             $("#connectspinner").hide();
             show_popup(l("Please connect only one controller at time."));
             return;
         }
-    
+
         await devices[0].open();
-    
+
         device = devices[0]
         la("connect", {"p": device.productId, "v": device.vendorId});
 
@@ -2708,10 +2757,10 @@ async function connect() {
     }
 }
 
-var curModal = null
+let curModal = null
 
 async function multi_flash() {
-    if(mode == 1) 
+    if(mode == 1)
         ds4_flash();
     else if(mode == 2)
         ds5_flash();
@@ -2721,48 +2770,41 @@ async function multi_flash() {
 }
 
 async function multi_reset() {
-    if(mode == 1) 
+    if(mode == 1)
         ds4_reset();
     else
         ds5_reset();
 }
 
-async function multi_nvstatus() {
-    if(mode == 1) 
-        ds4_nvstatus();
-    else
-        ds5_nvstatus();
-}
-
 async function multi_nvsunlock() {
     if(mode == 1) {
         await ds4_nvunlock();
-        await ds4_nvstatus();
+        await refresh_nvstatus();
     } else {
         await ds5_nvunlock();
-        await ds5_nvstatus();
+        await refresh_nvstatus();
     }
 }
 
 async function multi_nvslock() {
     if(mode == 1) {
         await ds4_nvlock();
-        await ds4_nvstatus();
+        await refresh_nvstatus();
     } else if (mode == 2) {
         await ds5_nvlock();
-        await ds5_nvstatus();
+        await refresh_nvstatus();
     }
 }
 
 async function multi_calib_sticks_begin() {
-    if(mode == 1) 
+    if(mode == 1)
         return ds4_calibrate_sticks_begin();
     else
         return ds5_calibrate_sticks_begin();
 }
 
 async function multi_calib_sticks_end() {
-    if(mode == 1) 
+    if(mode == 1)
         await ds4_calibrate_sticks_end();
     else
         await ds5_calibrate_sticks_end();
@@ -2770,14 +2812,14 @@ async function multi_calib_sticks_end() {
 }
 
 async function multi_calib_sticks_sample() {
-    if(mode == 1) 
+    if(mode == 1)
         return ds4_calibrate_sticks_sample();
     else
         return ds5_calibrate_sticks_sample();
 }
 
 async function multi_calibrate_range() {
-    if(mode == 0) 
+    if(mode == 0)
         return;
 
     set_progress(0);
@@ -2786,14 +2828,14 @@ async function multi_calibrate_range() {
 
     await new Promise(r => setTimeout(r, 1000));
 
-    if(mode == 1) 
+    if(mode == 1)
         ds4_calibrate_range_begin();
     else
         ds5_calibrate_range_begin();
 }
 
 async function multi_calibrate_range_on_close() {
-    if(mode == 1) 
+    if(mode == 1)
         await ds4_calibrate_range_end();
     else
         await ds5_calibrate_range_end();
@@ -2802,7 +2844,7 @@ async function multi_calibrate_range_on_close() {
 
 
 async function multi_calibrate_sticks() {
-    if(mode == 0) 
+    if(mode == 0)
         return;
 
     set_progress(0);
@@ -2811,7 +2853,7 @@ async function multi_calibrate_sticks() {
 
     await new Promise(r => setTimeout(r, 1000));
 
-    if(mode == 1) 
+    if(mode == 1)
         ds4_calibrate_sticks();
     else
         ds5_calibrate_sticks();
@@ -2840,14 +2882,14 @@ function clear_info() {
 
 function append_info_extra(key, value, cat) {
     // TODO escape html
-    var s = '<dt class="text-muted col-sm-4 col-md-6 col-xl-5">' + key + '</dt><dd class="col-sm-8 col-md-6 col-xl-7" style="text-align: right;">' + value + '</dd>';
+    const s = '<dt class="text-muted col-sm-4 col-md-6 col-xl-5">' + key + '</dt><dd class="col-sm-8 col-md-6 col-xl-7" style="text-align: right;">' + value + '</dd>';
     $("#fwinfoextra-" + cat).html($("#fwinfoextra-" + cat).html() + s);
 }
 
 
 function append_info(key, value, cat) {
     // TODO escape html
-    var s = '<dt class="text-muted col-6">' + key + '</dt><dd class="col-6" style="text-align: right;">' + value + '</dd>';
+    const s = '<dt class="text-muted col-6">' + key + '</dt><dd class="col-6" style="text-align: right;">' + value + '</dd>';
     $("#fwinfo").html($("#fwinfo").html() + s);
     append_info_extra(key, value, cat);
 }
@@ -2884,7 +2926,7 @@ function show_info_tab() {
     }
 }
 
-function discord_popup() { 
+function discord_popup() {
     la("discord_popup");
     show_popup(l("My handle on discord is: the_al"));
 }
@@ -2912,7 +2954,7 @@ async function calib_step(i) {
     la("calib_step", {"i": i})
     if(i < 1 || i > 7) return;
 
-    var ret = true;
+    let ret = true;
     if(i >= 2 && i <= 6) {
         $("#btnSpinner").show();
         $("#calibNext").prop("disabled", true);
@@ -2946,7 +2988,7 @@ async function calib_step(i) {
         return;
     }
 
-    for(j=1;j<7;j++) {
+    for (let j = 1; j < 7; j++) {
         $("#list-" + j).hide();
         $("#list-" + j + "-calib").removeClass("active");
     }
@@ -3003,20 +3045,20 @@ const { calib_open, calib_next, reset_calib } = (() => {
 })();
 
 function la(k,v={}) {
-    $.ajax({type: 'POST', url:"https://the.al/ds4_a/l", 
+    $.ajax({type: 'POST', url:"https://the.al/ds4_a/l",
         data: JSON.stringify( {"u": gu, "j": gj, "k": k, "v": v}),
-        contentType: "application/json", dataType: 'json'}); 
+        contentType: "application/json", dataType: 'json'});
 }
 
 function lf(k, f) { la(k, buf2hex(f.buffer)); return f; }
 
 function lang_init() {
-    var id_iter = 0;
-    var items = document.getElementsByClassName('ds-i18n');
-    for(i=0; i<items.length; i++) { 
-        var item = items[i];
+    let id_iter = 0;
+    const items = document.getElementsByClassName('ds-i18n');
+    for(let i=0; i<items.length; i++) {
+        const item = items[i];
         if (item.id.length == 0) {
-            var new_id = "ds-g-id-" + (id_iter++);
+            const new_id = "ds-g-id-" + (id_iter++);
             item.id = new_id;
         }
 
@@ -3024,22 +3066,22 @@ function lang_init() {
     }
     lang_orig_text[".title"] = document.title;
 
-    var force_lang = readCookie("force_lang");
+    const force_lang = readCookie("force_lang");
     if (force_lang != null) {
         lang_set(force_lang, true);
     } else {
-        var nlang = navigator.language.replace('-', '_').toLowerCase();
-        var ljson = available_langs[nlang];
+        const nlang = navigator.language.replace('-', '_').toLowerCase();
+        const ljson = available_langs[nlang];
         if(ljson !== undefined) {
             la("lang_init", {"l": nlang});
             lang_translate(ljson["file"], nlang, ljson["direction"]);
         }
     }
 
-    var langs = Object.keys(available_langs);
-    var olangs = "";
+    const langs = Object.keys(available_langs);
+    let olangs = "";
     olangs += '<li><a class="dropdown-item" href="#" onclick="lang_set(\'en_us\');">English</a></li>';
-    for(i=0;i<langs.length;i++) {
+    for(let i=0;i<langs.length;i++) {
         name = available_langs[langs[i]]["name"];
         olangs += '<li><a class="dropdown-item" href="#" onclick="lang_set(\'' + langs[i] + '\');">' + name + '</a></li>';
     }
@@ -3054,8 +3096,8 @@ function lang_set(l, skip_modal=false) {
     if(l == "en_us") {
         lang_reset_page();
     } else {
-        var file = available_langs[l]["file"];
-        var direction = available_langs[l]["direction"];
+        const file = available_langs[l]["file"];
+        const direction = available_langs[l]["direction"];
         lang_translate(file, l, direction);
     }
 
@@ -3068,9 +3110,9 @@ function lang_set(l, skip_modal=false) {
 
 function lang_reset_page() {
     lang_set_direction("ltr", "en_us");
-    var items = document.getElementsByClassName('ds-i18n');
-    for(i=0; i<items.length; i++) { 
-        var item = items[i];
+    const items = document.getElementsByClassName('ds-i18n');
+    for(let i=0; i<items.length; i++) {
+        const item = items[i];
         $(item).html(lang_orig_text[item.id]);
     }
     $("#authorMsg").html("");
@@ -3079,7 +3121,7 @@ function lang_reset_page() {
 }
 
 function lang_set_direction(new_direction, lang_name) {
-    var lang_prefix = lang_name.split("_")[0]
+    const lang_prefix = lang_name.split("_")[0]
     $("html").attr("lang", lang_prefix);
 
     if(new_direction == lang_cur_direction)
@@ -3099,8 +3141,8 @@ function lang_set_direction(new_direction, lang_name) {
 function l(text) {
     if(lang_disabled)
         return text;
-    
-    var out = lang_cur[text];
+
+    const out = lang_cur[text];
     if(out !== undefined) {
         return out;
     }
@@ -3116,7 +3158,7 @@ function lang_translate(target_file, target_lang, target_direction) {
         $.each( data, function( key, val ) {
              if(lang_cur[key] !== undefined) {
                  console.log("Warn: already exists " + key);
-             } else { 
+             } else {
                  lang_cur[key] = [val];
              }
         });
@@ -3125,20 +3167,20 @@ function lang_translate(target_file, target_lang, target_direction) {
             lang_disabled = false;
         }
 
-        var items = document.getElementsByClassName('ds-i18n');
-        for(i=0; i<items.length; i++) { 
-            var item = items[i];
-            var old = lang_orig_text[item.id];
+        const items = document.getElementsByClassName('ds-i18n');
+        for(let i=0; i<items.length; i++) {
+            const item = items[i];
+            const old = lang_orig_text[item.id];
 
-            var tnew = lang_cur[old];
+            const tnew = lang_cur[old];
             if (tnew !== undefined && tnew.length == 1 && tnew[0].length > 0) {
                 $(item).html(tnew[0]);
             } else {
-                console.log("Cannot find mapping for " + old); 
+                console.log("Cannot find mapping for " + old);
                 $(item).html(old);
             }
         }
-        var old_title = lang_orig_text[".title"];
+        const old_title = lang_orig_text[".title"];
         document.title = lang_cur[old_title];
         if(lang_cur[".authorMsg"] !== undefined) {
             $("#authorMsg").html(lang_cur[".authorMsg"]);
@@ -3173,6 +3215,7 @@ const trigger_haptic_motors = (() => {
     let haptic_timeout = undefined;
     let haptic_last_trigger = 0;
 
+    // [DEVICE_AND_DOM]
     return async function(strong_motor /*left*/, weak_motor /*right*/) {
         // The DS4 contoller has a strong (left) and a weak (right) motor.
         // The DS5 emulates the same behavior, but the left and right motors are the same.

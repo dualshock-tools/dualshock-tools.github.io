@@ -6,7 +6,7 @@
 <title>DualShock Calibration GUI</title>
 
 <link id="bootstrap-css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet" 
+      rel="stylesheet"
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous">
 
@@ -15,7 +15,7 @@
       integrity="sha384-NvKbDTEnL+A8F/AA5Tc5kmMLSJHUO868P+lDtTpJIeQdGYaUIuLr4lVGOEA1OcMy"
       crossorigin="anonymous">
 
-<link rel="stylesheet" 
+<link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css"
       integrity="sha384-h/hnnw1Bi4nbpD6kE7nYfCXzovi622sY5WBxww8ARKwpdLj5kUWjRuyiXaD1U2JT"
       crossorigin="anonymous">
@@ -90,7 +90,7 @@ input[id^="finetune"] {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     grid-template-rows: auto 1fr auto;
-    grid-template-areas: 
+    grid-template-areas:
         ". top ."
         "left center right"
         ". bottom .";
@@ -532,7 +532,7 @@ input[id^="finetune"] {
         <div class="row">
           <p class="ds-i18n">Sections below are not useful, just some debug infos or manual commands</p>
         </div>
-  
+
         <div class="row">
           <div class="col-md-6 col-sm-12">
             <div class="card text-bg-light" >
@@ -549,7 +549,7 @@ input[id^="finetune"] {
               <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
               <div class="vstack gap-2 p-2">
                 <div class="hstack gap-2">
-                  <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
+                  <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="refresh_nvstatus()">Query NVS status</button>
                   <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
                   <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
                 </div>
@@ -969,7 +969,7 @@ input[id^="finetune"] {
         </div>
       </div>
       <div class="modal-footer">
-        <button data-bs-toggle="collapse" data-bs-target="#ethereumCollapse" aria-expanded="false" aria-controls="ethereumCollapse" type="button" class="btn btn-success"> 
+        <button data-bs-toggle="collapse" data-bs-target="#ethereumCollapse" aria-expanded="false" aria-controls="ethereumCollapse" type="button" class="btn btn-success">
             <svg class="bi" width="18" height="18"><use xlink:href="#ethereum"/></svg>&nbsp;Ethereum
         </button>
 
@@ -1011,7 +1011,7 @@ input[id^="finetune"] {
             <div id="flush-collapse3" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
                 <p class="ds-i18n">Behind the scenes, this website is the culmination of one year of dedicated effort in reverse-engineering DualShock controllers for fun/hobby from a random guy on the internet.</p>
-                
+
                 <p><span class="ds-i18n">Through</span> <a class="ds-i18n" href='https://blog.the.al' target='_blank'>this research</a><span class="ds-i18n">, it was discovered that there exist some undocumented commands on DualShock controllers that can be sent via USB and are used during factory assembly process. If these commands are sent, the controller starts the recalibration of analog sticks.</span></p>
                 <p class="ds-i18n">While the primary focus of this research wasn't initially centered on recalibration, it became apparent that a service offering this capability could greatly benefit numerous individuals. And thus, here we are.</p>
               </div>
@@ -1040,7 +1040,7 @@ input[id^="finetune"] {
             <div id="flush-collapse4" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
                 <p class="ds-i18n">Yes, only DualShock4 at the moment. This happened because I accidentally purchased some clones, spent time identifying the differences and added this functionality to prevent future deception.</p>
-                
+
                 <p class="ds-i18n">Unfortunately, the clones cannot be calibrated anyway, because they only clone the behavior of a DualShock4 during a normal gameplay, not all the undocumented functionalities.</p>
 
                 <p class="ds-i18n">If you want to extend this detection functionality to DualSense, please ship me a fake DualSense and you'll see it in few weeks.</p>
@@ -1054,7 +1054,7 @@ input[id^="finetune"] {
             <div id="flush-collapse5" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
                 <p class="ds-i18n">I maintain two separate to-do lists for this project, although the priority has yet to be established.</p>
-                
+
                 <p class="ds-i18n">The first list is about enhancing support for DualShock4 and DualSense controllers:</p>
                 <ul>
                 <li class="ds-i18n">Implement calibration of L2/R2 triggers.</li>
@@ -1063,14 +1063,14 @@ input[id^="finetune"] {
                 <li class="ds-i18n">Add support for recalibrating IMUs.</li>
                 <li class="ds-i18n">Additionally, explore the possibility of reviving non-functioning DualShock controllers (further discussion available on Discord for interested parties).</li>
                 </ul>
-                
+
                 <p class="ds-i18n">The second list contains new controllers I aim to support:</p>
                 <ul>
                 <li class="ds-i18n">DualSense Edge</li>
                 <li class="ds-i18n">DualShock 3</li>
                 <li class="ds-i18n">XBox Controllers</li>
                 </ul>
-                
+
                 <p class="ds-i18n">Each of these tasks presents both immense interest and significant time investment. To provide context, supporting a new controller typically demands 6-12 months of full-time research, alongside a stroke of good fortune.</p>
               </div>
             </div>

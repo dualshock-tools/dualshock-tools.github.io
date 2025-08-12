@@ -26,7 +26,15 @@
         crossorigin="anonymous"></script>
 
 <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
-<script src="core.js"></script>
+<script type="module" src="utils.js"></script>
+<script type="module" src="translations.js"></script>
+<script type="module" src="controllers/base-controller.js"></script>
+<script type="module" src="controllers/ds4-controller.js"></script>
+<script type="module" src="controllers/ds5-controller.js"></script>
+<script type="module" src="controllers/ds5-edge-controller.js"></script>
+<script type="module" src="controllers/controller-factory.js"></script>
+<script type="module" src="controllers/controller-manager.js"></script>
+<script type="module" src="core.js"></script>
 
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -1184,6 +1192,20 @@ input[id^="finetune"] {
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-FSXPMDXLLS');
-  gboot();
+
+  // Wait for the module to load before calling gboot
+  if (window.gboot) {
+    gboot();
+  } else {
+    // If gboot isn't available yet, wait for it
+    const checkGboot = () => {
+      if (window.gboot) {
+        gboot();
+      } else {
+        setTimeout(checkGboot, 10);
+      }
+    };
+    checkGboot();
+  }
 </script>
 </html>

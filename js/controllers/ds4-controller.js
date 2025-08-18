@@ -8,7 +8,7 @@ import {
   format_mac_from_view, 
   lf,
   la 
-} from '../utils.js';
+} from '../js/utils.js';
 
 // DS4 Button mapping configuration
 const DS4_BUTTON_MAP = [

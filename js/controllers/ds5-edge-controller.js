@@ -1,7 +1,11 @@
 'use strict';
 
 import DS5Controller from './ds5-controller.js';
+<<<<<<< HEAD:js/controllers/ds5-edge-controller.js
 import { sleep, dec2hex32, la, lf } from '../utils.js';
+=======
+import { sleep, dec2hex32, la, lf } from '../js/utils.js';
+>>>>>>> 4c77399 (Split the code into smaller more manageble files):controllers/ds5-edge-controller.js
 
 /**
 * DualSense Edge (DS5 Edge) Controller implementation

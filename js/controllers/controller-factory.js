@@ -3,7 +3,7 @@
 import DS4Controller from './ds4-controller.js';
 import DS5Controller from './ds5-controller.js';
 import DS5EdgeController from './ds5-edge-controller.js';
-import { dec2hex } from '../utils.js';
+import { dec2hex } from '../js/utils.js';
 
 /**
 * Controller Factory - Creates the appropriate controller instance based on device type

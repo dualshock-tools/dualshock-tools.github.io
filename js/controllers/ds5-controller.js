@@ -11,7 +11,7 @@ import {
   reverse_str, 
   la,
   lf
-} from '../utils.js';
+} from '../js/utils.js';
 
 // DS5 Button mapping configuration
 const DS5_BUTTON_MAP = [

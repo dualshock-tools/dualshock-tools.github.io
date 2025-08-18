@@ -285,7 +285,7 @@ export class Finetune {
   }
 
   async _readFinetuneData() {
-    const data = await ds5_get_inmemory_module_data(); //mm there's also a missing await here
+    const data = await this.controller.getInMemoryModuleData();
     if(!data) {
       throw new Error("ERROR: Cannot read calibration data");
     }

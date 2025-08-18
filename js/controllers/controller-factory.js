@@ -28,16 +28,16 @@ class ControllerFactory {
     switch (device.productId) {
       case 0x05c4: // DS4 v1
       case 0x09cc: // DS4 v2
-      return new DS4Controller(device, uiDependencies);
+        return new DS4Controller(device, uiDependencies);
 
       case 0x0ce6: // DS5
-      return new DS5Controller(device, uiDependencies);
+        return new DS5Controller(device, uiDependencies);
 
       case 0x0df2: // DS5 Edge
-      return new DS5EdgeController(device, uiDependencies);
+        return new DS5EdgeController(device, uiDependencies);
 
       default:
-      throw new Error(`Unsupported device: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`);
+        throw new Error(`Unsupported device: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`);
     }
   }
 
@@ -49,15 +49,15 @@ class ControllerFactory {
   static getDeviceName(productId) {
     switch (productId) {
       case 0x05c4:
-      return "Sony DualShock 4 V1";
+        return "Sony DualShock 4 V1";
       case 0x09cc:
-      return "Sony DualShock 4 V2";
+        return "Sony DualShock 4 V2";
       case 0x0ce6:
-      return "Sony DualSense";
+        return "Sony DualSense";
       case 0x0df2:
-      return "Sony DualSense Edge";
+        return "Sony DualSense Edge";
       default:
-      return "Unknown Device";
+        return "Unknown Device";
     }
   }
 
@@ -70,29 +70,29 @@ class ControllerFactory {
     switch (productId) {
       case 0x05c4: // DS4 v1
       case 0x09cc: // DS4 v2
-      return { 
-        showInfo: false, 
-        showFinetune: false, 
-        showMute: false, 
-        showInfoTab: false 
-      };
+        return { 
+          showInfo: false, 
+          showFinetune: false, 
+          showMute: false, 
+          showInfoTab: false 
+        };
 
       case 0x0ce6: // DS5
       case 0x0df2: // DS5 Edge
-      return { 
-        showInfo: true, 
-        showFinetune: true, 
-        showMute: true, 
-        showInfoTab: true 
-      };
+        return { 
+          showInfo: true, 
+          showFinetune: true, 
+          showMute: true, 
+          showInfoTab: true 
+        };
 
       default:
-      return { 
-        showInfo: false, 
-        showFinetune: false, 
-        showMute: false, 
-        showInfoTab: false 
-      };
+        return { 
+          showInfo: false, 
+          showFinetune: false, 
+          showMute: false, 
+          showInfoTab: false 
+        };
     }
   }
 }

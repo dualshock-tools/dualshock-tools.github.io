@@ -1,33 +1,31 @@
 'use strict';
 
 import DS5Controller from './ds5-controller.js';
-import { 
-  sleep, 
-  dec2hex32, 
-  la,
-  lf 
-} from '../utils.js';
+import { sleep, dec2hex32, la, lf } from '../utils.js';
 
 /**
 * DualSense Edge (DS5 Edge) Controller implementation
 */
 class DS5EdgeController extends DS5Controller {
-  constructor(device) {
-    super(device);
-    this.type = "DS5Edge";
+  constructor(device, uiDependencies = {}) {
+    super(device, uiDependencies);
+    this.model = "DS5_Edge";
+    this.finetuneMaxValue = 4095; // 12-bit max value for DS5 Edge
   }
 
   async getInfo() {
+    const { l } = this;
+
     // DS5 Edge uses the same info structure as DS5 but with is_edge=true
     const result = await this._getInfo(true);
 
     if (result.ok) {
       // DS Edge extra module info
-      const empty = '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+      const empty = Array(17).fill('\x00').join('');
       try {
-        const sticks_barcode = (await this.getBarcode()).map(barcode => barcode === empty ? this.l("Unknown") : barcode);
-        result.infoItems.push({ key: this.l("Left Module Barcode"), value: sticks_barcode[1], cat: "fw" });
-        result.infoItems.push({ key: this.l("Right Module Barcode"), value: sticks_barcode[0], cat: "fw" });
+        const sticks_barcode = (await this.getBarcode()).map(barcode => barcode === empty ? l("Unknown") : barcode);
+        result.infoItems.push({ key: l("Left Module Barcode"), value: sticks_barcode[1], cat: "fw" });
+        result.infoItems.push({ key: l("Right Module Barcode"), value: sticks_barcode[0], cat: "fw" });
       } catch(_e) {
         // ignore module read errors here
       }
@@ -146,21 +144,25 @@ class DS5EdgeController extends DS5Controller {
   }
 
   async waitUntilWritten(expected) {
-    for(let it=0;it<10;it++) {
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
       const data = await this.receiveFeatureReport(0x81);
 
-      let again = false
-      for(let i=0;i<expected.length;i++) {
-        if(data.getUint8(1+i, true) != expected[i]) {
-          again = true;
-          break;
-        }
-      }
-      if(!again) {
+      // Check if all expected bytes match
+      const allMatch = expected.every((expectedByte, i) => 
+        data.getUint8(1 + i, true) === expectedByte
+      );
+
+      if (allMatch) {
         return true;
       }
+
+      attempts++;
       await sleep(50);
     }
+
     return false;
   }
 
@@ -229,9 +231,7 @@ class DS5EdgeController extends DS5Controller {
     await sleep(100);
     const data = await this.receiveFeatureReport(0x81);
     const cmd = data.getUint8(0, true);
-    const p1 = data.getUint8(1, true);
-    const p2 = data.getUint8(2, true);
-    const p3 = data.getUint8(3, true);
+    const [p1, p2, p3] = [1, 2, 3].map(i => data.getUint8(i, true));
 
     if(cmd != 129 || p1 != 12 || (p2 != 2 && p2 != 4) || p3 != 2)
       return null;

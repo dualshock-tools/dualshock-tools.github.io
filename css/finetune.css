@@ -1,0 +1,116 @@
+/* Styles for fine-tuning interface */
+
+/* Styling for coordinate labels - base state to prevent layout shift */
+#finetuneStickCanvasLx-lbl,
+#finetuneStickCanvasLy-lbl,
+#finetuneStickCanvasRx-lbl,
+#finetuneStickCanvasRy-lbl {
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  background-color: transparent !important;
+}
+
+/* Styling for finetune input boxes - base state to prevent layout shift */
+input[id^="finetune"] {
+  border: 1px solid transparent !important;
+  width: 90px !important;
+  min-width: 90px !important;
+  color: #969696 !important;
+}
+
+/* Styling for highlighted coordinate labels */
+#finetuneStickCanvasLx-lbl.text-primary,
+#finetuneStickCanvasLy-lbl.text-primary,
+#finetuneStickCanvasRx-lbl.text-primary,
+#finetuneStickCanvasRy-lbl.text-primary {
+  color: #0d6efd !important;
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+/* CSS Grid layout for finetune inputs around canvas */
+.finetune-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+  ". top ."
+  "left center right"
+  ". bottom .";
+  justify-items: center;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto;
+  max-width: fit-content;
+}
+
+.finetune-top {
+  grid-area: top;
+}
+
+.finetune-left {
+  grid-area: left;
+}
+
+.finetune-center {
+  grid-area: center;
+}
+
+.finetune-right {
+  grid-area: right;
+}
+
+.finetune-bottom {
+  grid-area: bottom;
+}
+
+/* Finetune mode visibility controls */
+.finetune-center-mode {
+  display: block;
+}
+
+.finetune-circularity-mode {
+  display: none;
+}
+
+/* When circularity mode is active */
+#finetuneModal.circularity-mode .finetune-center-mode {
+  display: none;
+}
+
+#finetuneModal.circularity-mode .finetune-circularity-mode {
+  display: block;
+}
+
+/* Hide raw numbers mode - hide input boxes when checkbox is unchecked */
+#finetuneModal.hide-raw-numbers .finetune-top,
+#finetuneModal.hide-raw-numbers .finetune-left,
+#finetuneModal.hide-raw-numbers .finetune-right,
+#finetuneModal.hide-raw-numbers .finetune-bottom {
+  display: none;
+}
+
+/* Adjust grid layout when raw numbers are hidden - center the canvas */
+#finetuneModal.hide-raw-numbers .finetune-grid {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "center";
+}
+
+/* when element with id finetuneModal has class hide-raw-numbers, hide all elements with id finetuneStickCanvasL and finetuneStickCanvasR */
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasL,
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasR {
+  display: none;
+}
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasL,
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasR {
+  display: block;
+}
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasL_large,
+#finetuneModal.hide-raw-numbers #finetuneStickCanvasR_large
+{
+  display: block;
+}
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasL_large,
+#finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasR_large {
+  display: none;
+}

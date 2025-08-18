@@ -6,14 +6,15 @@
 class BaseController {
   constructor(device, uiDependencies = {}) {
     this.device = device;
-    this.type = "undefined"; // to be set by subclasses
+    this.model = "undefined"; // to be set by subclasses
+    this.finetuneMaxValue; // to be set by subclasses
 
     // UI dependencies injected from core
     this.l = uiDependencies.l;
   }
 
-  getType() {
-    return this.type;
+  getModel() {
+    return this.model;
   }
 
   /**
@@ -26,6 +27,15 @@ class BaseController {
 
   getInputConfig() {
     throw new Error('getInputConfig() must be implemented by subclass');
+  }
+
+  /**
+   * Get the maximum value for finetune data
+   * @returns {number} Maximum value for finetune adjustments
+   */
+  getFinetuneMaxValue() {
+    if(!this.finetuneMaxValue) throw new Error('getFinetuneMaxValue() must be implemented by subclass');
+    return this.finetuneMaxValue;
   }
 
   /**
@@ -121,6 +131,10 @@ class BaseController {
 
   async calibrateRangeEnd() {
     throw new Error('calibrateRangeEnd() must be implemented by subclass');
+  }
+
+  parseBatteryStatus(data) {
+    throw new Error('parseBatteryStatus() must be implemented by subclass');
   }
 }
 

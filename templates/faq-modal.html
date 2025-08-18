@@ -1,0 +1,168 @@
+<!-- FAQ -->
+<div class="modal fade" id="faqModal" tabindex="-1" role="dialog" aria-labelledby="faqModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-fullscreen-md-down" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title ds-i18n" id="faqModalTitle">Frequently Asked Questions</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="p-3 ds-i18n">Welcome to the F.A.Q. section! Below, you'll find answers to some of the most commonly asked questions about this website. If you have any other inquiries or need further assistance, feel free to reach out to me directly. Your feedback and questions are always welcome!</div>
+        <div class="accordion accordion-flush" id="accordionFlushExample">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse3" aria-expanded="false" aria-controls="flush-collapse3">How does it work?</button>
+            </h2>
+            <div id="flush-collapse3" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">Behind the scenes, this website is the culmination of one year of dedicated effort in reverse-engineering DualShock controllers for fun/hobby from a random guy on the internet.</p>
+
+                <p><span class="ds-i18n">Through</span> <a class="ds-i18n" href='https://blog.the.al' target='_blank'>this research</a><span class="ds-i18n">, it was discovered that there exist some undocumented commands on DualShock controllers that can be sent via USB and are used during factory assembly process. If these commands are sent, the controller starts the recalibration of analog sticks.</span></p>
+                <p class="ds-i18n">While the primary focus of this research wasn't initially centered on recalibration, it became apparent that a service offering this capability could greatly benefit numerous individuals. And thus, here we are.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">Does the calibration remain effective during gameplay on PS4/PS5?</button>
+            </h2>
+            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="ds-i18n accordion-body">Yes, if you tick the checkbox "Write changes permanently in the controller". In that case, the calibration is flashed directly in the controller firmware. This ensures that it remains in place regardless of the console it's connected to.</div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">Is this an officially endorsed service?</button>
+            </h2>
+            <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="ds-i18n accordion-body">No, this service is simply a creation by a DualShock enthusiast.</div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse4" aria-expanded="false" aria-controls="flush-collapse4">Does this website detects if a controller is a clone?</button>
+            </h2>
+            <div id="flush-collapse4" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">Yes, only DualShock4 at the moment. This happened because I accidentally purchased some clones, spent time identifying the differences and added this functionality to prevent future deception.</p>
+
+                <p class="ds-i18n">Unfortunately, the clones cannot be calibrated anyway, because they only clone the behavior of a DualShock4 during a normal gameplay, not all the undocumented functionalities.</p>
+
+                <p class="ds-i18n">If you want to extend this detection functionality to DualSense, please ship me a fake DualSense and you'll see it in few weeks.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse5" aria-expanded="false" aria-controls="flush-collapse5">What development is in plan?</button>
+            </h2>
+            <div id="flush-collapse5" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">I maintain two separate to-do lists for this project, although the priority has yet to be established.</p>
+
+                <p class="ds-i18n">The first list is about enhancing support for DualShock4 and DualSense controllers:</p>
+                <ul>
+                <li class="ds-i18n">Implement calibration of L2/R2 triggers.</li>
+                <li class="ds-i18n">Improve detection of clones, particularly beneficial for those seeking to purchase used controllers with assurance of authenticity.</li>
+                <li class="ds-i18n">Enhance user interface (e.g. provide additional controller information)</li>
+                <li class="ds-i18n">Add support for recalibrating IMUs.</li>
+                <li class="ds-i18n">Additionally, explore the possibility of reviving non-functioning DualShock controllers (further discussion available on Discord for interested parties).</li>
+                </ul>
+
+                <p class="ds-i18n">The second list contains new controllers I aim to support:</p>
+                <ul>
+                <li class="ds-i18n">DualSense Edge</li>
+                <li class="ds-i18n">DualShock 3</li>
+                <li class="ds-i18n">XBox Controllers</li>
+                </ul>
+
+                <p class="ds-i18n">Each of these tasks presents both immense interest and significant time investment. To provide context, supporting a new controller typically demands 6-12 months of full-time research, alongside a stroke of good fortune.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse7" aria-expanded="false" aria-controls="flush-collapse7">Can I reset a permanent calibration to previous calibration?</button>
+            </h2>
+            <div id="flush-collapse7" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">No.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse8" aria-expanded="false" aria-controls="flush-collapse8">Can you overwrite a permanent calibration?</button>
+            </h2>
+            <div id="flush-collapse8" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">Yes. Simply do another permanent calibration.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse9" aria-expanded="false" aria-controls="flush-collapse9">Does this software resolve stickdrift?</button>
+            </h2>
+            <div id="flush-collapse9" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                    <p class="ds-i18n">Stickdrift is caused by a physical defect; namely dirt, worn potentiometer or in some cases a worn spring.</p>
+                    <p class="ds-i18n">This software will not fix stick drift on its own if you already experience that. What it will help with, is ensuring the new joystick(s) will function properly after replacing the old one(s) to work well with.</p>
+                    <p class="ds-i18n">I have noticed some controllers out of the box have worse factory calibration than if I would recalibrate them. Especially true for circularity of SCUF controllers with a unique shell.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse10" aria-expanded="false" aria-controls="flush-collapse10">(Dualsense) Will updating the firmware reset calibration?</button>
+            </h2>
+            <div id="flush-collapse10" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">No.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse11" aria-expanded="false" aria-controls="flush-collapse11">After range calibration, joysticks always go in corners.</button>
+            </h2>
+            <div id="flush-collapse11" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">This issue happens because you have clicked "Done" immediately after starting a range calibration.</p>
+                <b><p class="ds-i18n">Please read the instructions.</p></b>
+                <p class="ds-i18n">You have to rotate the joysticks before you press "Done".</p>
+                <p class="ds-i18n">Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.</p>
+                <p class="ds-i18n">Only after you have done that, you click on "Done".</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse6" aria-expanded="false" aria-controls="flush-collapse6">I love this service, it helped me! How can I contribute?</button>
+            </h2>
+            <div id="flush-collapse6" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">I'm glad to hear that you found this helpful! If you're interested in contributing, here are a few ways you can help me:</p>
+                <ul>
+                <li><span class="ds-i18n">Consider making a</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="ds-i18n">donation</a> <span class="ds-i18n">to support my late-night caffeine-fueled reverse-engineering efforts.</span></li>
+                <li class="ds-i18n">Ship me a controller you would love to add (send me an email for organization).</li>
+                <li><a href="https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/TRANSLATIONS.md" class="ds-i18n" target="_blank">Translate this website in your language</a><span class="ds-i18n">, to help more people like you!</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

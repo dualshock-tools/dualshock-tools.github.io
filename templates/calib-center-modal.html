@@ -1,0 +1,65 @@
+<!-- New calibrate modal -->
+<div class="modal fade" id="calibCenterModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="calibTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="calibTitle">Stick center calibration</h1>
+        <button type="button" id="calibCross" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="row">
+            <div class="col-4">
+                <div class="list-group" id="list-tab">
+                <a class="ds-i18n list-group-item list-group-item-action active" id="list-1-calib">Welcome</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-2-calib">Step 1</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-3-calib">Step 2</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-4-calib">Step 3</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-5-calib">Step 4</a>
+                <a class="ds-i18n list-group-item list-group-item-action" id="list-6-calib">Completed</a>
+                </div>
+            </div>
+            <div class="col-8">
+                <div class="container" id="list-1">
+                    <h4 class="ds-i18n">Welcome to the stick center-calibration wizard!</h4>
+
+                    <p class="ds-i18n">This tool will guide you in re-centering the analog sticks of your controller. It consists in four steps: you will be asked to move both sticks in a direction and release them.</p>
+
+                    <p class="ds-i18n">Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.</p>
+
+                    <p class="ds-i18n">Press <b>Start</b> to begin calibration.</p>
+                </div>
+                <div class="container" style="display: none;" id="list-2">
+                    <p class="ds-i18n">Please move both sticks to the <b>top-left corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
+                </div>
+                <div class="container" style="display: none;" id="list-3">
+                    <p class="ds-i18n">Please move both sticks to the <b>top-right corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
+                </div>
+                <div class="container" style="display: none;" id="list-4">
+                    <p class="ds-i18n">Please move both sticks to the <b>bottom-left corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
+                </div>
+                <div class="container" style="display: none;" id="list-5">
+                    <p class="ds-i18n">Please move both sticks to the <b>bottom-right corner</b> and release them.</p>
+                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
+                </div>
+                <div class="container" style="display: none;" id="list-6">
+                    <p class="ds-i18n">Calibration completed successfully!</p>
+                    <p><span class="ds-i18n">You can check the calibration with the</span> <a href="https://hardwaretester.com/gamepad" target="_blank">gamepad tester</a>.</p>
+                    <p class="ds-i18n">Have a nice day :)</p>
+                </div>
+            </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="calibNext" onclick="calib_next()">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="btnSpinner" style="display: none;"></span>
+        <span id="calibNextText" class="ds-i18n">Next</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

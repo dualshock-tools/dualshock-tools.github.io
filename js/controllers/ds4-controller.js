@@ -40,8 +40,6 @@ const DS4_INPUT_CONFIG = {
   l2AnalogByte: 7,
   r2AnalogByte: 8,
   touchpadOffset: 34,
-  batteryByte: 29,
-  isDS4: true
 };
 
 /**
@@ -50,7 +48,7 @@ const DS4_INPUT_CONFIG = {
 class DS4Controller extends BaseController {
   constructor(device, uiDependencies = {}) {
     super(device, uiDependencies);
-    this.type = "DS4";
+    this.model = "DS4";
   }
 
   getInputConfig() {
@@ -58,9 +56,11 @@ class DS4Controller extends BaseController {
   }
 
   async getInfo() {
+    const { l } = this;
+
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
-      let deviceTypeText = this.l("unknown");
+      let deviceTypeText = l("unknown");
       let is_clone = false;
 
       const view = lf("ds4_info", await this.receiveFeatureReport(0xa3));
@@ -69,7 +69,7 @@ class DS4Controller extends BaseController {
 
       if(cmd != 0xa3 || view.buffer.byteLength < 49) {
         if(view.buffer.byteLength != 49) {
-          deviceTypeText = this.l("clone");
+          deviceTypeText = l("clone");
           is_clone = true;
         }
       }
@@ -77,35 +77,35 @@ class DS4Controller extends BaseController {
       const k1 = new TextDecoder().decode(view.buffer.slice(1, 0x10)).replace(/\0/g, '');
       const k2 = new TextDecoder().decode(view.buffer.slice(0x10, 0x20)).replace(/\0/g, '');
 
-      const hw_ver_major= view.getUint16(0x21, true);
-      const hw_ver_minor= view.getUint16(0x23, true);
-      const sw_ver_major= view.getUint32(0x25, true);
-      const sw_ver_minor= view.getUint16(0x25+4, true);
+      const hw_ver_major = view.getUint16(0x21, true);
+      const hw_ver_minor = view.getUint16(0x23, true);
+      const sw_ver_major = view.getUint32(0x25, true);
+      const sw_ver_minor = view.getUint16(0x25+4, true);
       try {
         if(!is_clone) {
           // If this feature report succeeds, it's an original device
           await this.receiveFeatureReport(0x81);
-          deviceTypeText = this.l("original");
+          deviceTypeText = l("original");
         }
       } catch(e) {
         la("clone");
         is_clone = true;
-        deviceTypeText = this.l("clone");
+        deviceTypeText = l("clone");
       }
 
       const infoItems = [
-        { key: this.l("Build Date"), value: k1 + " " + k2, cat: "fw" },
-        { key: this.l("HW Version"), value: "" + dec2hex(hw_ver_major) + ":" + dec2hex(hw_ver_minor), cat: "hw" },
-        { key: this.l("SW Version"), value: dec2hex32(sw_ver_major) + ":" + dec2hex(sw_ver_minor), cat: "fw" },
-        { key: this.l("Device Type"), value: deviceTypeText, cat: "hw", severity: is_clone ? 'danger' : undefined },
+        { key: l("Build Date"), value: `${k1} ${k2}`, cat: "fw" },
+        { key: l("HW Version"), value: `${dec2hex(hw_ver_major)}:${dec2hex(hw_ver_minor)}`, cat: "hw" },
+        { key: l("SW Version"), value: `${dec2hex32(sw_ver_major)}:${dec2hex(sw_ver_minor)}`, cat: "fw" },
+        { key: l("Device Type"), value: deviceTypeText, cat: "hw", severity: is_clone ? 'danger' : undefined },
       ];
 
       if(!is_clone) {
         // Add Board Model (UI will append the info icon)
-        infoItems.push({ key: this.l("Board Model"), value: this.hwToBoardModel(hw_ver_minor), cat: "hw", addInfoIcon: 'board' });
+        infoItems.push({ key: l("Board Model"), value: this.hwToBoardModel(hw_ver_minor), cat: "hw", addInfoIcon: 'board' });
 
         const bd_addr = await this.getBdAddr();
-        infoItems.push({ key: this.l("Bluetooth Address"), value: bd_addr, cat: "hw" });
+        infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw" });
       }
 
       const nv = await this.queryNvStatus();
@@ -175,8 +175,7 @@ class DS4Controller extends BaseController {
       // Assert
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
-      const d1 = data.getUint32(0, false);
-      const d2 = data2.getUint32(0, false);
+      const [d1, d2] = [data, data2].map(v => v.getUint32(0, false));
       if(d1 != 0x91010201 || d2 != 0x920102ff) {
         la("ds4_calibrate_range_begin_failed", {"d1": d1, "d2": d2});
         return { ok: false, code: 1, d1, d2 };
@@ -197,8 +196,7 @@ class DS4Controller extends BaseController {
 
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
-      const d1 = data.getUint32(0, false);
-      const d2 = data2.getUint32(0, false);
+      const [d1, d2] = [data, data2].map(v => v.getUint32(0, false));
       if(d1 != 0x91010202 || d2 != 0x92010201) {
         la("ds4_calibrate_range_end_failed", {"d1": d1, "d2": d2});
         return { ok: false, code: 3, d1, d2 };
@@ -221,8 +219,7 @@ class DS4Controller extends BaseController {
       // Assert
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
-      const d1 = data.getUint32(0, false);
-      const d2 = data2.getUint32(0, false);
+      const [d1, d2] = [data, data2].map(v => v.getUint32(0, false));
       if(d1 != 0x91010101 || d2 != 0x920101ff) {
         la("ds4_calibrate_sticks_begin_failed", {"d1": d1, "d2": d2});
         return { ok: false, code: 1, d1, d2 };
@@ -246,8 +243,7 @@ class DS4Controller extends BaseController {
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
       if(data.getUint32(0, false) != 0x91010101 || data2.getUint32(0, false) != 0x920101ff) {
-        const d1 = dec2hex32(data.getUint32(0, false));
-        const d2 = dec2hex32(data2.getUint32(0, false));
+        const [d1, d2] = [data, data2].map(v => dec2hex32(v.getUint32(0, false)));
         la("ds4_calibrate_sticks_sample_failed", {"d1": d1, "d2": d2});
         return { ok: false, code: 2, d1, d2 };
       }
@@ -267,8 +263,7 @@ class DS4Controller extends BaseController {
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
       if(data.getUint32(0, false) != 0x91010102 || data2.getUint32(0, false) != 0x92010101) {
-        const d1 = dec2hex32(data.getUint32(0, false));
-        const d2 = dec2hex32(data2.getUint32(0, false));
+        const [d1, d2] = [data, data2].map(v => dec2hex32(v.getUint32(0, false)));
         la("ds4_calibrate_sticks_end_failed", {"d1": d1, "d2": d2});
         return { ok: false, code: 3, d1, d2 };
       }
@@ -285,12 +280,14 @@ class DS4Controller extends BaseController {
       await this.sendFeatureReport(0x08, [0xff,0, 12]);
       const data = lf("ds4_nvstatus", await this.receiveFeatureReport(0x11));
       const ret = data.getUint8(1, false);
-      if (ret === 1) {
-        return { device: 'ds4', status: 'locked', locked: true, mode: 'temporary', code: 1 };
-      } else if (ret === 0) {
-        return { device: 'ds4', status: 'unlocked', locked: false, mode: 'permanent', code: 0 };
-      } else {
-        return { device: 'ds4', status: 'unknown', locked: null, code: ret };
+      const res = { device: 'ds4', code: ret }
+      switch(ret) {
+        case 1:
+          return { ...res, status: 'locked', locked: true, mode: 'temporary' };
+        case 0:
+          return { ...res, status: 'unlocked', locked: false, mode: 'permanent' };
+        default:
+          return { ...res, status: 'unknown', locked: null };
       }
     } catch (e) {
       return { device: 'ds4', status: 'error', locked: null, code: 2, error: e };
@@ -326,6 +323,42 @@ class DS4Controller extends BaseController {
     const a = hw_ver >> 8;
     const b = a >> 4;
     return ((b == 7 && a > 0x74) || (b == 9 && a != 0x93 && a != 0x90));
+  }
+
+  /**
+  * Parse DS4 battery status from input data
+  */
+  parseBatteryStatus(data) {
+    const bat = data.getUint8(29); // DS4 battery byte is at position 29
+
+    // DS4: bat_data = low 4 bits, bat_status = bit 4
+    const bat_data = bat & 0x0f;
+    const bat_status = (bat >> 4) & 1;
+    const cable_connected = bat_status === 1;
+
+    let bat_capacity = 0;
+    let is_charging = false;
+    let is_error = false;
+
+    if (cable_connected) {
+      if (bat_data < 10) {
+        bat_capacity = Math.min(bat_data * 10 + 5, 100);
+        is_charging = true;
+      } else if (bat_data === 10) {
+        bat_capacity = 100;
+        is_charging = true;
+      } else if (bat_data === 11) {
+        bat_capacity = 100; // Fully charged
+      } else {
+        bat_capacity = 0;
+        is_error = true;
+      }
+    } else {
+      // On battery power
+      bat_capacity = bat_data < 10 ? bat_data * 10 + 5 : 100;
+    }
+
+    return { bat_capacity, cable_connected, is_charging, is_error };
   }
 }
 

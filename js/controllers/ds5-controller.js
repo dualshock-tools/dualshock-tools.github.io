@@ -43,8 +43,6 @@ const DS5_INPUT_CONFIG = {
   l2AnalogByte: 4,
   r2AnalogByte: 5,
   touchpadOffset: 32,
-  batteryByte: 52,
-  isDS4: false
 };
 
 function ds5_color(x) {
@@ -81,7 +79,8 @@ function ds5_color(x) {
 class DS5Controller extends BaseController {
   constructor(device, uiDependencies = {}) {
     super(device, uiDependencies);
-    this.type = "DS5";
+    this.model = "DS5";
+    this.finetuneMaxValue = 65535; // 16-bit max value for DS5
   }
 
   getInputConfig() {
@@ -89,10 +88,11 @@ class DS5Controller extends BaseController {
   }
 
   async getInfo() {
-    return await this._getInfo(false);
+    return this._getInfo(false);
   }
 
   async _getInfo(is_edge) {
+    const { l } = this;
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
       const view = lf("ds5_info", await this.receiveFeatureReport(0x20));
@@ -118,30 +118,30 @@ class DS5Controller extends BaseController {
       const serial_number = await this.getSystemInfo(1, 19, 17);
       const color = ds5_color(serial_number);
       const infoItems = [
-        { key: this.l("Serial Number"), value: serial_number, cat: "hw" },
-        { key: this.l("MCU Unique ID"), value: await this.getSystemInfo(1, 9, 9, false), cat: "hw", isExtra: true },
-        { key: this.l("PCBA ID"), value: reverse_str(await this.getSystemInfo(1, 17, 14)), cat: "hw", isExtra: true },
-        { key: this.l("Battery Barcode"), value: await this.getSystemInfo(1, 24, 23), cat: "hw", isExtra: true },
-        { key: this.l("VCM Left Barcode"), value: await this.getSystemInfo(1, 26, 16), cat: "hw", isExtra: true },
-        { key: this.l("VCM Right Barcode"), value: await this.getSystemInfo(1, 28, 16), cat: "hw", isExtra: true },
+        { key: l("Serial Number"), value: serial_number, cat: "hw" },
+        { key: l("MCU Unique ID"), value: await this.getSystemInfo(1, 9, 9, false), cat: "hw", isExtra: true },
+        { key: l("PCBA ID"), value: reverse_str(await this.getSystemInfo(1, 17, 14)), cat: "hw", isExtra: true },
+        { key: l("Battery Barcode"), value: await this.getSystemInfo(1, 24, 23), cat: "hw", isExtra: true },
+        { key: l("VCM Left Barcode"), value: await this.getSystemInfo(1, 26, 16), cat: "hw", isExtra: true },
+        { key: l("VCM Right Barcode"), value: await this.getSystemInfo(1, 28, 16), cat: "hw", isExtra: true },
 
-        { key: this.l("Color"), value: this.l(color), cat: "hw", addInfoIcon: 'color' },
+        { key: l("Color"), value: l(color), cat: "hw", addInfoIcon: 'color' },
 
-        ...(is_edge ? [] : [{ key: this.l("Board Model"), value: this.hwToBoardModel(hwinfo), cat: "hw", addInfoIcon: 'board' }]),
+        ...(is_edge ? [] : [{ key: l("Board Model"), value: this.hwToBoardModel(hwinfo), cat: "hw", addInfoIcon: 'board' }]),
 
-        { key: this.l("FW Build Date"), value: build_date + " " + build_time, cat: "fw" },
-        { key: this.l("FW Type"), value: "0x" + dec2hex(fwtype), cat: "fw", isExtra: true },
-        { key: this.l("FW Series"), value: "0x" + dec2hex(swseries), cat: "fw", isExtra: true },
-        { key: this.l("HW Model"), value: "0x" + dec2hex32(hwinfo), cat: "hw", isExtra: true },
-        { key: this.l("FW Version"), value: "0x" + dec2hex32(fwversion), cat: "fw" },
-        { key: this.l("FW Update"), value: "0x" + dec2hex(updversion), cat: "fw" },
-        { key: this.l("FW Update Info"), value: "0x" + dec2hex8(unk), cat: "fw", isExtra: true },
-        { key: this.l("SBL FW Version"), value: "0x" + dec2hex32(fwversion1), cat: "fw", isExtra: true },
-        { key: this.l("Venom FW Version"), value: "0x" + dec2hex32(fwversion2), cat: "fw", isExtra: true },
-        { key: this.l("Spider FW Version"), value: "0x" + dec2hex32(fwversion3), cat: "fw", isExtra: true },
+        { key: l("FW Build Date"), value: build_date + " " + build_time, cat: "fw" },
+        { key: l("FW Type"), value: "0x" + dec2hex(fwtype), cat: "fw", isExtra: true },
+        { key: l("FW Series"), value: "0x" + dec2hex(swseries), cat: "fw", isExtra: true },
+        { key: l("HW Model"), value: "0x" + dec2hex32(hwinfo), cat: "hw", isExtra: true },
+        { key: l("FW Version"), value: "0x" + dec2hex32(fwversion), cat: "fw" },
+        { key: l("FW Update"), value: "0x" + dec2hex(updversion), cat: "fw" },
+        { key: l("FW Update Info"), value: "0x" + dec2hex8(unk), cat: "fw", isExtra: true },
+        { key: l("SBL FW Version"), value: "0x" + dec2hex32(fwversion1), cat: "fw", isExtra: true },
+        { key: l("Venom FW Version"), value: "0x" + dec2hex32(fwversion2), cat: "fw", isExtra: true },
+        { key: l("Spider FW Version"), value: "0x" + dec2hex32(fwversion3), cat: "fw", isExtra: true },
 
-        { key: this.l("Touchpad ID"), value: await this.getSystemInfo(5, 2, 8, false), cat: "hw", isExtra: true },
-        { key: this.l("Touchpad FW Version"), value: await this.getSystemInfo(5, 4, 8, false), cat: "fw", isExtra: true },
+        { key: l("Touchpad ID"), value: await this.getSystemInfo(5, 2, 8, false), cat: "hw", isExtra: true },
+        { key: l("Touchpad FW Version"), value: await this.getSystemInfo(5, 4, 8, false), cat: "fw", isExtra: true },
       ];
 
       const old_controller = build_date.search(/ 2020| 2021/);
@@ -153,7 +153,7 @@ class DS5Controller extends BaseController {
 
       const nv = await this.queryNvStatus();
       const bd_addr = await this.getBdAddr();
-      infoItems.push({ key: this.l("Bluetooth Address"), value: bd_addr, cat: "hw" });
+      infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw" });
 
       const pending_reboot = (nv?.status === 'pending_reboot');
 
@@ -218,13 +218,11 @@ class DS5Controller extends BaseController {
     const pcba_id = lf("ds5_pcba_id", await this.receiveFeatureReport(129));
     if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
       return this.l("error");
-    } else {
-      if(decode)
-        return new TextDecoder().decode(pcba_id.buffer.slice(4, 4+length));
-      else
-        return buf2hex(pcba_id.buffer.slice(4, 4+length));
     }
-    return this.l("Unknown");
+    if(decode)
+      return new TextDecoder().decode(pcba_id.buffer.slice(4, 4+length));
+
+    return buf2hex(pcba_id.buffer.slice(4, 4+length));
   }
 
   async calibrateSticksBegin() {
@@ -273,7 +271,7 @@ class DS5Controller extends BaseController {
       // Write
       await this.sendFeatureReport(0x82, [2,1,1]);
 
-      let data = await this.receiveFeatureReport(0x83);
+      const data = await this.receiveFeatureReport(0x83);
 
       if(data.getUint32(0, false) != 0x83010102) {
         const d1 = dec2hex32(data.getUint32(0, false));
@@ -315,7 +313,7 @@ class DS5Controller extends BaseController {
       await this.sendFeatureReport(0x82, [2,1,2]);
 
       // Assert
-      let data = await this.receiveFeatureReport(0x83);
+      const data = await this.receiveFeatureReport(0x83);
 
       if(data.getUint32(0, false) != 0x83010202) {
         const d1 = dec2hex32(data.getUint32(0, false));
@@ -376,9 +374,7 @@ class DS5Controller extends BaseController {
     await sleep(100);
     const data = await this.receiveFeatureReport(0x81);
     const cmd = data.getUint8(0, true);
-    const p1 = data.getUint8(1, true);
-    const p2 = data.getUint8(2, true);
-    const p3 = data.getUint8(3, true);
+    const [p1, p2, p3] = [1, 2, 3].map(i => data.getUint8(i, true));
 
     if(cmd != 129 || p1 != 12 || (p2 != 2 && p2 != 4) || p3 != 2)
       return null;
@@ -389,6 +385,46 @@ class DS5Controller extends BaseController {
   async writeFinetuneData(data) {
     const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);
     await this.sendFeatureReport(0x80, pkg);
+  }
+
+  /**
+  * Parse DS5 battery status from input data
+  */
+  parseBatteryStatus(data) {
+    const bat = data.getUint8(52); // DS5 battery byte is at position 52
+
+    // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
+    const bat_charge = bat & 0x0f;
+    const bat_status = bat >> 4;
+
+    let bat_capacity = 0;
+    let cable_connected = false;
+    let is_charging = false;
+    let is_error = false;
+
+    switch (bat_status) {
+      case 0:
+        // On battery power
+        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        break;
+      case 1:
+        // Charging
+        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        is_charging = true;
+        cable_connected = true;
+        break;
+      case 2:
+        // Fully charged
+        bat_capacity = 100;
+        cable_connected = true;
+        break;
+      default:
+        // Error state
+        is_error = true;
+        break;
+    }
+
+    return { bat_capacity, cable_connected, is_charging, is_error };
   }
 }
 

@@ -1,0 +1,69 @@
+'use strict';
+
+// Cache for loaded templates
+const templateCache = new Map();
+
+/**
+* Load a template from the templates directory
+* @param {string} templateName - Name of the template file without extension
+* @returns {Promise<string>} - Promise that resolves with the template HTML
+*/
+async function loadTemplate(templateName) {
+  // Check if template is already in cache
+  if (templateCache.has(templateName)) {
+    return templateCache.get(templateName);
+  }
+
+  try {
+    // Only append .html if the templateName doesn't already have an extension
+    const hasExtension = templateName.includes('.');
+    const templatePath = hasExtension ? `templates/${templateName}` : `templates/${templateName}.html`;
+
+    const response = await fetch(templatePath);
+    if (!response.ok) {
+      throw new Error(`Failed to load template: ${templateName}`);
+    }
+
+    const templateHtml = await response.text();
+    templateCache.set(templateName, templateHtml);
+    return templateHtml;
+  } catch (error) {
+    console.error(`Error loading template ${templateName}:`, error);
+    return '';
+  }
+}
+
+/**
+* Load all templates and insert them into the DOM
+*/
+export async function loadAllTemplates() {
+  try {
+    // Load SVG icons
+    const iconsHtml = await loadTemplate('../assets/icons.svg');
+    const iconsContainer = document.createElement('div');
+    iconsContainer.innerHTML = iconsHtml;
+    document.body.prepend(iconsContainer);
+
+    // Load modals
+    const faqModalHtml = await loadTemplate('faq-modal');
+    const popupModalHtml = await loadTemplate('popup-modal');
+    const finetuneModalHtml = await loadTemplate('finetune-modal');
+    const calibCenterModalHtml = await loadTemplate('calib-center-modal');
+    const welcomeModalHtml = await loadTemplate('welcome-modal');
+    const calibrateModalHtml = await loadTemplate('calibrate-modal');
+    const rangeModalHtml = await loadTemplate('range-modal');
+    const edgeProgressModalHtml = await loadTemplate('edge-progress-modal');
+    const edgeModalHtml = await loadTemplate('edge-modal');
+    const donateModalHtml = await loadTemplate('donate-modal');
+
+    // Create modals container
+    const modalsContainer = document.createElement('div');
+    modalsContainer.id = 'modals-container';
+    modalsContainer.innerHTML = faqModalHtml + popupModalHtml + finetuneModalHtml + calibCenterModalHtml + welcomeModalHtml + calibrateModalHtml + rangeModalHtml + edgeProgressModalHtml + edgeModalHtml + donateModalHtml;
+    document.body.appendChild(modalsContainer);
+
+    console.log('All templates loaded successfully');
+  } catch (error) {
+    console.error('Error loading templates:', error);
+  }
+}

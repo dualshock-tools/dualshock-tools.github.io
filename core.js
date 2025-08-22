@@ -1283,9 +1283,12 @@ async function ds5_finetune() {
     curModal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
     curModal.show();
 
+    const maxValue = mode === 3 ? 4095 : 65535; // 12-bit max value for DS5 Edge, 16-bit for DS5
     const list = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
     list.forEach((suffix, i) => {
-        $("#finetune" + suffix).val(data[i]);
+        const el = $("#finetune" + suffix);
+        el.attr('max', maxValue);
+        el.val(data[i]);
     });
 
     // Initialize in center mode
@@ -1425,7 +1428,9 @@ const update_finetune_warning_messages = (() => {
 
         if (finetune.mode === 'circularity') {
             // Check if stick is in extreme position (close to edges)
-            const isInExtremePosition = (Math.abs(currentStick.x) >= 0.7 || Math.abs(currentStick.y) >= 0.7);
+            const primeAxis = Math.max(Math.abs(currentStick.x), Math.abs(currentStick.y));
+            const otherAxis = Math.min(Math.abs(currentStick.x), Math.abs(currentStick.y));
+            const isInExtremePosition = primeAxis >= 0.7 && otherAxis < 0.2;
             $(`#finetuneCircularity${isInExtremePosition? 'Warning' : 'Success'}`).hide();
             $(`#finetuneCircularity${isInExtremePosition? 'Success' : 'Warning'}`).show();
         }
@@ -1719,8 +1724,10 @@ function handle_circularity_mode_adjustment({sticks: _, ...changes}) {
     const currentStick = sticks[finetune.active_stick];
 
     // Only adjust if stick is moved significantly from center
-    const deadzone = 0.5;
-    if (Math.abs(currentStick.x) < deadzone && Math.abs(currentStick.y) < deadzone) {
+    const primeAxis = Math.max(Math.abs(currentStick.x), Math.abs(currentStick.y));
+    const otherAxis = Math.min(Math.abs(currentStick.x), Math.abs(currentStick.y));
+    const isInExtremePosition = primeAxis >= 0.5 && otherAxis < 0.2;
+    if (!isInExtremePosition) {
         stop_continuous_dpad_adjustment();
         if(is_navigation_key_pressed()) {
             flash_finetune_warning();
@@ -1823,7 +1830,8 @@ const { start_continuous_adjustment_with_suffix, stop_continuous_dpad_adjustment
 
 async function perform_dpad_adjustment(element, adjustment) {
     const currentValue = parseInt(element.val()) || 0;
-    const newValue = Math.max(0, Math.min(65535, currentValue + adjustment));
+    const maxAdjustment = mode == 3 ? 4095 : 65535; // 12-bit max value for DS5 Edge, 16-bit for DS5
+    const newValue = Math.max(0, Math.min(maxAdjustment, currentValue + adjustment));
     element.val(newValue);
 
     // Trigger the change event to update the finetune data

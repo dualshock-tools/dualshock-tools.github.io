@@ -1,0 +1,6 @@
+var device = null;
+var devname = "";
+var mode = 0;
+// bitmask: 1: clone, 2: update ds5 firmware, 4: battery low, 8: ds-edge not supported
+var disable_btn = 0;
+var last_disable_btn = 0;

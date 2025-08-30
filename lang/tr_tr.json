@@ -138,8 +138,6 @@
     "This DualSense controller has outdated firmware.": "Bu DualSense denetleyicisinin yazılımı güncel değil.",
     "Please update the firmware and try again.": "Lütfen yazılımı güncelleyin ve tekrar deneyin.",
     "Joystick Info": "Joystick Bilgisi",
-    "Err R:": "Hata D:",
-    "Err L:": "Hata S:",
     "Check circularity": "Daireselliği kontrol et",
     "Can I reset a permanent calibration to previous calibration?": "Kalıcı bir kalibrasyonu önceki kalibrasyona sıfırlayabilir miyim?",
     "No.": "Hayır.",
@@ -253,5 +251,13 @@
     "Test the Haptic Motors": "Dokunsal Motorları Test Et",
     "Tests": "Testler",
     "The motor strength will match how hard you press the trigger": "Motor gücü, tetiğe ne kadar sert bastığınızla orantılı olacaktır",
+    "Center (L1)": "",
+    "Circularity (R1)": "",
+    "Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. Flick it and adjust it again if it is off center or flickers.": "",
+    "Please release the stick to center position before adjusting with D-pad buttons.": "",
+    "Press the D-pad or face buttons in the direction you want the stick position to move.": "",
+    "Push the stick straight up/down/left/right as far as possible.": "",
+    "Show raw numbers": "",
+    "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "",
     "": ""
 }

@@ -139,8 +139,6 @@
     "This DualSense controller has outdated firmware.": "该DualSense手柄的固件已过时。",
     "Please update the firmware and try again.": "请更新固件后重试。",
     "Joystick Info": "摇杆信息",
-    "Err R:": "右摇杆错误率",
-    "Err L:": "左摇杆错误率",
     "Check circularity": "测试摇杆外圈",
     "Can I reset a permanent calibration to previous calibration?": "我可以回退到之前的校准吗？",
     "No.": "不可以。",
@@ -253,5 +251,13 @@
     "Test the Haptic Motors": "测试震动",
     "Tests": "测试",
     "The motor strength will match how hard you press the trigger": "震动马达的力度与你扣动扳机的力度相匹配",
+    "Center (L1)": "",
+    "Circularity (R1)": "",
+    "Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. Flick it and adjust it again if it is off center or flickers.": "",
+    "Please release the stick to center position before adjusting with D-pad buttons.": "",
+    "Press the D-pad or face buttons in the direction you want the stick position to move.": "",
+    "Push the stick straight up/down/left/right as far as possible.": "",
+    "Show raw numbers": "",
+    "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "",
     "": ""
 }

@@ -1420,6 +1420,7 @@ const update_finetune_warning_messages = (() => {
 
             clearTimeout(timeout);
             timeout = setTimeout(() => {
+                if(finetune.mode !== 'center') return; // in case it changed during timeout
                 $(`#finetuneCenter${isNearCenter? 'Warning' : 'Success'}`).hide();
                 $(`#finetuneCenter${isNearCenter? 'Success' : 'Warning'}`).show();
                 timeout = null;
@@ -2434,6 +2435,7 @@ function process_ds4_input({data}) {
 
     const current_active_tab = get_current_main_tab();
     if(current_active_tab === 'controller-tab') {
+        collectCircularityData(changes.sticks, ll_data, rr_data);
         update_stick_graphics(changes, { is_ds5: false });
         update_ds_button_svg(changes, DS4_BUTTON_MAP);
 

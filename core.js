@@ -18,7 +18,6 @@ const app = {
 
   // Language and UI state
   lang_orig_text: {},
-  lang_orig_text: {},
   lang_cur: {},
   lang_disabled: true,
   lang_cur_direction: "ltr",

@@ -41,7 +41,7 @@ export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb, laCb
   
   let id_iter = 0;
   const items = document.getElementsByClassName('ds-i18n');
-  for(let item of items) {
+  for(const item of items) {
     if (item.id.length == 0) {
       item.id = `ds-i18n-${id_iter++}`;
     }
@@ -105,7 +105,7 @@ function lang_reset_page() {
 
   const { lang_orig_text } = translationState;
   const items = document.getElementsByClassName('ds-i18n');
-  for(let item of items) {
+  for(const item of items) {
     $(item).html(lang_orig_text[item.id]);
   };
   $("#authorMsg").html("");
@@ -162,7 +162,7 @@ function lang_translate(target_file, target_lang, target_direction) {
         }
 
         const items = document.getElementsByClassName('ds-i18n');
-        for(let item of items) {
+        for(const item of items) {
           const originalText = lang_orig_text[item.id];
           const [translatedText] = lang_cur[originalText] || [];
           if (translatedText) {

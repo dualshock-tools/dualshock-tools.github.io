@@ -21,6 +21,8 @@ const app = {
   disable_btn: 0,
   last_disable_btn: 0,
 
+  shownRangeCalibrationWarning: false,
+
   // Language and UI state
   lang_orig_text: {},
   lang_orig_text: {},
@@ -669,6 +671,19 @@ function get_current_test_tab() {
   return activeBtn?.id || 'haptic-test-tab';
 }
 
+function detectFailedRangeCalibration(changes) {
+  if (!changes.sticks || app.shownRangeCalibrationWarning) return;
+
+  const { left, right } = changes.sticks;
+  const failedCalibration = [left, right].some(({x, y}) => Math.abs(x) + Math.abs(y) == 2);
+  const hasOpenModals = document.querySelectorAll('.modal.show').length > 0;
+
+  if (failedCalibration && !app.shownRangeCalibrationWarning && !hasOpenModals) {
+    app.shownRangeCalibrationWarning = true;
+    show_popup(l("Range calibration appears to have failed. Please try again and make sure you rotate the sticks."));
+  }
+}
+
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
@@ -689,6 +704,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
         update_stick_graphics(changes);
         update_ds_button_svg(changes, buttonMap);
         update_touchpad_circles(touchPoints);
+        detectFailedRangeCalibration(changes);
       }
       break;
 
@@ -984,6 +1000,7 @@ window.calibrate_range = () => calibrate_range(
       resetStickDiagrams();
       successAlert(message);
       switchToRangeMode();
+      app.shownRangeCalibrationWarning = false
     }
   }
 );

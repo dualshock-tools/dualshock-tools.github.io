@@ -92,3 +92,13 @@ dl.row dd {
 .accordion-header:hover .skip-btn {
   opacity: 1;
 }
+
+/* Blinking animation for range calibration alert */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.blink-text {
+  animation: blink 1s infinite;
+}

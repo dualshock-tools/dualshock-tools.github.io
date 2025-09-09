@@ -95,7 +95,9 @@ class DS5Controller extends BaseController {
     const { l } = this;
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
+      console.log("Fetching DS5 info...");
       const view = lf("ds5_info", await this.receiveFeatureReport(0x20));
+      console.log("Got DS5 info report:", buf2hex(view.buffer));
       const cmd = view.getUint8(0, true);
       if(cmd != 0x20 || view.buffer.byteLength != 64)
         return { ok: false, error: new Error("Invalid response for ds5_info") };
@@ -160,6 +162,7 @@ class DS5Controller extends BaseController {
       return { ok: true, infoItems, nv, disable_bits, pending_reboot };
     } catch(e) {
       la("ds5_info_error", {"r": e})
+      console.error(e.stack);
       return { ok: false, error: e, disable_bits: 1 };
     }
   }

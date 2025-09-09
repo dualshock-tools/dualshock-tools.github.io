@@ -26,3 +26,13 @@ dl.row dd {
   background-color: #0d6efd !important;
   color: white !important;
 }
+
+/* Blinking animation for range calibration alert */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.blink-text {
+  animation: blink 1s infinite;
+}

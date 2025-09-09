@@ -16,6 +16,8 @@ const app = {
   disable_btn: 0,
   last_disable_btn: 0,
 
+  shownRangeCalibrationWarning: false,
+
   // Language and UI state
   lang_orig_text: {},
   lang_orig_text: {},
@@ -646,9 +648,24 @@ function get_current_test_tab() {
   return activeBtn?.id || 'haptic-test-tab';
 }
 
+function detectFailedRangeCalibration(changes) {
+  if (!changes.sticks || app.shownRangeCalibrationWarning) return;
+
+  const { left, right } = changes.sticks;
+  const failedCalibration = [left, right].some(({x, y}) => Math.abs(x) + Math.abs(y) == 2);
+  const hasOpenModals = document.querySelectorAll('.modal.show').length > 0;
+
+  if (failedCalibration && !app.shownRangeCalibrationWarning && !hasOpenModals) {
+    app.shownRangeCalibrationWarning = true;
+    show_popup(l("Range calibration appears to have failed. Please try again and make sure you rotate the sticks."));
+  }
+}
+
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
+
+  detectFailedRangeCalibration(changes);
 
   const current_active_tab = get_current_main_tab();
   switch (current_active_tab) {
@@ -1001,7 +1018,7 @@ window.connect = connect;
 window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
-window.calibrate_range = () => calibrate_range(controller, { resetStickDiagrams, successAlert });
+window.calibrate_range = () => calibrate_range(controller, { resetStickDiagrams, successAlert, ll_data, rr_data }).then(() => app.shownRangeCalibrationWarning = false);
 window.calibrate_stick_centers = () => calibrate_stick_centers(controller, { resetStickDiagrams, show_popup, set_progress });
 window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(controller, { resetStickDiagrams, successAlert, set_progress });
 window.ds5_finetune = () => ds5_finetune(controller, { ll_data, rr_data, clear_circularity });

@@ -51,7 +51,7 @@ function gboot() {
       show_popup(event.error?.message || event.message);
     });
 
-    window.addEventListener("unhandledRejection", (event) => {
+    window.addEventListener("unhandledrejection", (event) => {
       console.error("Unhandled rejection:", event.reason?.stack || event.reason);
       close_all_modals();
       show_popup(event.reason?.message || event.reason);
@@ -105,13 +105,15 @@ async function connect() {
     }
 
     if (devices.length > 1) {
-      $("#btnconnect").prop("disabled", false);
-      $("#connectspinner").hide();
       throw new Error(l("Please connect only one controller at time."));
     }
 
-    const device = devices[0];
-    if(device.opened) await device.close();
+    const [device] = devices;
+    if(device.opened) {
+      console.log("Device already opened, closing it before re-opening.");
+      await device.close();
+      await sleep(500);
+    }
     await device.open();
 
     la("connect", {"p": device.productId, "v": device.vendorId});
@@ -126,6 +128,7 @@ async function connect() {
 async function continue_connection({data, device}) {
   try {
     if (!controller || controller.isConnected()) {
+      console.log("Already connected. Reset input report handler.");
       controller?.setInputReportHandler(null);
       return;
     }
@@ -135,9 +138,6 @@ async function continue_connection({data, device}) {
     // Detect if the controller is connected via USB
     const reportLen = data.byteLength;
     if(reportLen != 63) {
-      $("#btnconnect").prop("disabled", false);
-      $("#connectspinner").hide();
-      await disconnect();
       throw new Error(l("Please connect the device using a USB cable."));
     }
 
@@ -159,9 +159,6 @@ async function continue_connection({data, device}) {
 
       info = await controllerInstance.getInfo();
     } catch (error) {
-      $("#btnconnect").prop("disabled", false);
-      $("#connectspinner").hide();
-      await disconnect();
       if (device) {
         throw new Error(l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId));
       } else {
@@ -171,11 +168,8 @@ async function continue_connection({data, device}) {
 
     if(!info?.ok) {
       // Not connected/failed to fetch info
-      $("#btnconnect").prop("disabled", false);
-      $("#connectspinner").hide();
-      await disconnect();
-      if(info) console.error(info.error);
-      throw new Error(l("Connected invalid device: ") + l("Error 1"));
+      if(info) console.error(JSON.stringify(info, null, 2));
+      throw new Error(l("Connected invalid device: ") + l("Error 1") + (info?.error ? ` (${info.error}).` : '. '));
     }
 
     connected = true;
@@ -184,6 +178,7 @@ async function continue_connection({data, device}) {
     applyDeviceUI(ui);
 
     // Assign input processor for stream
+    console.log("Setting input report handler.");
     device.oninputreport = controller.getInputHandler();
 
     const deviceName = ControllerFactory.getDeviceName(device.productId);
@@ -203,9 +198,6 @@ async function continue_connection({data, device}) {
 
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
-      $("#btnconnect").prop("disabled", false);
-      $("#connectspinner").hide();
-      await disconnect();
       throw new Error(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
     }
 
@@ -236,6 +228,9 @@ async function continue_connection({data, device}) {
     if(model == "DS5_Edge") {
       show_edge_modal();
     }
+  } catch(err) {
+    await disconnect();
+    throw err;
   } finally {
     $("#btnconnect").prop("disabled", false);
     $("#connectspinner").hide();

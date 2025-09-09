@@ -54,11 +54,12 @@ class BaseController {
   */
   alloc_req(id, data = []) {
     const fr = this.device.collections[0].featureReports;
-    const report = fr.find(e => e.reportId === id);
+    const [report] = fr.find(e => e.reportId === id)?.items || [];
     const maxLen = report?.reportCount || data.length;
 
-    const out = new Uint8Array(data.length);
-    out.set(data.slice(0, maxLen));
+    const len = Math.min(data.length, maxLen);
+    const out = new Uint8Array(maxLen);
+    out.set(data.slice(0, len));
     return out;
   }
 
@@ -72,7 +73,13 @@ class BaseController {
     if (Array.isArray(data)) {
       data = this.alloc_req(reportId, data);
     }
-    return await this.device.sendFeatureReport(reportId, data);
+
+    try {
+      return await this.device.sendFeatureReport(reportId, data);
+    } catch (error) {
+      // HID doesn't throw proper Errors with stack (stack is "name: message") so generate a new stack here
+      throw new Error(error.stack);
+    }
   }
 
   /**

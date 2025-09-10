@@ -15,6 +15,8 @@ export class Finetune {
     this.original_data = [];
     this.last_written_data = [];
     this.active_stick = null; // 'left', 'right', or null
+    this._centerStepSize = 5; // Default step size for center mode
+    this._circularityStepSize = 5; // Default step size for circularity mode
     
     // Dependencies
     this.controller = null;
@@ -46,6 +48,20 @@ export class Finetune {
     this._updateUI();
   }
 
+  get stepSize() {
+    return this._mode === 'center' ? this._centerStepSize : this._circularityStepSize;
+  }
+
+  set stepSize(size) {
+    if (this._mode === 'center') {
+      this._centerStepSize = size;
+    } else {
+      this._circularityStepSize = size;
+    }
+    this._updateStepSizeUI();
+    this._saveStepSizeToLocalStorage();
+  }
+
   async init(controllerInstance, { ll_data, rr_data, clear_circularity }) {
     this.controller = controllerInstance;
     this.ll_data = ll_data;
@@ -54,6 +70,7 @@ export class Finetune {
 
     this._initEventListeners();
     this._restoreShowRawNumbersCheckbox();
+    this._restoreStepSizeFromLocalStorage();
   
     // Lock NVS before
     const nv = await this.controller.queryNvStatus();
@@ -134,6 +151,13 @@ export class Finetune {
       console.log("Finetune modal hidden event triggered");
       destroyCurrentInstance();
     });
+
+    // Step size dropdown event listeners
+    $('.dropdown-item[data-step]').on('click', (e) => {
+      e.preventDefault();
+      const stepSize = parseInt($(e.target).data('step'));
+      this.stepSize = stepSize;
+    });
   }
 
   /**
@@ -154,6 +178,7 @@ export class Finetune {
     $("#right-stick-card").off('click');
 
     $('#finetuneModal').off('hidden.bs.modal');
+    $('.dropdown-item[data-step]').off('click');
   }
 
   /**
@@ -273,6 +298,9 @@ export class Finetune {
       $("#finetuneModeCircularity").prop('checked', true);
       modal.addClass('circularity-mode');
     }
+
+    // Update step size UI when mode changes
+    this._updateStepSizeUI();
   }
 
   async _onFinetuneChange() {
@@ -530,7 +558,7 @@ export class Finetune {
   }
 
   _handleCenterModeAdjustment(changes) {
-    const adjustmentStep = 5; // Use consistent step size for center mode
+    const adjustmentStep = this._centerStepSize; // Use center step size for center mode
 
     // Define button mappings for center mode
     const buttonMappings = [
@@ -606,8 +634,8 @@ export class Finetune {
 
     const quadrant = this._getStickQuadrant(currentStick.x, currentStick.y);
 
-    // Use different step sizes based on quadrant - right/down values are much larger
-    const adjustmentStep = (quadrant === 'right' || quadrant === 'down') ? 15 : 3;
+    // Use circularity step size for circularity mode
+    const adjustmentStep = this._circularityStepSize;
 
     // Define button mappings for each quadrant type
     const horizontalButtons = ['left', 'right', 'square', 'circle'];
@@ -699,6 +727,41 @@ export class Finetune {
 
     // Trigger the change event to update the finetune data
     await this._onFinetuneChange();
+  }
+
+  /**
+   * Update the step size UI display
+   */
+  _updateStepSizeUI() {
+    const currentStepSize = this._mode === 'center' ? this._centerStepSize : this._circularityStepSize;
+    $('#stepSizeValue').text(currentStepSize);
+  }
+
+  /**
+   * Save step size to localStorage
+   */
+  _saveStepSizeToLocalStorage() {
+    localStorage.setItem('finetuneCenterStepSize', this._centerStepSize.toString());
+    localStorage.setItem('finetuneCircularityStepSize', this._circularityStepSize.toString());
+  }
+
+  /**
+   * Restore step size from localStorage
+   */
+  _restoreStepSizeFromLocalStorage() {
+    // Restore center step size
+    const savedCenterStepSize = localStorage.getItem('finetuneCenterStepSize');
+    if (savedCenterStepSize) {
+      this._centerStepSize = parseInt(savedCenterStepSize);
+    }
+
+    // Restore circularity step size
+    const savedCircularityStepSize = localStorage.getItem('finetuneCircularityStepSize');
+    if (savedCircularityStepSize) {
+      this._circularityStepSize = parseInt(savedCircularityStepSize);
+    }
+
+    this._updateStepSizeUI();
   }
 }
 

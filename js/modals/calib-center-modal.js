@@ -8,10 +8,10 @@ import { l } from '../translations.js';
  * Handles step-by-step manual stick center calibration
  */
 export class CalibCenterModal {
-  constructor(controllerInstance, { resetStickDiagrams, show_popup, set_progress }) {
+  constructor(controllerInstance, { resetStickDiagrams, successAlert, set_progress }) {
     this.controller = controllerInstance;
     this.resetStickDiagrams = resetStickDiagrams;
-    this.show_popup = show_popup;
+    this.successAlert = successAlert;
     this.set_progress = set_progress;
 
     this._initEventListeners();
@@ -130,7 +130,7 @@ export class CalibCenterModal {
     this.resetStickDiagrams();
 
     if (result?.message) {
-      this.show_popup(result.message);
+      this.successAlert(result.message);
     }
   }
 

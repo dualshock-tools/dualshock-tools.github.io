@@ -1,5 +1,10 @@
 /* Main styles for DualShock Calibration GUI */
 
+/* Add padding to body to prevent content from being hidden behind fixed footer */
+body {
+  padding-bottom: 80px;
+}
+
 dl.row dt {
   font-weight: normal;
 }

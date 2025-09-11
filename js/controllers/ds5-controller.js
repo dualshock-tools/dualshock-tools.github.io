@@ -160,10 +160,9 @@ class DS5Controller extends BaseController {
       const pending_reboot = (nv?.status === 'pending_reboot');
 
       return { ok: true, infoItems, nv, disable_bits, pending_reboot };
-    } catch(e) {
-      la("ds5_info_error", {"r": e})
-      console.error(e.stack);
-      return { ok: false, error: e, disable_bits: 1 };
+    } catch(error) {
+      la("ds5_info_error", {"r": error})
+      return { ok: false, error, disable_bits: 1 };
     }
   }
 
@@ -176,7 +175,7 @@ class DS5Controller extends BaseController {
 
       return { success: true, message: this.l("Changes saved successfully") };
     } catch(error) {
-      throw new Error(this.l("Error while saving changes: ") + String(error));
+      throw new Error(this.l("Error while saving changes"), { cause: error });
     }
   }
 
@@ -194,8 +193,8 @@ class DS5Controller extends BaseController {
       await this.sendFeatureReport(0x80, [3,1]);
       await this.receiveFeatureReport(0x81);
       return { ok: true };
-    } catch(e) {
-      return { ok: false, error: e };
+    } catch(error) {
+      return { ok: false, error };
     }
   }
 
@@ -204,9 +203,9 @@ class DS5Controller extends BaseController {
     try {
       await this.sendFeatureReport(0x80, [3,2, 101, 50, 64, 12]);
       const data = await this.receiveFeatureReport(0x81);
-    } catch(e) {
+    } catch(error) {
       await sleep(500);
-      throw new Error(this.l("NVS Unlock failed: ") + e);
+      throw new Error(this.l("NVS Unlock failed"), { cause: error });
     }
   }
 
@@ -239,12 +238,12 @@ class DS5Controller extends BaseController {
       if(data.getUint32(0, false) != 0x83010101) {
         const d1 = dec2hex32(data.getUint32(0, false));
         la("ds5_calibrate_sticks_begin_failed", {"d1": d1});
-        return { ok: false, code: 1, d1 };
+        throw new Error(`Stick center calibration begin failed: ${d1}`);
       }
       return { ok: true };
-    } catch(e) {
+    } catch(error) {
       la("ds5_calibrate_sticks_begin_failed", {"r": e});
-      return { ok: false, error: String(e) };
+      return { ok: false, error };
     }
   }
 
@@ -259,12 +258,12 @@ class DS5Controller extends BaseController {
       if(data.getUint32(0, false) != 0x83010101) {
         const d1 = dec2hex32(data.getUint32(0, false));
         la("ds5_calibrate_sticks_sample_failed", {"d1": d1});
-        return { ok: false, code: 2, d1 };
+        throw new Error(`Stick center calibration sample failed: ${d1}`);
       }
       return { ok: true };
-    } catch(e) {
+    } catch(error) {
       la("ds5_calibrate_sticks_sample_failed", {"r": e});
-      return { ok: false, error: String(e) };
+      return { ok: false, error };
     }
   }
 
@@ -279,13 +278,13 @@ class DS5Controller extends BaseController {
       if(data.getUint32(0, false) != 0x83010102) {
         const d1 = dec2hex32(data.getUint32(0, false));
         la("ds5_calibrate_sticks_failed", {"s": 3, "d1": d1});
-        return { ok: false, code: 3, d1 };
+        throw new Error(`Stick center calibration end failed: ${d1}`);
       }
 
       return { ok: true };
-    } catch(e) {
+    } catch(error) {
       la("ds5_calibrate_sticks_end_failed", {"r": e});
-      return { ok: false, error: String(e) };
+      return { ok: false, error };
     }
   }
 
@@ -300,12 +299,12 @@ class DS5Controller extends BaseController {
       if(data.getUint32(0, false) != 0x83010201) {
         const d1 = dec2hex32(data.getUint32(0, false));
         la("ds5_calibrate_range_begin_failed", {"d1": d1});
-        return { ok: false, code: 1, d1 };
+        throw new Error(`Stick range calibration begin failed: ${d1}`);
       }
       return { ok: true };
-    } catch(e) {
+    } catch(error) {
       la("ds5_calibrate_range_begin_failed", {"r": e});
-      return { ok: false, error: String(e) };
+      return { ok: false, error };
     }
   }
 
@@ -321,13 +320,13 @@ class DS5Controller extends BaseController {
       if(data.getUint32(0, false) != 0x83010202) {
         const d1 = dec2hex32(data.getUint32(0, false));
         la("ds5_calibrate_range_end_failed", {"d1": d1});
-        return { ok: false, code: 3, d1 };
+        throw new Error(`Stick range calibration end failed: ${d1}`);
       }
 
       return { ok: true };
-    } catch(e) {
+    } catch(error) {
       la("ds5_calibrate_range_end_failed", {"r": e});
-      return { ok: false, error: String(e) };
+      return { ok: false, error };
     }
   }
 

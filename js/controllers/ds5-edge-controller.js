@@ -46,7 +46,7 @@ class DS5EdgeController extends DS5Controller {
         };
       }
     } catch(error) {
-      throw new Error(this.l("Error while saving changes: ") + String(error));
+      throw new Error(this.l("Error while saving changes"), { cause: error });
     }
   }
 

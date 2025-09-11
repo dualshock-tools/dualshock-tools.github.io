@@ -35,9 +35,66 @@ let controller = null;
 
 function gboot() {
   app.gu = crypto.randomUUID();
-  $("#infoshowall").hide();
 
   async function initializeApp() {
+    window.addEventListener("error", (event) => {
+      console.error(event.error?.stack || event.message);
+      show_popup(event.error?.message || event.message);
+    });
+
+    window.addEventListener("unhandledrejection", async (event) => {
+      console.error("Unhandled rejection:", event.reason?.stack || event.reason);
+      close_all_modals();
+      // show_popup(event.reason?.message || event.reason);
+
+      // Format the error message for better readability
+      let errorMessage = "An unexpected error occurred";
+      if (event.reason) {
+        if (event.reason.message) {
+          errorMessage = `<strong>Error:</strong> ${event.reason.message}`;
+        } else if (typeof event.reason === 'string') {
+          errorMessage = `<strong>Error:</strong> ${event.reason}`;
+        }
+
+        // Collect all stack traces (main error and causes) for a single expandable section
+        let allStackTraces = '';
+        if (event.reason.stack) {
+          const stackTrace = event.reason.stack.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
+          allStackTraces += `<strong>Main Error Stack:</strong><br>${stackTrace}`;
+        }
+
+        // Add error chain information if available (ES2022 error chaining)
+        let currentError = event.reason;
+        let chainLevel = 0;
+        while (currentError?.cause && chainLevel < 5) {
+          chainLevel++;
+          currentError = currentError.cause;
+          if (currentError.stack) {
+            const causeStackTrace = currentError.stack.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
+            if (allStackTraces) allStackTraces += '<br><br>';
+            allStackTraces += `<strong>Cause ${chainLevel} Stack:</strong><br>${causeStackTrace}`;
+          }
+        }
+
+        // Add single expandable section if we have any stack traces
+        if (allStackTraces) {
+          errorMessage += `
+            <br>
+            <details style="margin-top: 0px;">
+              <summary style="cursor: pointer; color: #666;">Details</summary>
+              <div style="font-family: monospace; font-size: 0.85em; margin-top: 8px; padding: 8px; background-color: #f8f9fa; border-radius: 4px; overflow-x: auto;">
+                ${allStackTraces}
+              </div>
+            </details>
+          `;
+        }
+      }
+
+      errorAlert(errorMessage);
+      // Prevent the default browser behavior (logging to console, again)
+      event.preventDefault();
+    });
+
     await loadAllTemplates();
     await init_svg_controller();
 
@@ -45,19 +102,6 @@ function gboot() {
     show_welcome_modal();
 
     $("input[name='displayMode']").on('change', on_stick_mode_change);
-
-    window.addEventListener("error", (event) => {
-      console.error(event.error?.stack || event.message);
-      show_popup(event.error?.message || event.message);
-    });
-
-    window.addEventListener("unhandledrejection", (event) => {
-      console.error("Unhandled rejection:", event.reason?.stack || event.reason);
-      close_all_modals();
-      show_popup(event.reason?.message || event.reason);
-      // Prevent the default browser behavior (logging to console, again)
-      event.preventDefault();
-    });
   }
 
   // Since modules are deferred, DOM might already be loaded
@@ -87,6 +131,9 @@ async function connect() {
 
   la("begin");
   reset_circularity_mode();
+  clearAllAlerts();
+  await sleep(200);
+
   try {
     $("#btnconnect").prop("disabled", true);
     $("#connectspinner").show();
@@ -101,11 +148,16 @@ async function connect() {
     if (devices.length == 0) {
       $("#btnconnect").prop("disabled", false);
       $("#connectspinner").hide();
+      await disconnect();
       return;
     }
 
-    if (devices.length > 1) {
-      throw new Error(l("Please connect only one controller at time."));
+    if (devices.length > 1) { //mm: this should never happen
+      infoAlert(l("Please connect only one controller at time."));
+      $("#btnconnect").prop("disabled", false);
+      $("#connectspinner").hide();
+      await disconnect();
+      return;
     }
 
     const [device] = devices;
@@ -117,28 +169,29 @@ async function connect() {
     await device.open();
 
     la("connect", {"p": device.productId, "v": device.vendorId});
-    device.oninputreport = continue_connection
+    device.oninputreport = continue_connection; // continue below
   } catch(error) {
     $("#btnconnect").prop("disabled", false);
     $("#connectspinner").hide();
-    throw new Error(l("Error: ") + error);
+    await disconnect();
+    throw error;
   }
 }
 
 async function continue_connection({data, device}) {
   try {
     if (!controller || controller.isConnected()) {
-      console.log("Already connected. Reset input report handler.");
-      controller?.setInputReportHandler(null);
+      device.oninputreport = null;  // this function is called repeatedly if not cleared
       return;
     }
-
-    let connected = false;
 
     // Detect if the controller is connected via USB
     const reportLen = data.byteLength;
     if(reportLen != 63) {
-      throw new Error(l("Please connect the device using a USB cable."));
+      // throw new Error(l("Please connect the device using a USB cable."));
+      infoAlert(l("The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead."));
+      await disconnect();
+      return;
     }
 
     // Helper to apply basic UI visibility based on device type
@@ -159,20 +212,18 @@ async function continue_connection({data, device}) {
 
       info = await controllerInstance.getInfo();
     } catch (error) {
-      if (device) {
-        throw new Error(l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId));
-      } else {
-        throw new Error(l("Failed to connect to device"));
-      }
+      const contextMessage = device 
+        ? l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId)
+        : l("Failed to connect to device");
+        throw new Error(contextMessage, { cause: error });
     }
 
     if(!info?.ok) {
       // Not connected/failed to fetch info
       if(info) console.error(JSON.stringify(info, null, 2));
-      throw new Error(l("Connected invalid device: ") + l("Error 1") + (info?.error ? ` (${info.error}).` : '. '));
+      throw new Error(l("Connected invalid device: ") + l("Error 1"), { cause: info?.error });
     }
 
-    connected = true;
     // Get UI configuration and device name
     const ui = ControllerFactory.getUIConfig(device.productId);
     applyDeviceUI(ui);
@@ -198,7 +249,9 @@ async function continue_connection({data, device}) {
 
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
-      throw new Error(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
+      infoAlert(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
+      await disconnect();
+      return;
     }
 
     // Render info collected from device
@@ -256,8 +309,7 @@ async function disconnect() {
 // Wrapper function for HTML onclick handlers
 function disconnectSync() {
   disconnect().catch(error => {
-    console.error("Error during disconnect:", error);
-    show_popup("Error during disconnect: " + error.message);
+    throw new Error("Failed to disconnect", { cause: error });
   });
 }
 
@@ -269,7 +321,7 @@ async function handleDisconnectedDevice(e) {
 
 function render_nvstatus_to_dom(nv) {
   if(!nv?.status) {
-    throw new Error("Invalid NVS status data");
+    throw new Error("Invalid NVS status data", { cause: nv?.error });
   }
 
   switch (nv.status) {
@@ -676,7 +728,11 @@ async function flash_all_changes() {
   const progressCallback = controller.getModel() == "DS5_Edge" ? set_edge_progress : null;
   const result = await controller.flash(progressCallback);
   if (result?.success) {
-    show_popup(result.message, result.isHtml);
+    if(result.isHtml) {
+      show_popup(result.message, result.isHtml);
+    } else {
+      successAlert(result.message);
+    }
   }
 }
 
@@ -833,8 +889,8 @@ const trigger_haptic_motors = (() => {
       // Stop rumble after duration
       clearTimeout(haptic_timeout);
       haptic_timeout = setTimeout(stop_haptic_motors, 250);
-    } catch(e) {
-      throw new Error(l("Error triggering rumble: ") + e);
+    } catch(error) {
+      throw new Error(l("Error triggering rumble"), { cause: error });
     }
   };
 })();
@@ -854,15 +910,90 @@ async function stop_haptic_motors() {
 }
 
 
+// Alert Management Functions
+let alertCounter = 0;
+
+/**
+ * Push a new alert message to the bottom of the screen
+ * @param {string} message - The message to display
+ * @param {string} type - Bootstrap alert type: 'primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'
+ * @param {number} duration - Auto-dismiss duration in milliseconds (0 = no auto-dismiss)
+ * @param {boolean} dismissible - Whether the alert can be manually dismissed
+ * @returns {string} - The ID of the created alert element
+ */
+function pushAlert(message, type = 'info', duration = 0, dismissible = true) {
+    const alertContainer = document.getElementById('alert-container');
+    if (!alertContainer) {
+        console.error('Alert container not found');
+        return null;
+    }
+
+    const alertId = `alert-${++alertCounter}`;
+    const alertDiv = document.createElement('div');
+    alertDiv.id = alertId;
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+        ${message}
+        ${dismissible ? '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
+    `;
+
+    alertContainer.appendChild(alertDiv);
+
+    if (duration > 0) {
+        setTimeout(() => {
+            dismissAlert(alertId);
+        }, duration);
+    }
+
+    return alertId;
+}
+
+function dismissAlert(alertId) {
+    const alertElement = document.getElementById(alertId);
+    if (alertElement) {
+        const bsAlert = new bootstrap.Alert(alertElement);
+        bsAlert.close();
+    }
+}
+
+function clearAllAlerts() {
+    const alertContainer = document.getElementById('alert-container');
+    if (alertContainer) {
+        const alerts = alertContainer.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }
+}
+
+function successAlert(message, duration = 1_500) {
+    return pushAlert(message, 'success', duration, false);
+}
+
+function errorAlert(message, duration = 15_000) {
+    return pushAlert(message, 'danger', /* duration */);
+}
+
+function warningAlert(message, duration = 8_000) {
+    return pushAlert(message, 'warning', duration);
+}
+
+function infoAlert(message, duration = 5_000) {
+    return pushAlert(message, 'info', duration, false);
+}
+
+
 // Export functions to global scope for HTML onclick handlers
 window.gboot = gboot;
 window.connect = connect;
 window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
-window.calibrate_range = () => calibrate_range(controller, { resetStickDiagrams, show_popup });
+window.calibrate_range = () => calibrate_range(controller, { resetStickDiagrams, successAlert });
 window.calibrate_stick_centers = () => calibrate_stick_centers(controller, { resetStickDiagrams, show_popup, set_progress });
-window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(controller, { resetStickDiagrams, show_popup, set_progress });
+window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(controller, { resetStickDiagrams, successAlert, set_progress });
 window.ds5_finetune = () => ds5_finetune(controller, { ll_data, rr_data, clear_circularity });
 window.flash_all_changes = flash_all_changes;
 window.reboot_controller = reboot_controller;

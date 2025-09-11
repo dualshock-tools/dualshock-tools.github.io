@@ -94,7 +94,7 @@ class BaseController {
   * Close the HID device connection
   */
   async close() {
-    if (this.device && this.device.opened) {
+    if (this.device?.opened) {
       await this.device.close();
     }
   }

@@ -7,11 +7,11 @@ import { sleep } from '../utils.js';
  * Handles stick range calibration
  */
 export class CalibRangeModal {
-  constructor(controllerInstance, { resetStickDiagrams, show_popup }) {
+  constructor(controllerInstance, { resetStickDiagrams, successAlert }) {
     // Dependencies
     this.controller = controllerInstance;
     this.resetStickDiagrams = resetStickDiagrams;
-    this.show_popup = show_popup;
+    this.successAlert = successAlert;
   }
 
   async open() {
@@ -30,7 +30,7 @@ export class CalibRangeModal {
     
     const result = await this.controller.calibrateRangeOnClose();
     if (result?.message) {
-      this.show_popup(result.message);
+      this.successAlert(result.message);
     }
   }
 }

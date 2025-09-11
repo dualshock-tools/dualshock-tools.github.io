@@ -184,7 +184,7 @@ class ControllerManager {
   async nvsLock() {
     const res = await this.currentController.nvsLock();
     if (!res.ok) {
-      throw new Error(this.l("NVS Lock failed: ") + String(res.error));
+      throw new Error(this.l("NVS Lock failed"), { cause: res.error });
     }
 
     await this.queryNvStatus(); // Refresh NVS status
@@ -197,8 +197,7 @@ class ControllerManager {
   async calibrateSticksBegin() {
     const res = await this.currentController.calibrateSticksBegin();
     if (!res.ok) {
-      const detail = res.code ? (this.l("Error ") + String(res.code)) : String(res.error || "");
-      throw new Error(this.l("Stick calibration failed: ") + detail);
+      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
     }
   }
 
@@ -209,8 +208,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateSticksSample();
     if (!res.ok) {
       await sleep(500);
-      const detail = res.code ? (this.l("Error ") + String(res.code)) : String(res.error || "");
-      throw new Error(this.l("Stick calibration failed: ") + detail);
+      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
     }
   }
 
@@ -221,8 +219,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateSticksEnd();
     if (!res.ok) {
       await sleep(500);
-      const detail = res.code ? (this.l("Error ") + String(res.code)) : String(res.error || "");
-      throw new Error(this.l("Stick calibration failed: ") + detail);
+      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
     }
 
     this.setHasChangesToWrite(true);
@@ -234,8 +231,7 @@ class ControllerManager {
   async calibrateRangeBegin() {
     const ret = await this.currentController.calibrateRangeBegin();
     if (!ret.ok) {
-      const detail = ret.code ? (this.l("Error ") + String(ret.code)) : String(ret.error || "");
-      throw new Error(this.l("Range calibration failed: ") + detail);
+      throw new Error(this.l("Range calibration failed"), { cause: ret.error } );
     }
   }
 
@@ -259,8 +255,8 @@ class ControllerManager {
 
       console.log("Range calibration end failed with unexpected error:", res);
       await sleep(500);
-      const msg = res?.code ? (this.l("Range calibration failed: ") + this.l("Error ") + String(res.code)) : (this.l("Range calibration failed: ") + String(res?.error || ""));
-      return { success: false, message: msg };
+      const msg = res?.code ? (this.l("Range calibration failed") + this.l("Error ") + String(res.code)) : (this.l("Range calibration failed") + String(res?.error || ""));
+      return { success: false, message: msg, error: res?.error };
     }
   }
 

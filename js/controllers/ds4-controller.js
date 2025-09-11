@@ -113,9 +113,9 @@ class DS4Controller extends BaseController {
       const disable_bits = is_clone ? 1 : 0; // 1: clone
 
       return { ok: true, infoItems, nv, disable_bits, rare };
-    } catch(e) {
+    } catch(error) {
       // Return error but do not touch DOM
-      return { ok: false, error: e, disable_bits: 1 };
+      return { ok: false, error, disable_bits: 1 };
     }
   }
 
@@ -128,7 +128,7 @@ class DS4Controller extends BaseController {
 
       return { success: true, message: this.l("Changes saved successfully") };
     } catch(error) {
-      throw new Error(this.l("Error while saving changes: ") + String(error));
+      throw new Error(this.l("Error while saving changes"), { cause: error });
     }
   }
 
@@ -145,8 +145,8 @@ class DS4Controller extends BaseController {
     try {
       await this.sendFeatureReport(0xa0, [10,1,0]);
       return { ok: true };
-    } catch(e) {
-      return { ok: false, error: e };
+    } catch(error) {
+      return { ok: false, error };
     }
   }
 
@@ -155,8 +155,8 @@ class DS4Controller extends BaseController {
     try {
       await this.sendFeatureReport(0xa0, [10,2,0x3e,0x71,0x7f,0x89]);
       return { ok: true };
-    } catch(e) {
-      return { ok: false, error: e };
+    } catch(error) {
+      return { ok: false, error };
     } 
   }
 
@@ -181,9 +181,9 @@ class DS4Controller extends BaseController {
         return { ok: false, code: 1, d1, d2 };
       }
       return { ok: true };
-    } catch(e) {
-      la("ds4_calibrate_range_begin_failed", {"r": e});
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      la("ds4_calibrate_range_begin_failed", {"r": error});
+      return { ok: false, error };
     }
   }
 
@@ -203,9 +203,9 @@ class DS4Controller extends BaseController {
       }
 
       return { ok: true };
-    } catch(e) {
-      la("ds4_calibrate_range_end_failed", {"r": e});
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      la("ds4_calibrate_range_end_failed", {"r": error});
+      return { ok: false, error };
     }
   }
 
@@ -226,9 +226,9 @@ class DS4Controller extends BaseController {
       }
 
       return { ok: true };
-    } catch(e) {
-      la("ds4_calibrate_sticks_begin_failed", {"r": e});
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      la("ds4_calibrate_sticks_begin_failed", {"r": error});
+      return { ok: false, error };
     }
   }
 
@@ -248,8 +248,8 @@ class DS4Controller extends BaseController {
         return { ok: false, code: 2, d1, d2 };
       }
       return { ok: true };
-    } catch(e) {
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      return { ok: false, error };
     }
   }
 
@@ -269,9 +269,9 @@ class DS4Controller extends BaseController {
       }
 
       return { ok: true };
-    } catch(e) {
-      la("ds4_calibrate_sticks_end_failed", {"r": e});
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      la("ds4_calibrate_sticks_end_failed", {"r": error});
+      return { ok: false, error };
     }
   }
 
@@ -289,8 +289,8 @@ class DS4Controller extends BaseController {
         default:
           return { ...res, status: 'unknown', locked: null };
       }
-    } catch (e) {
-      return { device: 'ds4', status: 'error', locked: null, code: 2, error: e };
+    } catch (error) {
+      return { device: 'ds4', status: 'error', locked: null, code: 2, error };
     }
   }
 

@@ -1362,7 +1362,7 @@ async function ds5_get_inmemory_module_data() {
 }
 
 async function read_finetune_data() {
-    data = ds5_get_inmemory_module_data();
+    data = ds5_get_inmemory_module_data(); //mm there's also a missing await here
     if(data == null) {
         finetune_close();
         show_popup("ERROR: Cannot read calibration data");
@@ -1378,8 +1378,9 @@ async function write_finetune_data(data) {
         return;
     }
 
-    const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-    if (deepEqual(data, finetune.last_written_data)) {
+    // const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    // if (deepEqual(data, finetune.last_written_data)) {
+    if (data == last_written_finetune_data) {   //mm this will never be true, but fixing it (per above) breaks Edge writes
         return;
     }
 

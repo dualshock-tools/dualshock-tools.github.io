@@ -1,0 +1,34 @@
+<div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body p-4" id="donateBody">
+        <p class="ds-i18n">Hi, thank you for using this software.</p>
+        <p><span class="ds-i18n">If you're finding it helpful and you want to support my efforts, feel free to</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="text-body-secondary ds-i18n">buy me a coffee</a><span class="ds-i18n">! :)</span></p>
+        <p class="ds-i18n">Do you have any suggestion or issue? Drop me a message via email or discord.</p>
+        <p class="ds-i18n">Cheers!</p>
+
+        <div class="collapse" id="ethereumCollapse">
+            <div class="card card-body">
+                <h5 class="card-title">Ethereum Address</h5>
+                <center><img src="donate.png" width="128px" /></center>
+                <input type="text" class="form-control" value="0x27dDA2f15A6A477fcdFB3709Ed0760aEF0246D5D" readonly />
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button data-bs-toggle="collapse" data-bs-target="#ethereumCollapse" aria-expanded="false" aria-controls="ethereumCollapse" type="button" class="btn btn-success">
+            <svg class="bi" width="18" height="18"><use xlink:href="#ethereum"/></svg>&nbsp;Ethereum
+        </button>
+
+        <button onclick="window.open('https://paypal.me/alaincarlucci')" type="button" class="btn btn-primary" data-bs-dismiss="modal">
+            <svg class="bi" width="18" height="18"><use xlink:href="#paypal"/></svg>&nbsp;&nbsp;PayPal
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

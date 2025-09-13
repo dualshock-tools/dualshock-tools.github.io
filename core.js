@@ -1380,9 +1380,9 @@ async function write_finetune_data(data) {
 
     // const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
     // if (deepEqual(data, finetune.last_written_data)) {
-    if (data == last_written_finetune_data) {   //mm this will never be true, but fixing it (per above) breaks Edge writes
-        return;
-    }
+    // if (data == finetune.last_written_data) {   //mm this will never be true, but fixing it (per above) breaks Edge writes
+    //     return;
+    // }
 
     finetune.last_written_data = data
     const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);

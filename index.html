@@ -314,19 +314,7 @@
   gtag('js', new Date());
   gtag('config', 'G-FSXPMDXLLS');
 
-  // Wait for the module to load before calling gboot
-  if (window.gboot) {
-    gboot();
-  } else {
-    // If gboot isn't available yet, wait for it
-    const checkGboot = () => {
-      if (window.gboot) {
-        gboot();
-      } else {
-        setTimeout(checkGboot, 10);
-      }
-    };
-    checkGboot();
-  }
+  // The gboot() function is now auto-called when the core.js module loads
+  // No manual initialization needed here
 </script>
 </html>

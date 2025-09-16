@@ -323,11 +323,20 @@ function welcome_accepted() {
 async function init_svg_controller() {
   const svgContainer = document.getElementById('controller-svg-placeholder');
 
-  const response = await fetch('assets/dualshock-controller.svg'); // load it from separate HTML file
-  if (!response.ok) {
-    throw new Error('Failed to load controller SVG');
+  let svgContent;
+  
+  // Check if we have bundled assets (production mode)
+  if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg['dualshock-controller.svg']) {
+    svgContent = window.BUNDLED_ASSETS.svg['dualshock-controller.svg'];
+  } else {
+    // Fallback to fetching from server (development mode)
+    const response = await fetch('assets/dualshock-controller.svg');
+    if (!response.ok) {
+      throw new Error('Failed to load controller SVG');
+    }
+    svgContent = await response.text();
   }
-  const svgContent = await response.text();
+  
   svgContainer.innerHTML = svgContent;
 
   const lightBlue = '#7ecbff';
@@ -864,3 +873,6 @@ window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
 window.board_model_info = board_model_info;
 window.edge_color_info = edge_color_info;
+
+// Auto-initialize the application when the module loads
+gboot();

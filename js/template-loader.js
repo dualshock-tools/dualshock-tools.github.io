@@ -4,7 +4,7 @@
 const templateCache = new Map();
 
 /**
-* Load a template from the templates directory
+* Load a template from the templates directory or bundled assets
 * @param {string} templateName - Name of the template file without extension
 * @returns {Promise<string>} - Promise that resolves with the template HTML
 */
@@ -15,6 +15,16 @@ async function loadTemplate(templateName) {
   }
 
   try {
+    // Check if we have bundled assets (production mode)
+    if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.templates) {
+      const templateHtml = window.BUNDLED_ASSETS.templates[templateName];
+      if (templateHtml) {
+        templateCache.set(templateName, templateHtml);
+        return templateHtml;
+      }
+    }
+
+    // Fallback to fetching from server (development mode)
     // Only append .html if the templateName doesn't already have an extension
     const hasExtension = templateName.includes('.');
     const templatePath = hasExtension ? `templates/${templateName}` : `templates/${templateName}.html`;
@@ -34,12 +44,40 @@ async function loadTemplate(templateName) {
 }
 
 /**
+* Load SVG assets from bundled assets or server
+* @param {string} assetPath - Path to the SVG asset
+* @returns {Promise<string>} - Promise that resolves with the SVG content
+*/
+async function loadSvgAsset(assetPath) {
+  try {
+    // Check if we have bundled assets (production mode)
+    if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg) {
+      const svgContent = window.BUNDLED_ASSETS.svg[assetPath];
+      if (svgContent) {
+        return svgContent;
+      }
+    }
+
+    // Fallback to fetching from server (development mode)
+    const response = await fetch(`assets/${assetPath}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load SVG asset: ${assetPath}`);
+    }
+
+    return await response.text();
+  } catch (error) {
+    console.error(`Error loading SVG asset ${assetPath}:`, error);
+    return '';
+  }
+}
+
+/**
 * Load all templates and insert them into the DOM
 */
 export async function loadAllTemplates() {
   try {
     // Load SVG icons
-    const iconsHtml = await loadTemplate('../assets/icons.svg');
+    const iconsHtml = await loadSvgAsset('icons.svg');
     const iconsContainer = document.createElement('div');
     iconsContainer.innerHTML = iconsHtml;
     document.body.prepend(iconsContainer);

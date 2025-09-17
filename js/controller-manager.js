@@ -158,9 +158,8 @@ class ControllerManager {
   * Flash/save changes to the controller
   */
   async flash(progressCallback = null) {
-    const result = await this.currentController.flash(progressCallback);
     this.setHasChangesToWrite(false);
-    return result;
+    return this.currentController.flash(progressCallback);
   }
 
   /**
@@ -197,7 +196,7 @@ class ControllerManager {
   async calibrateSticksBegin() {
     const res = await this.currentController.calibrateSticksBegin();
     if (!res.ok) {
-      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
+      throw new Error(`${this.l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
     }
   }
 
@@ -229,9 +228,9 @@ class ControllerManager {
   * Begin stick range calibration (for UI-driven calibration)
   */
   async calibrateRangeBegin() {
-    const ret = await this.currentController.calibrateRangeBegin();
-    if (!ret.ok) {
-      throw new Error(this.l("Range calibration failed"), { cause: ret.error } );
+    const res = await this.currentController.calibrateRangeBegin();
+    if (!res.ok) {
+      throw new Error(`${this.l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
     }
   }
 

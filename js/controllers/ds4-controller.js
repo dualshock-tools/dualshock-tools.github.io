@@ -10,6 +10,8 @@ import {
   la 
 } from '../utils.js';
 
+const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
+
 // DS4 Button mapping configuration
 const DS4_BUTTON_MAP = [
   { name: 'up', byte: 4, mask: 0x0 }, // Dpad handled separately
@@ -175,10 +177,14 @@ class DS4Controller extends BaseController {
       // Assert
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
-      const [d1, d2] = [data, data2].map(v => v.getUint32(0, false));
+      const [d1, d2] = [data, data2].map(v => v.buffer.byteLength == 4 ? v.getUint32(0, false) : undefined);
       if(d1 != 0x91010201 || d2 != 0x920102ff) {
         la("ds4_calibrate_range_begin_failed", {"d1": d1, "d2": d2});
-        return { ok: false, code: 1, d1, d2 };
+        return {
+          ok: false,
+          error: new Error(this.l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          code: 1, d1, d2
+        };
       }
       return { ok: true };
     } catch(error) {
@@ -219,10 +225,14 @@ class DS4Controller extends BaseController {
       // Assert
       const data = await this.receiveFeatureReport(0x91);
       const data2 = await this.receiveFeatureReport(0x92);
-      const [d1, d2] = [data, data2].map(v => v.getUint32(0, false));
+      const [d1, d2] = [data, data2].map(v => v.buffer.byteLength == 4 ? v.getUint32(0, false) : undefined);
       if(d1 != 0x91010101 || d2 != 0x920101ff) {
         la("ds4_calibrate_sticks_begin_failed", {"d1": d1, "d2": d2});
-        return { ok: false, code: 1, d1, d2 };
+        return {
+          ok: false,
+          error: new Error(this.l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          code: 1, d1, d2,
+        };
       }
 
       return { ok: true };

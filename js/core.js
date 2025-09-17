@@ -298,6 +298,8 @@ async function disconnect() {
   }
   app.gj = 0;
   app.disable_btn = 0;
+  update_disable_btn();
+
   await controller.disconnect();
   controller = null; // Tear everything down
   close_all_modals();
@@ -724,9 +726,14 @@ function handleNvStatusUpdate(nv) {
 }
 
 async function flash_all_changes() {
-  // For DS5 Edge controllers, pass the progress callback
-  const progressCallback = controller.getModel() == "DS5_Edge" ? set_edge_progress : null;
+  const isEdge = controller.getModel() == "DS5_Edge";
+  const progressCallback = isEdge ? set_edge_progress : null;
+  const edgeProgressModal = isEdge ? bootstrap.Modal.getOrCreateInstance('#edgeProgressModal') : null;
+  edgeProgressModal?.show();
+
   const result = await controller.flash(progressCallback);
+  edgeProgressModal?.hide();
+
   if (result?.success) {
     if(result.isHtml) {
       show_popup(result.message, result.isHtml);

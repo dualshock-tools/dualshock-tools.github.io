@@ -134,7 +134,6 @@
     "This feature is experimental.": "Bu özellik deneysel.",
     "Please let me know if the board model of your controller is not detected correctly.": "Denetleyicinizin kart modeli doğru tespit edilmezse lütfen bana bildirin.",
     "Board model detection thanks to": "Kart modeli tespiti sayesinde",
-    "Please connect the device using a USB cable.": "Lütfen cihazı bir USB kablosu kullanarak bağlayın.",
     "This DualSense controller has outdated firmware.": "Bu DualSense denetleyicisinin yazılımı güncel değil.",
     "Please update the firmware and try again.": "Lütfen yazılımı güncelleyin ve tekrar deneyin.",
     "Joystick Info": "Joystick Bilgisi",
@@ -259,5 +258,7 @@
     "Push the stick straight up/down/left/right as far as possible.": "Analoğu mümkün olduğunca yukarı/aşağı/sola/sağa itin.",
     "Show raw numbers": "Ham değerleri göster",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Ayarlanacak analoğu yukarı/aşağı/sola/sağa doğru basılı tutarken, <em>dairenin altındaki vurgulanan değeri gözlemleyin</em> ve ardından değeri ±0,99’a (±1,00’ın hemen altına) ayarlamak için yön tuşlarını kullanın.",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

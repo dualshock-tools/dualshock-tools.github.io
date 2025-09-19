@@ -1,6 +1,6 @@
 'use strict';
 
-import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, la, createCookie, readCookie } from './utils.js';
+import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, initAnalyticsApi, la, createCookie, readCookie } from './utils.js';
 import { initControllerManager } from './controller-manager.js';
 import ControllerFactory from './controllers/controller-factory.js';
 import { lang_init, l } from './translations.js';
@@ -98,7 +98,8 @@ function gboot() {
     await loadAllTemplates();
     await init_svg_controller();
 
-    lang_init(app, handleLanguageChange, show_welcome_modal, la);
+    initAnalyticsApi(app); // init just with gu for now
+    lang_init(app, handleLanguageChange, show_welcome_modal);
     show_welcome_modal();
 
     $("input[name='displayMode']").on('change', on_stick_mode_change);
@@ -125,6 +126,8 @@ function gboot() {
 
 async function connect() {
   app.gj = crypto.randomUUID();
+  initAnalyticsApi(app); // init with gu and jg
+
   // Initialize controller manager with translation function
   controller = initControllerManager({ l, handleNvStatusUpdate });
   controller.setInputHandler(handleControllerInput);

@@ -135,7 +135,6 @@
     "This feature is experimental.": "Ця функція є експериментальною.",
     "Please let me know if the board model of your controller is not detected correctly.": "Будь ласка, повідомте, якщо модель плати вашого контролера визначена неправильно.",
     "Board model detection thanks to": "Визначення моделі плати завдяки",
-    "Please connect the device using a USB cable.": "Будь ласка, підключіть пристрій за допомогою USB-кабелю.",
     "This DualSense controller has outdated firmware.": "Прошивка цього контролера DualSense застаріла.",
     "Please update the firmware and try again.": "Будь ласка, оновіть прошивку та спробуйте знову.",
     "Joystick Info": "Інформація про джойстик",
@@ -259,5 +258,7 @@
     "Push the stick straight up/down/left/right as far as possible.": "Відхиліть стік максимально вгору/вниз/вліво/вправо.",
     "Show raw numbers": "Показати необроблені значення",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Утримуючи стік, який потрібно налаштувати, максимально вгору/вниз/вліво/вправо, <em>стежте за виділеним значенням під колом</em>, потім використовуйте кнопки D-pad, щоб відрегулювати значення до ±0.99 (трохи нижче за ±1.00).",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

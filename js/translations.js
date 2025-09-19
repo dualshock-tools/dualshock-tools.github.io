@@ -1,6 +1,6 @@
 'use strict';
 
-import { createCookie, readCookie } from './utils.js';
+import { la, createCookie, readCookie } from './utils.js';
 
 // Alphabetical order
 const available_langs = {
@@ -29,15 +29,13 @@ const available_langs = {
 
 // Translation state - will be imported from core.js app object
 let translationState = null;
-let la = null;
 let welcomeModal = null;
 let handleLanguageChange = null;
 
-export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb, laCb) {
+export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb) {
   translationState = appState;
   handleLanguageChange = handleLanguageChangeCb;
   welcomeModal = welcomeModalCb;
-  la = laCb;
   
   let id_iter = 0;
   const items = document.getElementsByClassName('ds-i18n');

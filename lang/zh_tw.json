@@ -134,7 +134,6 @@
     "This feature is experimental.": "此功能為實驗性質。",
     "Please let me know if the board model of your controller is not detected correctly.": "如果您的手把的主機板型號沒有被正確檢測，請告訴我。",
     "Board model detection thanks to": "主機板型號檢測功能需要感謝",
-    "Please connect the device using a USB cable.": "請使用USB線連接設備。",
     "This DualSense controller has outdated firmware.": "該DualSense手把的韌體已過時。",
     "Please update the firmware and try again.": "請更新韌體後重試。",
     "Joystick Info": "搖桿資訊",
@@ -258,6 +257,8 @@
     "Press the D-pad or face buttons in the direction you want the stick position to move.": "",
     "Push the stick straight up/down/left/right as far as possible.": "",
     "Show raw numbers": "",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

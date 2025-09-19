@@ -134,7 +134,6 @@
     "This feature is experimental.": "Questa funzionalità è sperimentale.",
     "Please let me know if the board model of your controller is not detected correctly.": "Scrivimi se il modello della scheda del tuo controller non viene riconosciuto correttamente.",
     "Board model detection thanks to": "Rilevamento del modello della scheda grazie a",
-    "Please connect the device using a USB cable.": "Connetti il controller usando un cavo USB.",
     "This DualSense controller has outdated firmware.": "Questo controller DualSense ha un firmware non aggiornato.",
     "Please update the firmware and try again.": "Aggiorna il firmware e riprova.",
     "Joystick Info": "Informazioni sui Joystick",
@@ -259,5 +258,7 @@
     "Push the stick straight up/down/left/right as far as possible.": "Premi lo stick completamente verso l'alto, il basso, sinistra o destra.",
     "Show raw numbers": "Mostra i dati raw",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Mentre tieni lo stick da calibrare verso l'alto, il basso, sinistra o destra, <em>osserva il valore evidenziato sotto il cerchio</em>, quindi usa i pulsanti del D-pad per regolare il valore a ±0.99 (appena sotto ±1.00).",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

@@ -135,7 +135,6 @@
     "This feature is experimental.": "Ez egy kisérleti funkció",
     "Please let me know if the board model of your controller is not detected correctly.": "Kérlek értesítsd a fejlesztőt, ha az alaplap verziója nem egyezik meg a felimert verzióval!",
     "Board model detection thanks to": "Az alaplapfelismerési funkciőért köszönet illeti:",
-    "Please connect the device using a USB cable.": "Kérlek csatlakoztasd az eszközt USB kábel használatával.",
     "This DualSense controller has outdated firmware.": "Ennek a DualSense vezérlőnek elavult a firmware-e.",
     "Please update the firmware and try again.": "Kérlek frissítsd a firmware-t, és próbáld újra.",
     "Joystick Info": "Analógkar Információ",
@@ -257,7 +256,9 @@
     "Test the Haptic Motors": "",
     "Tests": "",
     "The Last of Us": "",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
     "The motor strength will match how hard you press the trigger": "",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

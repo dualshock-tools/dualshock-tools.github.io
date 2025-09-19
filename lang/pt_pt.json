@@ -134,7 +134,6 @@
     "This feature is experimental.": "Esta funcionalidade é experimental.",
     "Please let me know if the board model of your controller is not detected correctly.": "Por favor, avise-me se o modelo da placa do seu controlador não for detectado corretamente.",
     "Board model detection thanks to": "Detecção do modelo da placa graças a",
-    "Please connect the device using a USB cable.": "Por favor, conecte o dispositivo usando um cabo USB.",
     "This DualSense controller has outdated firmware.": "Este controlador DualSense possui um firmware desatualizado.",
     "Please update the firmware and try again.": "Por favor, atualize o firmware e tente novamente.",
     "Joystick Info": "Informações do Joystick",
@@ -255,9 +254,11 @@
     "Test the Haptic Motors": "",
     "Tests": "",
     "The Last of Us": "",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
     "The motor strength will match how hard you press the trigger": "",
     "Volcanic Red": "",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "",
     "White": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

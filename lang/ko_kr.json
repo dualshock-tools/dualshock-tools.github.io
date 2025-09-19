@@ -97,7 +97,6 @@
     "Welcome to the F.A.Q. section! Below, you'll find answers to some of the most commonly asked questions about this website. If you have any other inquiries or need further assistance, feel free to reach out to me directly. Your feedback and questions are always welcome!": "자주 묻는 질문(F.A.Q.)에 오신 것을 환영합니다! 아래에서 이 웹사이트에 대해 자주 묻는 질문과 답변을 확인하실 수 있습니다. 다른 문의사항이나 추가 지원이 필요하시면 언제든지 직접 연락해주세요. 여러분의 피드백과 질문을 언제나 환영합니다!",
     "How does it work?": "어떻게 작동하나요?",
     "Behind the scenes, this website is the culmination of one year of dedicated effort in reverse-engineering DualShock controllers for fun/hobby from a random guy on the internet.": "이 웹사이트는 인터넷의 한 유저가 1년 동안 재미와 취미로 DualShock 컨트롤러를 리버스 엔지니어링한 노력의 결실입니다.",
-    "Through": "",
     "this research": "이 연구",
     ", it was discovered that there exist some undocumented commands on DualShock controllers that can be sent via USB and are used during factory assembly process. If these commands are sent, the controller starts the recalibration of analog sticks.": "를 통해 DualShock 컨트롤러에 문서화되지 않은 특정 명령어가 존재하며, 이 명령어는 USB를 통해 전송되어 공장 조립 과정에서 사용된다는 사실이 발견되었습니다. 이 명령어를 전송하면 컨트롤러가 아날로그 스틱 재보정을 시작합니다.",
     "While the primary focus of this research wasn't initially centered on recalibration, it became apparent that a service offering this capability could greatly benefit numerous individuals. And thus, here we are.": "처음에는 재보정이 이 연구의 주된 초점은 아니었지만, 이 기능을 제공하는 서비스가 많은 사람들에게 큰 도움이 될 수 있다는 사실이 명확해졌습니다. 그래서 이 웹사이트를 만들게 되었습니다.",
@@ -135,7 +134,6 @@
     "This feature is experimental.": "이 기능은 실험적인 기능입니다.",
     "Please let me know if the board model of your controller is not detected correctly.": "컨트롤러의 보드 모델이 올바르게 감지되지 않으면 알려주세요.",
     "Board model detection thanks to": "보드 모델 감지 도움:",
-    "Please connect the device using a USB cable.": "USB 케이블을 사용하여 기기를 연결해주세요.",
     "This DualSense controller has outdated firmware.": "이 DualSense 컨트롤러의 펌웨어가 오래되었습니다.",
     "Please update the firmware and try again.": "펌웨어를 업데이트한 후 다시 시도해주세요.",
     "Joystick Info": "조이스틱 정보",
@@ -258,5 +256,8 @@
     "here": "여기",
     "left module": "왼쪽 모듈",
     "right module": "오른쪽 모듈",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
+    "Through": "",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

@@ -136,7 +136,6 @@
     "This feature is experimental.": "Ta funkcja jest eksperymentalna.",
     "Please let me know if the board model of your controller is not detected correctly.": "Jeżeli model płytki został wykryty błędnie prosimy o kontakt",
     "Board model detection thanks to": "Podziękowania dla osoby za funkcję wykrywania modelu płytki",
-    "Please connect the device using a USB cable.": "Proszę podłącz urządzenie przy pomocy kabla USB.",
     "This DualSense controller has outdated firmware.": "Ten kontroler Dualsense posiada przestarzały firmware.",
     "Please update the firmware and try again.": "Proszę zaktualizuj firmware i spróbuj ponownie.",
     "Joystick Info": "Informacje o drążkach",
@@ -259,6 +258,8 @@
     "Press the D-pad or face buttons in the direction you want the stick position to move.": "Naciśnij pad kierunkowy (d-pad/krzyżak) lub przyciski funkcyjne w kierynku którym chcesz ustawić pozycję drążka.",
     "Push the stick straight up/down/left/right as far as possible.": "Przesuń drążek prosto w górę/dół/lewo/prawo najdalej jak to możliwe.",
     "Show raw numbers": "Pokaż surowe liczby",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Trzymajac drążek w pozycji do wyregulowania (góra/dół/lewo/prawo), <em>obserwuj pogrubioną wartość pod okręgiem</em>, nastęnie użyj pada kierunkowego (d-pada/krzyżaka) by ustawić wartość na ±0.99 (zaraz poniżej ±1.00).",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "": ""
 }

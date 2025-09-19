@@ -81,25 +81,20 @@ export function reverse_str(s) {
   return s.split('').reverse().join('');
 }
 
-/**
-* Analytics/logging function
-* @param {string} k Key/event name
-* @param {Object} v Optional values object
-*/
-export function la(k, v = {}) {
-  // Get app state from global scope if available
-  if (typeof window !== 'undefined' && window.app) {
+export let la = undefined;
+export function lf(operation, data) { la(operation, buf2hex(data.buffer)); return data; }
+
+export function initAnalyticsApi({gj, gu}) {
+  la = (k, v = {}) => {
     $.ajax({
       type: 'POST', 
       url: "https://the.al/ds4_a/l",
-      data: JSON.stringify({u: window.app.gu, j: window.app.gj, k, v}),
+      data: JSON.stringify({u: gu, j: gj, k, v}),
       contentType: "application/json", 
       dataType: 'json'
     });
   }
 }
-
-export function lf(operation, data) { la(operation, buf2hex(data.buffer)); return data; }
 
 export function lerp_color(a, b, t) {
   // a, b: hex color strings, t: 0.0-1.0

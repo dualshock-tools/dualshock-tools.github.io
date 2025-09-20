@@ -214,6 +214,11 @@ async function continue_connection({data, device}) {
       controller.setControllerInstance(controllerInstance);
 
       info = await controllerInstance.getInfo();
+
+      // Initialize output state for DS5 controllers
+      if (controllerInstance.initializeCurrentOutputState) {
+        await controllerInstance.initializeCurrentOutputState();
+      }
     } catch (error) {
       const contextMessage = device 
         ? l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId)
@@ -242,6 +247,11 @@ async function continue_connection({data, device}) {
     $("#onlinebar").show();
     $("#mainmenu").show();
     $("#resetBtn").show();
+
+    updateAdaptiveTriggerButtonVisibility();
+    updateHapticFeedbackButtonVisibility();
+    updateSpeakerToneButtonVisibility();
+    updateMicrophoneTestButtonVisibility();
 
     $("#d-nvstatus").text = l("Unknown");
     $("#d-bdaddr").text = l("Unknown");
@@ -309,6 +319,11 @@ async function disconnect() {
   $("#offlinebar").show();
   $("#onlinebar").hide();
   $("#mainmenu").hide();
+
+  updateAdaptiveTriggerButtonVisibility();
+  updateHapticFeedbackButtonVisibility();
+  updateSpeakerToneButtonVisibility();
+  updateMicrophoneTestButtonVisibility();
 }
 
 // Wrapper function for HTML onclick handlers
@@ -381,7 +396,7 @@ async function init_svg_controller() {
   const svgContainer = document.getElementById('controller-svg-placeholder');
 
   let svgContent;
-  
+
   // Check if we have bundled assets (production mode)
   if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg['dualshock-controller.svg']) {
     svgContent = window.BUNDLED_ASSETS.svg['dualshock-controller.svg'];
@@ -393,7 +408,7 @@ async function init_svg_controller() {
     }
     svgContent = await response.text();
   }
-  
+
   svgContainer.innerHTML = svgContent;
 
   const lightBlue = '#7ecbff';
@@ -932,66 +947,348 @@ let alertCounter = 0;
  * @returns {string} - The ID of the created alert element
  */
 function pushAlert(message, type = 'info', duration = 0, dismissible = true) {
-    const alertContainer = document.getElementById('alert-container');
-    if (!alertContainer) {
-        console.error('Alert container not found');
-        return null;
-    }
+  const alertContainer = document.getElementById('alert-container');
+  if (!alertContainer) {
+  console.error('Alert container not found');
+  return null;
+  }
 
-    const alertId = `alert-${++alertCounter}`;
-    const alertDiv = document.createElement('div');
-    alertDiv.id = alertId;
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.setAttribute('role', 'alert');
-    alertDiv.innerHTML = `
-        ${message}
-        ${dismissible ? '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
-    `;
+  const alertId = `alert-${++alertCounter}`;
+  const alertDiv = document.createElement('div');
+  alertDiv.id = alertId;
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+  alertDiv.setAttribute('role', 'alert');
+  alertDiv.innerHTML = `
+    ${message}
+    ${dismissible ? '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
+  `;
 
-    alertContainer.appendChild(alertDiv);
+  alertContainer.appendChild(alertDiv);
 
-    if (duration > 0) {
-        setTimeout(() => {
-            dismissAlert(alertId);
-        }, duration);
-    }
+  if (duration > 0) {
+    setTimeout(() => {
+      dismissAlert(alertId);
+    }, duration);
+  }
 
-    return alertId;
+  return alertId;
 }
 
 function dismissAlert(alertId) {
-    const alertElement = document.getElementById(alertId);
-    if (alertElement) {
-        const bsAlert = new bootstrap.Alert(alertElement);
-        bsAlert.close();
-    }
+  const alertElement = document.getElementById(alertId);
+  if (alertElement) {
+    const bsAlert = new bootstrap.Alert(alertElement);
+    bsAlert.close();
+  }
 }
 
 function clearAllAlerts() {
-    const alertContainer = document.getElementById('alert-container');
-    if (alertContainer) {
-        const alerts = alertContainer.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        });
-    }
+  const alertContainer = document.getElementById('alert-container');
+  if (alertContainer) {
+    const alerts = alertContainer.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      const bsAlert = new bootstrap.Alert(alert);
+      bsAlert.close();
+    });
+  }
 }
 
 function successAlert(message, duration = 1_500) {
-    return pushAlert(message, 'success', duration, false);
+  return pushAlert(message, 'success', duration, false);
 }
 
 function errorAlert(message, duration = 15_000) {
-    return pushAlert(message, 'danger', /* duration */);
+  return pushAlert(message, 'danger', /* duration */);
 }
 
 function warningAlert(message, duration = 8_000) {
-    return pushAlert(message, 'warning', duration);
+  return pushAlert(message, 'warning', duration);
 }
 
 function infoAlert(message, duration = 5_000) {
-    return pushAlert(message, 'info', duration, false);
+  return pushAlert(message, 'info', duration, false);
+}
+
+// Adaptive trigger state management
+let adaptiveTriggerEnabled = false;
+
+/**
+ * Toggle the left adaptive trigger on/off
+ */
+async function toggle_adaptive_trigger() {
+  const button = document.getElementById('adaptive-trigger-btn');
+  const icon = document.getElementById('adaptive-trigger-icon');
+  const text = document.getElementById('adaptive-trigger-text');
+
+  // Disable button during operation
+  button.disabled = true;
+
+  try {
+    if (adaptiveTriggerEnabled) {
+      await controller.setAdaptiveTriggerPreset({ left: 'off', right: 'off'});
+      adaptiveTriggerEnabled = false;
+
+      button.className = 'btn btn-info ds-btn ds-i18n';
+      icon.className = 'fas fa-hand-pointer';
+      text.textContent = l("Enable Adaptive Trigger");
+
+      successAlert(l("Adaptive trigger disabled"));
+    } else {
+      await controller.setAdaptiveTriggerPreset({ left: 'heavy', right: 'heavy' });
+      adaptiveTriggerEnabled = true;
+
+      button.className = 'btn btn-warning ds-btn ds-i18n';
+      icon.className = 'fas fa-hand-paper';
+      text.textContent = l("Disable Adaptive Trigger");
+
+      successAlert(l("Adaptive trigger enabled"));
+    }
+  }
+  finally {
+    button.disabled = false;
+  }
+}
+
+/**
+ * Update adaptive trigger button visibility based on controller type
+ */
+function updateAdaptiveTriggerButtonVisibility() {
+  const button = document.getElementById('adaptive-trigger-btn');
+  if (controller?.isConnected() && controller.getModel() === "DS5") {
+    button.style.display = 'block';
+  } else {
+    button.style.display = 'none';
+    adaptiveTriggerEnabled = false;
+  }
+}
+
+/**
+ * Test haptic feedback vibration for 3 seconds
+ */
+async function test_haptic_feedback() {
+  const button = document.getElementById('haptic-feedback-btn');
+  const icon = document.getElementById('haptic-feedback-icon');
+  const text = document.getElementById('haptic-feedback-text');
+
+  button.disabled = true;
+
+  // Update UI to show vibration is active
+  button.className = 'btn btn-warning ds-btn ds-i18n';
+  icon.className = 'fas fa-mobile-alt fa-shake';
+  text.textContent = l("Vibrating...");
+
+  // Set vibration for 3 seconds (medium intensity on both motors)
+  await controller.setVibration(255, 255, 3000, ({success}) => {
+    button.className = 'btn btn-secondary ds-btn ds-i18n';
+    icon.className = 'fas fa-mobile-alt';
+    text.textContent = l("Test Haptic Feedback");
+    button.disabled = false;
+  });
+}
+
+/**
+ * Test speaker tone by playing a 1-second tone through the controller's speaker
+ */
+async function test_speaker_tone() {
+  const button = document.getElementById('speaker-tone-btn');
+  const icon = document.getElementById('speaker-tone-icon');
+  const text = document.getElementById('speaker-tone-text');
+
+  button.disabled = true;
+
+  // Update UI to show tone is playing
+  button.className = 'btn btn-warning ds-btn ds-i18n';
+  icon.className = 'fas fa-volume-up fa-bounce';
+  text.textContent = l("Playing tone...");
+
+  // Set speaker tone for 1 second
+  await controller.setSpeakerTone(100, ({success}) => {
+    button.className = 'btn btn-secondary ds-btn ds-i18n';
+    icon.className = 'fas fa-volume-up';
+    text.textContent = l("Test Speaker Tone");
+    button.disabled = false;
+  });
+}
+
+/**
+ * Test microphone by monitoring audio input levels and asking user to blow into it
+ */
+async function test_microphone() {
+  const button = document.getElementById('microphone-test-btn');
+  const icon = document.getElementById('microphone-test-icon');
+  const text = document.getElementById('microphone-test-text');
+
+  button.disabled = true;
+
+  try {
+    // Update UI to show microphone test is starting
+    button.className = 'btn btn-info ds-btn ds-i18n';
+    icon.className = 'fas fa-microphone fa-pulse';
+    text.textContent = l("Starting microphone test...");
+
+    // Request microphone access
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      } 
+    });
+
+    // Create audio context and analyzer
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyzer = audioContext.createAnalyser();
+
+    analyzer.fftSize = 256;
+    analyzer.smoothingTimeConstant = 0.8;
+    source.connect(analyzer);
+
+    const bufferLength = analyzer.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    // Update UI to show listening state
+    button.className = 'btn btn-success ds-btn ds-i18n';
+    icon.className = 'fas fa-microphone fa-pulse';
+    text.textContent = l("Blow into the microphone...");
+
+    let detectionCount = 0;
+    let isDetecting = false;
+    const testDuration = 10000; // 10 seconds
+    const startTime = Date.now();
+
+    const checkAudioLevel = () => {
+      if (Date.now() - startTime > testDuration) {
+        // Test timeout
+        cleanup();
+        button.className = 'btn btn-outline-secondary ds-btn ds-i18n';
+        icon.className = 'fas fa-microphone';
+        text.textContent = l("Test completed - Try again");
+        button.disabled = false;
+        return;
+      }
+
+      analyzer.getByteFrequencyData(dataArray);
+
+      // Calculate average volume level
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / bufferLength;
+
+      // Detect significant audio input (blowing into mic)
+      const threshold = 30; // Adjust this value as needed
+      if (average > threshold) {
+        if (!isDetecting) {
+          isDetecting = true;
+          detectionCount++;
+
+          // Update UI to show detection
+          button.className = 'btn btn-warning ds-btn ds-i18n';
+          icon.className = 'fas fa-microphone fa-bounce';
+          text.textContent = l("Microphone input detected!") + ` (${detectionCount})`;
+
+          // Provide haptic feedback if available
+          if (controller?.isConnected() && controller.getModel() === "DS5") {
+            controller.setVibration(100, 100, 200);
+          }
+        }
+      } else {
+        if (isDetecting) {
+          isDetecting = false;
+          // Return to listening state
+          button.className = 'btn btn-success ds-btn ds-i18n';
+          icon.className = 'fas fa-microphone fa-pulse';
+          text.textContent = l("Blow into the microphone...");
+        }
+      }
+
+      // Continue monitoring
+      requestAnimationFrame(checkAudioLevel);
+    };
+
+    const cleanup = () => {
+      // Stop all tracks
+      stream.getTracks().forEach(track => track.stop());
+      // Close audio context
+      if (audioContext.state !== 'closed') {
+        audioContext.close();
+      }
+    };
+
+    // Start monitoring
+    checkAudioLevel();
+
+    // Auto-stop after test duration
+    setTimeout(() => {
+      cleanup();
+      if (detectionCount > 0) {
+        button.className = 'btn btn-success ds-btn ds-i18n';
+        icon.className = 'fas fa-microphone fa-check';
+        text.textContent = l("Microphone test passed!") + ` (${detectionCount} detections)`;
+      } else {
+        button.className = 'btn btn-outline-secondary ds-btn ds-i18n';
+        icon.className = 'fas fa-microphone';
+        text.textContent = l("No input detected - Try again");
+      }
+      button.disabled = false;
+    }, testDuration);
+
+  } catch (error) {
+    console.error('Microphone test error:', error);
+
+    // Update UI to show error
+    button.className = 'btn btn-danger ds-btn ds-i18n';
+    icon.className = 'fas fa-microphone-slash';
+
+    if (error.name === 'NotAllowedError') {
+      text.textContent = l("Microphone access denied");
+    } else if (error.name === 'NotFoundError') {
+      text.textContent = l("No microphone found");
+    } else {
+      text.textContent = l("Microphone test failed");
+    }
+
+    button.disabled = false;
+
+    // Reset button after 3 seconds
+    setTimeout(() => {
+      button.className = 'btn btn-secondary ds-btn ds-i18n';
+      icon.className = 'fas fa-microphone';
+      text.textContent = l("Test Microphone");
+    }, 3000);
+  }
+}
+
+/**
+ * Update haptic feedback button visibility based on controller type
+ */
+function updateHapticFeedbackButtonVisibility() {
+  const button = document.getElementById('haptic-feedback-btn');
+  const model = controller?.getModel();
+  const supported = (controller?.isConnected() && model === "DS5");
+  button.style.display = supported ? 'block' : 'none';
+}
+
+/**
+ * Update speaker tone button visibility based on controller type
+ */
+function updateSpeakerToneButtonVisibility() {
+  const button = document.getElementById('speaker-tone-btn');
+  const model = controller?.getModel();
+  const supported = (controller?.isConnected() && model === "DS5");
+  button.style.display = supported ? 'block' : 'none';
+}
+
+/**
+ * Update microphone test button visibility based on controller type
+ */
+function updateMicrophoneTestButtonVisibility() {
+  const button = document.getElementById('microphone-test-btn');
+  const model = controller?.getModel();
+  const supported = (controller?.isConnected() && model === "DS5");
+  button.style.display = supported ? 'block' : 'none';
 }
 
 
@@ -1014,6 +1311,10 @@ window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
 window.board_model_info = board_model_info;
 window.edge_color_info = edge_color_info;
+window.toggle_adaptive_trigger = toggle_adaptive_trigger;
+window.test_haptic_feedback = test_haptic_feedback;
+window.test_speaker_tone = test_speaker_tone;
+window.test_microphone = test_microphone;
 
 // Auto-initialize the application when the module loads
 gboot();

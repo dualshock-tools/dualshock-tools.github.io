@@ -294,6 +294,124 @@ class ControllerManager {
   }
 
   /**
+   * Disable left adaptive trigger effects (DS5 only)
+   * @returns {Promise<Object>} Result object with success status and message
+   */
+  async disableLeftAdaptiveTrigger() {
+    if (!this.currentController) {
+      throw new Error(this.l("No controller connected"));
+    }
+
+    // Check if the controller supports adaptive triggers (DS5 only)
+    if (this.getModel() !== "DS5") {
+      throw new Error(this.l("Adaptive triggers are only supported on DualSense controllers"));
+    }
+
+    // Check if the controller has the disableLeftAdaptiveTrigger method
+    if (typeof this.currentController.disableLeftAdaptiveTrigger !== 'function') {
+      throw new Error(this.l("Controller does not support adaptive trigger control"));
+    }
+
+    try {
+      const result = await this.currentController.disableLeftAdaptiveTrigger();
+      return result;
+    } catch (error) {
+      throw new Error(this.l("Failed to disable adaptive trigger"), { cause: error });
+    }
+  }
+
+  /**
+   * Set left adaptive trigger with preset configurations (DS5 only)
+   * @param {string} preset - Preset name: 'light', 'medium', 'heavy', 'custom'
+   * @param {Object} customParams - Custom parameters for 'custom' preset {start, end, force}
+   * @returns {Promise<Object>} Result object with success status and message
+   */
+  async setAdaptiveTriggerPreset({left, right}/* , customParams = {} */) {
+    const presets = {
+      'off': { start: 0, end: 0, force: 0, mode: 'off' },
+      'light': { start: 10, end: 80, force: 150, mode: 'single'},
+      'medium': { start: 15, end: 100, force: 200, mode: 'single' },
+      'heavy': { start: 20, end: 120, force: 255, mode: 'single' },
+      // 'custom': customParams
+    };
+
+    if (!presets[left] || !presets[right]) {
+      throw new Error(`Invalid preset. Available presets: light, medium, heavy, custom. Got "${left}" and "${right}".`);
+    }
+
+    const leftPreset = presets[left];
+    const rightPreset = presets[right];
+
+    // if (preset === 'custom') {
+    //   // Validate custom parameters
+    //   if (typeof start !== 'number' || typeof end !== 'number' || typeof force !== 'number') {
+    //     throw new Error(this.l("Custom preset requires start, end, and force parameters"));
+    //   }
+    // }
+
+    return await this.currentController.setAdaptiveTrigger(leftPreset, rightPreset);
+  }
+
+  /**
+   * Set vibration motors for haptic feedback (DS5 only)
+   * @param {number} leftMotor - Left motor intensity (0-255)
+   * @param {number} rightMotor - Right motor intensity (0-255)
+   * @param {number} duration - Duration in milliseconds (optional)
+   * @param {Function} doneCb - Callback function called when vibration ends (optional)
+   */
+  async setVibration(leftMotor, rightMotor, duration = 0, doneCb = ({success}) => {}) {
+    try {
+      await this.currentController.setVibration(leftMotor, rightMotor);
+
+      // If duration is specified, automatically turn off vibration after the duration
+      if (duration > 0) {
+        setTimeout(async () => {
+          if(!this.currentController) return doneCb({success: true});
+          await this.currentController.setVibration(0, 0); // Turn off vibration
+          doneCb({success: true});
+        }, duration);
+      }
+    } catch (error) {
+      if(duration) doneCb({ success: false});
+      throw new Error(this.l("Failed to set vibration"), { cause: error });
+    }
+  }
+
+  /**
+   * Test speaker tone (DS5 only)
+   * @param {number} duration - Duration in milliseconds (optional)
+   * @param {Function} doneCb - Callback function called when tone ends (optional)
+   */
+  async setSpeakerTone(duration = 1000, doneCb = ({success}) => {}) {
+    try {
+      if (!this.currentController.setSpeakerTone) {
+        throw new Error(this.l("Speaker tone not supported on this controller"));
+      }
+
+      await this.currentController.setSpeakerTone();
+
+      // If duration is specified, automatically reset speaker after the duration
+      if (duration > 0) {
+        setTimeout(async () => {
+          if(!this.currentController) return doneCb({success: true});
+          // Reset speaker settings to default by calling setSpeakerTone with reset parameters
+          try {
+            if (this.currentController.resetSpeakerSettings) {
+              await this.currentController.resetSpeakerSettings();
+            }
+          } catch (resetError) {
+            console.warn("Failed to reset speaker settings:", resetError);
+          }
+          doneCb({success: true});
+        }, duration);
+      }
+    } catch (error) {
+      if(duration) doneCb({ success: false});
+      throw new Error(this.l("Failed to set speaker tone"), { cause: error });
+    }
+  }
+
+  /**
   * Helper function to check if stick positions have changed
   */
   _sticksChanged(current, newValues) {

@@ -143,6 +143,10 @@ class BaseController {
   parseBatteryStatus(data) {
     throw new Error('parseBatteryStatus() must be implemented by subclass');
   }
+  
+  setAdaptiveTrigger(left, right) {
+    throw new Error('setAdaptiveTriggerSingleMode() must be implemented by subclass');
+  }
 }
 
 export default BaseController;

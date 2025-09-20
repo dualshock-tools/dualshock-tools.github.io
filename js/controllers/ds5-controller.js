@@ -45,6 +45,154 @@ const DS5_INPUT_CONFIG = {
   touchpadOffset: 32,
 };
 
+// DS5 Adaptive Trigger Effect Modes
+const DS5_TRIGGER_EFFECT_MODE = {
+  OFF: 0x00,           // No effect
+  RESISTANCE: 0x01,    // Constant resistance
+  TRIGGER: 0x02,       // Single-trigger effect with release
+  AUTO_TRIGGER: 0x06,  // Automatic trigger with vibration
+};
+
+// DS5 Output Report Constants
+const DS5_OUTPUT_REPORT = {
+  USB_REPORT_ID: 0x02,
+  BT_REPORT_ID: 0x31,
+}
+
+const DS5_VALID_FLAG0 = {
+  RIGHT_VIBRATION: 0x01,  // Bit 0 for right vibration motor
+  LEFT_VIBRATION: 0x02,   // Bit 1 for left vibration motor
+  LEFT_TRIGGER: 0x04,     // Bit 2 for left adaptive trigger
+  RIGHT_TRIGGER: 0x08,    // Bit 3 for right adaptive trigger
+  HEADPHONE_VOLUME: 0x10, // Bit 4 for headphone volume control
+  SPEAKER_VOLUME: 0x20,   // Bit 5 for speaker volume control
+  MIC_VOLUME: 0x40,       // Bit 6 for microphone volume control
+  AUDIO_CONTROL: 0x80,    // Bit 7 for audio control
+};
+
+const DS5_VALID_FLAG1 = {
+  MUTE_LED: 0x01,          // Bit 0 for mute LED control
+  POWER_SAVE_MUTE: 0x02,   // Bit 1 for power-save mute control
+  LIGHTBAR_COLOR: 0x04,    // Bit 2 for lightbar color control
+  RESERVED_BIT_3: 0x08,    // Bit 3 (reserved)
+  PLAYER_INDICATOR: 0x10,  // Bit 4 for player indicator LED control
+  LED_BRIGHTNESS: 0x20,    // Bit 6 for LED brightness control
+  LIGHTBAR_SETUP: 0x40,    // Bit 6 for lightbar setup control
+  RESERVED_BIT_7: 0x80,    // Bit 7 (reserved)
+}
+
+const DS5_VALID_FLAG2 = {
+  LED_BRIGHTNESS: 0x01,         // Bit 0 for LED brightness control
+  LIGHTBAR_SETUP: 0x02,         // Bit 1 for lightbar setup control
+};
+
+// Basic DS5 Output Structure for adaptive trigger control
+class DS5OutputStruct {
+  constructor(currentState = null) {
+    // Create a 47-byte buffer for DS5 output report (USB)
+    this.buffer = new ArrayBuffer(47);
+    this.view = new DataView(this.buffer);
+
+    // Control flags
+    this.validFlag0 = currentState.validFlag0 || 0;
+    this.validFlag1 = currentState.validFlag1 || 0;
+    this.validFlag2 = currentState.validFlag2 || 0;
+
+    // Vibration motors
+    this.bcVibrationRight = currentState.bcVibrationRight || 0;
+    this.bcVibrationLeft = currentState.bcVibrationLeft || 0;
+
+    // Audio control
+    this.headphoneVolume = currentState.headphoneVolume || 0;
+    this.speakerVolume = currentState.speakerVolume || 0;
+    this.micVolume = currentState.micVolume || 0;
+    this.audioControl = currentState.audioControl || 0;
+    this.audioControl2 = currentState.audioControl2 || 0;
+
+    // LED and indicator control
+    this.muteLedControl = currentState.muteLedControl || 0;
+    this.powerSaveMuteControl = currentState.powerSaveMuteControl || 0;
+    this.lightbarSetup = currentState.lightbarSetup || 0;
+    this.ledBrightness = currentState.ledBrightness || 0;
+    this.playerIndicator = currentState.playerIndicator || 0;
+    this.ledCRed = currentState.ledCRed || 0;
+    this.ledCGreen = currentState.ledCGreen || 0;
+    this.ledCBlue = currentState.ledCBlue || 0;
+
+    // Adaptive trigger parameters
+    this.adaptiveTriggerLeftMode = currentState.adaptiveTriggerLeftMode || 0;
+    this.adaptiveTriggerLeftParam0 = currentState.adaptiveTriggerLeftParam0 || 0;
+    this.adaptiveTriggerLeftParam1 = currentState.adaptiveTriggerLeftParam1 || 0;
+    this.adaptiveTriggerLeftParam2 = currentState.adaptiveTriggerLeftParam2 || 0;
+
+    this.adaptiveTriggerRightMode = currentState.adaptiveTriggerRightMode || 0;
+    this.adaptiveTriggerRightParam0 = currentState.adaptiveTriggerRightParam0 || 0;
+    this.adaptiveTriggerRightParam1 = currentState.adaptiveTriggerRightParam1 || 0;
+    this.adaptiveTriggerRightParam2 = currentState.adaptiveTriggerRightParam2 || 0;
+
+    // Haptic feedback
+    this.hapticVolume = currentState.hapticVolume || 0;
+  }
+
+  // Pack the data into the output buffer
+  pack() {
+    // Based on DS5 output report structure from HID descriptor
+    // Byte 0-1: Control flags (16-bit little endian)
+    this.view.setUint16(0, (this.validFlag1 << 8) | this.validFlag0, true);
+
+    // Byte 2-3: Vibration motors
+    this.view.setUint8(2, this.bcVibrationRight);
+    this.view.setUint8(3, this.bcVibrationLeft);
+
+    // Bytes 4-7: Audio control (reserved for now)
+    this.view.setUint8(4, this.headphoneVolume);
+    this.view.setUint8(5, this.speakerVolume);
+    this.view.setUint8(6, this.micVolume);
+    this.view.setUint8(7, this.audioControl);
+
+    // Byte 8: Mute LED control
+    this.view.setUint8(8, this.muteLedControl);
+
+    // Byte 9: Reserved
+    this.view.setUint8(9, 0);
+
+    // Bytes 10-20: Right adaptive trigger
+    this.view.setUint8(10, this.adaptiveTriggerRightMode);
+    this.view.setUint8(11, this.adaptiveTriggerRightParam0);
+    this.view.setUint8(12, this.adaptiveTriggerRightParam1);
+    this.view.setUint8(13, this.adaptiveTriggerRightParam2);
+    // Additional trigger parameters (bytes 14-20 reserved for extended params)
+    for (let i = 14; i <= 20; i++) {
+      this.view.setUint8(i, 0);
+    }
+
+    // Bytes 21-31: Left adaptive trigger
+    this.view.setUint8(21, this.adaptiveTriggerLeftMode);
+    this.view.setUint8(22, this.adaptiveTriggerLeftParam0);
+    this.view.setUint8(23, this.adaptiveTriggerLeftParam1);
+    this.view.setUint8(24, this.adaptiveTriggerLeftParam2);
+    // Additional trigger parameters (bytes 25-31 reserved for extended params)
+    for (let i = 25; i <= 31; i++) {
+      this.view.setUint8(i, 0);
+    }
+
+    // Bytes 32-42: Reserved
+    for (let i = 32; i <= 42; i++) {
+      this.view.setUint8(i, 0);
+    }
+
+    // Byte 43: Player LED indicator
+    this.view.setUint8(43, this.playerIndicator);
+
+    // Bytes 44-46: Lightbar RGB
+    this.view.setUint8(44, this.ledCRed);
+    this.view.setUint8(45, this.ledCGreen);
+    this.view.setUint8(46, this.ledCBlue);
+
+    return this.buffer;
+  }
+}
+
 function ds5_color(x) {
   const colorMap = {
     '00': 'White',
@@ -81,6 +229,37 @@ class DS5Controller extends BaseController {
     super(device, uiDependencies);
     this.model = "DS5";
     this.finetuneMaxValue = 65535; // 16-bit max value for DS5
+
+    // Initialize current output state to track controller settings
+    this.currentOutputState = {
+      validFlag0: 0,
+      validFlag1: 0,
+      validFlag2: 0,
+      bcVibrationRight: 0,
+      bcVibrationLeft: 0,
+      headphoneVolume: 0,
+      speakerVolume: 0,
+      micVolume: 0,
+      audioControl: 0,
+      audioControl2: 0,
+      muteLedControl: 0,
+      powerSaveMuteControl: 0,
+      lightbarSetup: 0,
+      ledBrightness: 0,
+      playerIndicator: 0,
+      ledCRed: 0,
+      ledCGreen: 0,
+      ledCBlue: 0,
+      adaptiveTriggerLeftMode: 0,
+      adaptiveTriggerLeftParam0: 0,
+      adaptiveTriggerLeftParam1: 0,
+      adaptiveTriggerLeftParam2: 0,
+      adaptiveTriggerRightMode: 0,
+      adaptiveTriggerRightParam0: 0,
+      adaptiveTriggerRightParam1: 0,
+      adaptiveTriggerRightParam2: 0,
+      hapticVolume: 0
+    };
   }
 
   getInputConfig() {
@@ -355,19 +534,12 @@ class DS5Controller extends BaseController {
 
   hwToBoardModel(hw_ver) {
     const a = (hw_ver >> 8) & 0xff;
-    if(a == 0x03) {
-      return "BDM-010";
-    } else if(a == 0x04) {
-      return "BDM-020";
-    } else if(a == 0x05) {
-      return "BDM-030";
-    } else if(a == 0x06) {
-      return "BDM-040";
-    } else if(a == 0x07 || a == 0x08) {
-      return "BDM-050";
-    } else {
-      return this.l("Unknown");
-    }
+    if(a == 0x03) return "BDM-010";
+    if(a == 0x04) return "BDM-020";
+    if(a == 0x05) return "BDM-030";
+    if(a == 0x06) return "BDM-040";
+    if(a == 0x07 || a == 0x08) return "BDM-050";
+    return this.l("Unknown");
   }
 
   async getInMemoryModuleData() {
@@ -387,6 +559,182 @@ class DS5Controller extends BaseController {
   async writeFinetuneData(data) {
     const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);
     await this.sendFeatureReport(0x80, pkg);
+  }
+
+  /**
+   * Send output report to the DS5 controller
+   * @param {ArrayBuffer} data - The output report data
+   */
+  async sendOutputReport(data, reason = "") {
+    try {
+      console.log(`Sending output report${ reason ? ` to ${reason}` : '' }:`, DS5_OUTPUT_REPORT.USB_REPORT_ID, buf2hex(data));
+      await this.device.sendReport(DS5_OUTPUT_REPORT.USB_REPORT_ID, new Uint8Array(data));
+    } catch (error) {
+      throw new Error(`Failed to send output report: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update the current output state with values from an OutputStruct
+   * @param {DS5OutputStruct} outputStruct - The output structure to copy state from
+   */
+  updateCurrentOutputState(outputStruct) {
+    this.currentOutputState = { ...outputStruct };
+  }
+
+  /**
+   * Get a copy of the current output state
+   * @returns {Object} A copy of the current output state
+   */
+  getCurrentOutputState() {
+    return { ...this.currentOutputState };
+  }
+
+  /**
+   * Initialize the current output state when the controller is first connected.
+   * Since DS5 controllers don't provide a way to read the current output state,
+   * this method sets up reasonable defaults and attempts to detect any current settings.
+   */
+  async initializeCurrentOutputState() {
+    try {
+      // Reset all output state to known defaults
+      this.currentOutputState = {
+        ...this.getCurrentOutputState(),
+        validFlag1: 0b1111_0111,
+        ledCRed: 0,
+        ledCGreen: 0,
+        ledCBlue: 255,
+      };
+
+      // Send a "reset" output report to ensure the controller is in a known state
+      // This will turn off any existing effects and set the controller to defaults
+      const resetOutputStruct = new DS5OutputStruct(this.currentOutputState);
+      await this.sendOutputReport(resetOutputStruct.pack(), 'init default states');
+
+      // Update our state to reflect what we just sent
+      this.updateCurrentOutputState(resetOutputStruct);
+    } catch (error) {
+      console.warn("Failed to initialize DS5 output state:", error);
+      // Even if the reset fails, we still have the default state initialized
+    }
+  }
+
+  /**
+   * Set left adaptive trigger to single-trigger mode
+   */
+  async setAdaptiveTrigger(left, right) {
+    try {
+      const modeMap = {
+        'off': DS5_TRIGGER_EFFECT_MODE.OFF,
+        'single': DS5_TRIGGER_EFFECT_MODE.TRIGGER,
+        'auto': DS5_TRIGGER_EFFECT_MODE.AUTO_TRIGGER,
+        'resistance': DS5_TRIGGER_EFFECT_MODE.RESISTANCE,
+      }
+
+      // Create output structure with current controller state
+      const { validFlag0 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        adaptiveTriggerLeftMode: modeMap[left.mode],
+        adaptiveTriggerLeftParam0: left.start,
+        adaptiveTriggerLeftParam1: left.end,
+        adaptiveTriggerLeftParam2: left.force,
+
+        adaptiveTriggerRightMode: modeMap[right.mode],
+        adaptiveTriggerRightParam0: right.start,
+        adaptiveTriggerRightParam1: right.end,
+        adaptiveTriggerRightParam2: right.force,
+
+        validFlag0: validFlag0 | DS5_VALID_FLAG0.LEFT_TRIGGER | DS5_VALID_FLAG0.RIGHT_TRIGGER,
+      });
+      await this.sendOutputReport(outputStruct.pack(), 'set adaptive trigger mode');
+      outputStruct.validFlag0 &= ~(DS5_VALID_FLAG0.LEFT_TRIGGER | DS5_VALID_FLAG0.RIGHT_TRIGGER);
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+
+      return { success: true };
+    } catch (error) {
+      throw new Error("Failed to set left adaptive trigger mode", { cause: error });
+    }
+  }
+
+  /**
+   * Set vibration motors for haptic feedback
+   * @param {number} leftMotor - Left motor intensity (0-255)
+   * @param {number} rightMotor - Right motor intensity (0-255)
+   */
+  async setVibration(leftMotor = 0, rightMotor = 0) {
+    try {
+      const { validFlag0 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        bcVibrationLeft: Math.max(0, Math.min(255, leftMotor)),
+        bcVibrationRight: Math.max(0, Math.min(255, rightMotor)),
+        validFlag0: validFlag0 | DS5_VALID_FLAG0.LEFT_VIBRATION | DS5_VALID_FLAG0.RIGHT_VIBRATION, // Update both vibration motors
+      });
+      await this.sendOutputReport(outputStruct.pack(), 'set vibration');
+      outputStruct.validFlag0 &= ~(DS5_VALID_FLAG0.LEFT_VIBRATION | DS5_VALID_FLAG0.RIGHT_VIBRATION);
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+    } catch (error) {
+      throw new Error("Failed to set vibration", { cause: error });
+    }
+  }
+
+  /**
+   * Test speaker tone by controlling speaker volume and audio settings
+   * This creates a brief audio feedback through the controller's speaker
+   */
+  async setSpeakerTone() {
+    try {
+      const { validFlag0 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        speakerVolume: 85,
+        validFlag0: validFlag0 | DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL,
+      });
+      await this.sendOutputReport(outputStruct.pack(), 'play speaker tone');
+      outputStruct.validFlag0 &= ~(DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL);
+
+      // Send feature reports to enable speaker audio
+      // Audio configuration command
+      await this.sendFeatureReport(128, [6, 4, 0, 0, 8]);
+
+      // Enable speaker tone
+      await this.sendFeatureReport(128, [6, 2, 1, 1, 0]);
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+    } catch (error) {
+      throw new Error("Failed to set speaker tone", { cause: error });
+    }
+  }
+
+  /**
+   * Reset speaker settings to default (turn off speaker)
+   */
+  async resetSpeakerSettings() {
+    try {
+      // Disable speaker tone first via feature report
+      await this.sendFeatureReport(128, [6, 2, 0, 1, 0]);
+
+      const { validFlag0 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        speakerVolume: 0,
+        validFlag0: validFlag0 | DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL,
+      });
+      // outputStruct.audioControl = 0x00;
+      await this.sendOutputReport(outputStruct.pack(), 'stop speaker tone');
+      outputStruct.validFlag0 &= ~(DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL);
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+    } catch (error) {
+      throw new Error("Failed to reset speaker settings", { cause: error });
+    }
   }
 
   /**

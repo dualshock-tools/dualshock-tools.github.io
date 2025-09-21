@@ -9,6 +9,12 @@ import { draw_stick_position, CIRCULARITY_DATA_SIZE } from './stick-renderer.js'
 import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } from './modals/finetune-modal.js';
 import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
 import { calibrate_range } from './modals/calib-range-modal.js';
+import { 
+  updateQuickTestButtonVisibility, 
+  show_quick_test_modal,
+  isQuickTestVisible,
+  quicktest_handle_controller_input
+} from './modals/quick-test-modal.js';
 
 // Application State - manages app-wide state and UI
 const app = {
@@ -248,10 +254,7 @@ async function continue_connection({data, device}) {
     $("#mainmenu").show();
     $("#resetBtn").show();
 
-    updateAdaptiveTriggerButtonVisibility();
-    updateHapticFeedbackButtonVisibility();
-    updateSpeakerToneButtonVisibility();
-    updateMicrophoneTestButtonVisibility();
+    updateQuickTestButtonVisibility(controller);
 
     $("#d-nvstatus").text = l("Unknown");
     $("#d-bdaddr").text = l("Unknown");
@@ -320,10 +323,7 @@ async function disconnect() {
   $("#onlinebar").hide();
   $("#mainmenu").hide();
 
-  updateAdaptiveTriggerButtonVisibility();
-  updateHapticFeedbackButtonVisibility();
-  updateSpeakerToneButtonVisibility();
-  updateMicrophoneTestButtonVisibility();
+  updateQuickTestButtonVisibility(controller);
 }
 
 // Wrapper function for HTML onclick handlers
@@ -665,6 +665,11 @@ function get_current_test_tab() {
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
 
+  // Handle Quick Test Modal input (can be open from any tab)
+  if (isQuickTestVisible()) {
+    quicktest_handle_controller_input(changes);
+  }
+
   const current_active_tab = get_current_main_tab();
   switch (current_active_tab) {
     case 'controller-tab': // Main controller tab
@@ -696,7 +701,7 @@ function handle_test_input(/* changes */) {
       const l2 = controller.button_states.l2_analog || 0;
       const r2 = controller.button_states.r2_analog || 0;
       if (l2 || r2) {
-        trigger_haptic_motors(l2, r2);
+        // trigger_haptic_motors(l2, r2);
       }
       break;
 
@@ -882,59 +887,6 @@ function board_model_info() {
   show_popup(l3 + "<br><br>" + l1 + " " + l2, true);
 }
 
-
-const trigger_haptic_motors = (() => {
-  let haptic_timeout = undefined;
-  let haptic_last_trigger = 0;
-
-  return async function(strong_motor /*left*/, weak_motor /*right*/) {
-    // The DS4 contoller has a strong (left) and a weak (right) motor.
-    // The DS5 emulates the same behavior, but the left and right motors are the same.
-
-    const now = Date.now();
-    if (now - haptic_last_trigger < 200) {
-      return; // Rate limited - ignore calls within 200ms
-    }
-
-    haptic_last_trigger = now;
-
-    try {
-      if (!controller.isConnected()) return;
-
-      const model = controller.getModel();
-      const device = controller.getDevice();
-      if (model == "DS4") {
-        const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
-        await device.sendReport(0x05, data);
-      } else if (model.startsWith("DS5")) {
-        const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
-        await device.sendReport(0x02, data);
-      }
-
-      // Stop rumble after duration
-      clearTimeout(haptic_timeout);
-      haptic_timeout = setTimeout(stop_haptic_motors, 250);
-    } catch(error) {
-      throw new Error(l("Error triggering rumble"), { cause: error });
-    }
-  };
-})();
-
-async function stop_haptic_motors() {
-  if (!controller.isConnected()) return;
-
-  const model = controller.getModel();
-  const device = controller.getDevice();
-  if (model == "DS4") {
-    const data = new Uint8Array([0x05, 0x00, 0, 0, 0]);
-    await device.sendReport(0x05, data);
-  } else if (model.startsWith("DS5")) {
-    const data = new Uint8Array([0x02, 0x00, 0, 0]);
-    await device.sendReport(0x02, data);
-  }
-}
-
-
 // Alert Management Functions
 let alertCounter = 0;
 
@@ -1009,287 +961,9 @@ function infoAlert(message, duration = 5_000) {
   return pushAlert(message, 'info', duration, false);
 }
 
-// Adaptive trigger state management
-let adaptiveTriggerEnabled = false;
 
-/**
- * Toggle the left adaptive trigger on/off
- */
-async function toggle_adaptive_trigger() {
-  const button = document.getElementById('adaptive-trigger-btn');
-  const icon = document.getElementById('adaptive-trigger-icon');
-  const text = document.getElementById('adaptive-trigger-text');
 
-  // Disable button during operation
-  button.disabled = true;
 
-  try {
-    if (adaptiveTriggerEnabled) {
-      await controller.setAdaptiveTriggerPreset({ left: 'off', right: 'off'});
-      adaptiveTriggerEnabled = false;
-
-      button.className = 'btn btn-info ds-btn ds-i18n';
-      icon.className = 'fas fa-hand-pointer';
-      text.textContent = l("Enable Adaptive Trigger");
-
-      successAlert(l("Adaptive trigger disabled"));
-    } else {
-      await controller.setAdaptiveTriggerPreset({ left: 'heavy', right: 'heavy' });
-      adaptiveTriggerEnabled = true;
-
-      button.className = 'btn btn-warning ds-btn ds-i18n';
-      icon.className = 'fas fa-hand-paper';
-      text.textContent = l("Disable Adaptive Trigger");
-
-      successAlert(l("Adaptive trigger enabled"));
-    }
-  }
-  finally {
-    button.disabled = false;
-  }
-}
-
-/**
- * Update adaptive trigger button visibility based on controller type
- */
-function updateAdaptiveTriggerButtonVisibility() {
-  const button = document.getElementById('adaptive-trigger-btn');
-  if (controller?.isConnected() && controller.getModel() === "DS5") {
-    button.style.display = 'block';
-  } else {
-    button.style.display = 'none';
-    adaptiveTriggerEnabled = false;
-  }
-}
-
-/**
- * Test haptic feedback vibration for 3 seconds
- */
-async function test_haptic_feedback() {
-  const button = document.getElementById('haptic-feedback-btn');
-  const icon = document.getElementById('haptic-feedback-icon');
-  const text = document.getElementById('haptic-feedback-text');
-
-  button.disabled = true;
-
-  // Update UI to show vibration is active
-  button.className = 'btn btn-warning ds-btn ds-i18n';
-  icon.className = 'fas fa-mobile-alt fa-shake';
-  text.textContent = l("Vibrating...");
-
-  // Set vibration for 3 seconds (medium intensity on both motors)
-  await controller.setVibration(255, 255, 3000, ({success}) => {
-    button.className = 'btn btn-secondary ds-btn ds-i18n';
-    icon.className = 'fas fa-mobile-alt';
-    text.textContent = l("Test Haptic Feedback");
-    button.disabled = false;
-  });
-}
-
-/**
- * Test speaker tone by playing a 1-second tone through the controller's speaker
- */
-async function test_speaker_tone() {
-  const button = document.getElementById('speaker-tone-btn');
-  const icon = document.getElementById('speaker-tone-icon');
-  const text = document.getElementById('speaker-tone-text');
-
-  button.disabled = true;
-
-  // Update UI to show tone is playing
-  button.className = 'btn btn-warning ds-btn ds-i18n';
-  icon.className = 'fas fa-volume-up fa-bounce';
-  text.textContent = l("Playing tone...");
-
-  // Set speaker tone for 1 second
-  await controller.setSpeakerTone(100, ({success}) => {
-    button.className = 'btn btn-secondary ds-btn ds-i18n';
-    icon.className = 'fas fa-volume-up';
-    text.textContent = l("Test Speaker Tone");
-    button.disabled = false;
-  });
-}
-
-/**
- * Test microphone by monitoring audio input levels and asking user to blow into it
- */
-async function test_microphone() {
-  const button = document.getElementById('microphone-test-btn');
-  const icon = document.getElementById('microphone-test-icon');
-  const text = document.getElementById('microphone-test-text');
-
-  button.disabled = true;
-
-  try {
-    // Update UI to show microphone test is starting
-    button.className = 'btn btn-info ds-btn ds-i18n';
-    icon.className = 'fas fa-microphone fa-pulse';
-    text.textContent = l("Starting microphone test...");
-
-    // Request microphone access
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      audio: {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false
-      } 
-    });
-
-    // Create audio context and analyzer
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyzer = audioContext.createAnalyser();
-
-    analyzer.fftSize = 256;
-    analyzer.smoothingTimeConstant = 0.8;
-    source.connect(analyzer);
-
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    // Update UI to show listening state
-    button.className = 'btn btn-success ds-btn ds-i18n';
-    icon.className = 'fas fa-microphone fa-pulse';
-    text.textContent = l("Blow into the microphone...");
-
-    let detectionCount = 0;
-    let isDetecting = false;
-    const testDuration = 10000; // 10 seconds
-    const startTime = Date.now();
-
-    const checkAudioLevel = () => {
-      if (Date.now() - startTime > testDuration) {
-        // Test timeout
-        cleanup();
-        button.className = 'btn btn-outline-secondary ds-btn ds-i18n';
-        icon.className = 'fas fa-microphone';
-        text.textContent = l("Test completed - Try again");
-        button.disabled = false;
-        return;
-      }
-
-      analyzer.getByteFrequencyData(dataArray);
-
-      // Calculate average volume level
-      let sum = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i];
-      }
-      const average = sum / bufferLength;
-
-      // Detect significant audio input (blowing into mic)
-      const threshold = 30; // Adjust this value as needed
-      if (average > threshold) {
-        if (!isDetecting) {
-          isDetecting = true;
-          detectionCount++;
-
-          // Update UI to show detection
-          button.className = 'btn btn-warning ds-btn ds-i18n';
-          icon.className = 'fas fa-microphone fa-bounce';
-          text.textContent = l("Microphone input detected!") + ` (${detectionCount})`;
-
-          // Provide haptic feedback if available
-          if (controller?.isConnected() && controller.getModel() === "DS5") {
-            controller.setVibration(100, 100, 200);
-          }
-        }
-      } else {
-        if (isDetecting) {
-          isDetecting = false;
-          // Return to listening state
-          button.className = 'btn btn-success ds-btn ds-i18n';
-          icon.className = 'fas fa-microphone fa-pulse';
-          text.textContent = l("Blow into the microphone...");
-        }
-      }
-
-      // Continue monitoring
-      requestAnimationFrame(checkAudioLevel);
-    };
-
-    const cleanup = () => {
-      // Stop all tracks
-      stream.getTracks().forEach(track => track.stop());
-      // Close audio context
-      if (audioContext.state !== 'closed') {
-        audioContext.close();
-      }
-    };
-
-    // Start monitoring
-    checkAudioLevel();
-
-    // Auto-stop after test duration
-    setTimeout(() => {
-      cleanup();
-      if (detectionCount > 0) {
-        button.className = 'btn btn-success ds-btn ds-i18n';
-        icon.className = 'fas fa-microphone fa-check';
-        text.textContent = l("Microphone test passed!") + ` (${detectionCount} detections)`;
-      } else {
-        button.className = 'btn btn-outline-secondary ds-btn ds-i18n';
-        icon.className = 'fas fa-microphone';
-        text.textContent = l("No input detected - Try again");
-      }
-      button.disabled = false;
-    }, testDuration);
-
-  } catch (error) {
-    console.error('Microphone test error:', error);
-
-    // Update UI to show error
-    button.className = 'btn btn-danger ds-btn ds-i18n';
-    icon.className = 'fas fa-microphone-slash';
-
-    if (error.name === 'NotAllowedError') {
-      text.textContent = l("Microphone access denied");
-    } else if (error.name === 'NotFoundError') {
-      text.textContent = l("No microphone found");
-    } else {
-      text.textContent = l("Microphone test failed");
-    }
-
-    button.disabled = false;
-
-    // Reset button after 3 seconds
-    setTimeout(() => {
-      button.className = 'btn btn-secondary ds-btn ds-i18n';
-      icon.className = 'fas fa-microphone';
-      text.textContent = l("Test Microphone");
-    }, 3000);
-  }
-}
-
-/**
- * Update haptic feedback button visibility based on controller type
- */
-function updateHapticFeedbackButtonVisibility() {
-  const button = document.getElementById('haptic-feedback-btn');
-  const model = controller?.getModel();
-  const supported = (controller?.isConnected() && model === "DS5");
-  button.style.display = supported ? 'block' : 'none';
-}
-
-/**
- * Update speaker tone button visibility based on controller type
- */
-function updateSpeakerToneButtonVisibility() {
-  const button = document.getElementById('speaker-tone-btn');
-  const model = controller?.getModel();
-  const supported = (controller?.isConnected() && model === "DS5");
-  button.style.display = supported ? 'block' : 'none';
-}
-
-/**
- * Update microphone test button visibility based on controller type
- */
-function updateMicrophoneTestButtonVisibility() {
-  const button = document.getElementById('microphone-test-btn');
-  const model = controller?.getModel();
-  const supported = (controller?.isConnected() && model === "DS5");
-  button.style.display = supported ? 'block' : 'none';
-}
 
 
 // Export functions to global scope for HTML onclick handlers
@@ -1311,10 +985,7 @@ window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
 window.board_model_info = board_model_info;
 window.edge_color_info = edge_color_info;
-window.toggle_adaptive_trigger = toggle_adaptive_trigger;
-window.test_haptic_feedback = test_haptic_feedback;
-window.test_speaker_tone = test_speaker_tone;
-window.test_microphone = test_microphone;
+window.show_quick_test_modal = () => show_quick_test_modal(controller, { l });
 
 // Auto-initialize the application when the module loads
 gboot();

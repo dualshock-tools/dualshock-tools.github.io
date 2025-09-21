@@ -1,0 +1,173 @@
+<!-- Quick Test Modal -->
+<div class="modal fade" id="quickTestModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="quickTestModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="quickTestModalLabel">Quick Test</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="ds-i18n mb-3">Run through these tests to verify your controller's functionality. Click on each test to expand and follow the instructions.</p>
+        <div class="alert alert-info mb-4" id="quick-test-instructions">
+          <i class="fas fa-gamepad me-2"></i>
+          <span class="ds-i18n" id="quick-test-instructions-text">Press <kbd>Square</kbd> to begin</span>
+        </div>
+        
+        <div class="accordion" id="quickTestAccordion">
+          <!-- USB Connector Test -->
+          <div class="accordion-item" id="usb-test-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#usb-test-collapse" aria-expanded="false" aria-controls="usb-test-collapse">
+                <div class="d-flex align-items-center w-100">
+                  <i class="fas fa-usb me-3"></i>
+                  <span class="flex-grow-1 ds-i18n">USB Connector Test</span>
+                  <span class="badge bg-secondary me-2" id="usb-test-status">Not tested</span>
+                </div>
+              </button>
+            </h2>
+            <div id="usb-test-collapse" class="accordion-collapse collapse" data-bs-parent="#quickTestAccordion">
+              <div class="accordion-body">
+                <p class="ds-i18n">This test checks the reliability of the USB port.</p>
+                <p class="ds-i18n"><strong>Instructions:</strong> Wiggle the USB cable to see if the controller disconnects.</p>
+                <div class="alert alert-warning mb-3">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  <span class="ds-i18n">Be gentle avoid damage.</span>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-success" id="usb-pass-btn" onclick="markTestResult('usb', true)">
+                    <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+                  </button>
+                  <button type="button" class="btn btn-danger" id="usb-fail-btn" onclick="markTestResult('usb', false)">
+                    <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Haptic Vibration Test -->
+          <div class="accordion-item" id="haptic-test-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#haptic-test-collapse" aria-expanded="false" aria-controls="haptic-test-collapse">
+                <div class="d-flex align-items-center w-100">
+                  <i class="fas fa-mobile-alt me-3"></i>
+                  <span class="flex-grow-1 ds-i18n">Haptic Vibration Test</span>
+                  <span class="badge bg-secondary me-2" id="haptic-test-status">Not tested</span>
+                </div>
+              </button>
+            </h2>
+            <div id="haptic-test-collapse" class="accordion-collapse collapse" data-bs-parent="#quickTestAccordion">
+              <div class="accordion-body">
+                <p class="ds-i18n">This test will activate the controller's vibration motors for 3 seconds.</p>
+                <p class="ds-i18n"><strong>Instructions:</strong> Feel for vibration in the controller.</p>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-success" id="haptic-pass-btn" onclick="markTestResult('haptic', true)">
+                    <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+                  </button>
+                  <button type="button" class="btn btn-danger" id="haptic-fail-btn" onclick="markTestResult('haptic', false)">
+                    <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Adaptive Trigger Test -->
+          <div class="accordion-item" id="adaptive-test-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#adaptive-test-collapse" aria-expanded="false" aria-controls="adaptive-test-collapse">
+                <div class="d-flex align-items-center w-100">
+                  <i class="fas fa-hand-pointer me-3"></i>
+                  <span class="flex-grow-1 ds-i18n">Adaptive Trigger Test</span>
+                  <span class="badge bg-secondary me-2" id="adaptive-test-status">Not tested</span>
+                </div>
+              </button>
+            </h2>
+            <div id="adaptive-test-collapse" class="accordion-collapse collapse" data-bs-parent="#quickTestAccordion">
+              <div class="accordion-body">
+                <p class="ds-i18n">This test will enable heavy resistance on both L2 and R2 triggers.</p>
+                <p class="ds-i18n"><strong>Instructions:</strong> Press L2 and R2 triggers to feel the trigger resistance.</p>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-success" id="adaptive-pass-btn" onclick="markTestResult('adaptive', true)">
+                    <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+                  </button>
+                  <button type="button" class="btn btn-danger" id="adaptive-fail-btn" onclick="markTestResult('adaptive', false)">
+                    <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speaker Test -->
+          <div class="accordion-item" id="speaker-test-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#speaker-test-collapse" aria-expanded="false" aria-controls="speaker-test-collapse">
+                <div class="d-flex align-items-center w-100">
+                  <i class="fas fa-volume-up me-3"></i>
+                  <span class="flex-grow-1 ds-i18n">Speaker Test</span>
+                  <span class="badge bg-secondary me-2" id="speaker-test-status">Not tested</span>
+                </div>
+              </button>
+            </h2>
+            <div id="speaker-test-collapse" class="accordion-collapse collapse" data-bs-parent="#quickTestAccordion">
+              <div class="accordion-body">
+                <p class="ds-i18n">This test will play a tone through the controller's built-in speaker.</p>
+                <p class="ds-i18n"><strong>Instructions:</strong> Listen for a tone from the controller speaker.</p>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-success" id="speaker-pass-btn" onclick="markTestResult('speaker', true)">
+                    <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+                  </button>
+                  <button type="button" class="btn btn-danger" id="speaker-fail-btn" onclick="markTestResult('speaker', false)">
+                    <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Microphone Test -->
+          <div class="accordion-item" id="microphone-test-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#microphone-test-collapse" aria-expanded="false" aria-controls="microphone-test-collapse">
+                <div class="d-flex align-items-center w-100">
+                  <i class="fas fa-microphone me-3"></i>
+                  <span class="flex-grow-1 ds-i18n">Microphone Test</span>
+                  <span class="badge bg-secondary me-2" id="microphone-test-status">Not tested</span>
+                </div>
+              </button>
+            </h2>
+            <div id="microphone-test-collapse" class="accordion-collapse collapse" data-bs-parent="#quickTestAccordion">
+              <div class="accordion-body">
+                <p class="ds-i18n">This test will monitor the controller's microphone input levels.</p>
+                <p class="ds-i18n"><strong>Instructions:</strong> Blow gently into the controller's microphone. You should see the audio level indicator respond.</p>
+                <div class="mb-3" id="mic-level-container" style="display: none;">
+                  <label class="form-label ds-i18n">Microphone Level:</label>
+                  <div class="progress">
+                    <div class="progress-bar bg-info" role="progressbar" id="mic-level-bar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                  <button type="button" class="btn btn-success" id="microphone-pass-btn" onclick="markTestResult('microphone', true)">
+                    <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+                  </button>
+                  <button type="button" class="btn btn-danger" id="microphone-fail-btn" onclick="markTestResult('microphone', false)">
+                    <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <h6 class="ds-i18n">Test Summary:</h6>
+          <div id="test-summary" class="text-muted ds-i18n">No tests completed yet.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

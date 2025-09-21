@@ -150,21 +150,9 @@
                 <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calibrate_range()">Calibrate stick range</button>
                 <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
                 <button id="btnmcs" type="button" class="btn btn-outline-secondary ds-btn ds-i18n" onclick="auto_calibrate_stick_centers()">Fast calibrate stick center (OLD)</button>
-                <button type="button" class="btn btn-info ds-btn ds-i18n" onclick="toggle_adaptive_trigger()" id="adaptive-trigger-btn" style="display: none;">
-                  <i class="fas fa-hand-pointer" id="adaptive-trigger-icon"></i>&nbsp;&nbsp;
-                  <span id="adaptive-trigger-text">Enable Adaptive Trigger</span>
-                </button>
-                <button type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="test_haptic_feedback()" id="haptic-feedback-btn" style="display: none;">
-                  <i class="fas fa-mobile-alt" id="haptic-feedback-icon"></i>&nbsp;&nbsp;
-                  <span id="haptic-feedback-text">Test Haptic Feedback</span>
-                </button>
-                <button type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="test_speaker_tone()" id="speaker-tone-btn" style="display: none;">
-                  <i class="fas fa-volume-up" id="speaker-tone-icon"></i>&nbsp;&nbsp;
-                  <span id="speaker-tone-text">Test Speaker Tone</span>
-                </button>
-                <button type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="test_microphone()" id="microphone-test-btn" style="display: none;">
-                  <i class="fas fa-microphone" id="microphone-test-icon"></i>&nbsp;&nbsp;
-                  <span id="microphone-test-text">Test Microphone</span>
+                <button type="button" class="btn btn-outline-info ds-btn ds-i18n" onclick="show_quick_test_modal()" id="quick-test-btn" style="display: none;">
+                  <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
+                  <span id="quick-test-text">Quick Test</span>
                 </button>
                 <hr>
                 <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()" id="resetBtn">Save changes permanently</button>

@@ -349,19 +349,20 @@ class ControllerManager {
     //   }
     // }
 
-    return await this.currentController.setAdaptiveTrigger(leftPreset, rightPreset);
+    return await this.currentController?.setAdaptiveTrigger(leftPreset, rightPreset);
   }
 
   /**
    * Set vibration motors for haptic feedback (DS5 only)
-   * @param {number} leftMotor - Left motor intensity (0-255)
-   * @param {number} rightMotor - Right motor intensity (0-255)
-   * @param {number} duration - Duration in milliseconds (optional)
+   * @param {Object} options - Vibration options
+   * @param {number} options.heavyLeft - Left motor intensity (0-255)
+   * @param {number} options.lightRight - Right motor intensity (0-255)
+   * @param {number} options.duration - Duration in milliseconds (optional)
    * @param {Function} doneCb - Callback function called when vibration ends (optional)
    */
-  async setVibration(leftMotor, rightMotor, duration = 0, doneCb = ({success}) => {}) {
+  async setVibration({heavyLeft, lightRight, duration = 0}, doneCb = ({success}) => {}) {
     try {
-      await this.currentController.setVibration(leftMotor, rightMotor);
+      await this.currentController.setVibration(heavyLeft, lightRight);
 
       // If duration is specified, automatically turn off vibration after the duration
       if (duration > 0) {

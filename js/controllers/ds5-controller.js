@@ -661,16 +661,16 @@ class DS5Controller extends BaseController {
 
   /**
    * Set vibration motors for haptic feedback
-   * @param {number} leftMotor - Left motor intensity (0-255)
-   * @param {number} rightMotor - Right motor intensity (0-255)
+   * @param {number} heavyLeft - Left motor intensity (0-255)
+   * @param {number} lightRight - Right motor intensity (0-255)
    */
-  async setVibration(leftMotor = 0, rightMotor = 0) {
+  async setVibration(heavyLeft = 0, lightRight = 0) {
     try {
       const { validFlag0 } = this.currentOutputState;
       const outputStruct = new DS5OutputStruct({
         ...this.currentOutputState,
-        bcVibrationLeft: Math.max(0, Math.min(255, leftMotor)),
-        bcVibrationRight: Math.max(0, Math.min(255, rightMotor)),
+        bcVibrationLeft: Math.max(0, Math.min(255, heavyLeft)),
+        bcVibrationRight: Math.max(0, Math.min(255, lightRight)),
         validFlag0: validFlag0 | DS5_VALID_FLAG0.LEFT_VIBRATION | DS5_VALID_FLAG0.RIGHT_VIBRATION, // Update both vibration motors
       });
       await this.sendOutputReport(outputStruct.pack(), 'set vibration');

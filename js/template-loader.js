@@ -82,10 +82,11 @@ export async function loadAllTemplates() {
   const edgeProgressModalHtml = await loadTemplate('edge-progress-modal');
   const edgeModalHtml = await loadTemplate('edge-modal');
   const donateModalHtml = await loadTemplate('donate-modal');
+  const quickTestModalHtml = await loadTemplate('quick-test-modal');
 
   // Create modals container
   const modalsContainer = document.createElement('div');
   modalsContainer.id = 'modals-container';
-  modalsContainer.innerHTML = faqModalHtml + popupModalHtml + finetuneModalHtml + calibCenterModalHtml + welcomeModalHtml + calibrateModalHtml + rangeModalHtml + edgeProgressModalHtml + edgeModalHtml + donateModalHtml;
+  modalsContainer.innerHTML = faqModalHtml + popupModalHtml + finetuneModalHtml + calibCenterModalHtml + welcomeModalHtml + calibrateModalHtml + rangeModalHtml + edgeProgressModalHtml + edgeModalHtml + donateModalHtml + quickTestModalHtml;
   document.body.appendChild(modalsContainer);
 }

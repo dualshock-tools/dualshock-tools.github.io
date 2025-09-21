@@ -250,15 +250,15 @@
     "Test the Haptic Motors": "Перевірити вібромотори",
     "Tests": "Тести",
     "The motor strength will match how hard you press the trigger": "Потужність вібрації залежатиме від сили натискання на тригер",
-    "Center (L1)": "Центр (L1)",
-    "Circularity (R1)": "Округовість (R1)",
+    "Center (L1)": "Центрування (L1)",
+    "Circularity (R1)": "Округлість (R1)",
     "Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. Flick it and adjust it again if it is off center or flickers.": "Перемістіть стік, щоб вибрати його для налаштування, потім, не торкаючись стіка, використовуйте кнопки D-pad для регулювання центральної точки. Різко відпустіть і налаштуйте знову, якщо стік зміщений від центру або тремтить.",
     "Please release the stick to center position before adjusting with D-pad buttons.": "Будь ласка, відпустіть стік у центральне положення перед регулюванням за допомогою кнопок D-pad.",
     "Press the D-pad or face buttons in the direction you want the stick position to move.": "Натисніть D-pad або передні кнопки в напрямку, куди потрібно змістити положення стіка.",
     "Push the stick straight up/down/left/right as far as possible.": "Відхиліть стік максимально вгору/вниз/вліво/вправо.",
     "Show raw numbers": "Показати необроблені значення",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Утримуючи стік, який потрібно налаштувати, максимально вгору/вниз/вліво/вправо, <em>стежте за виділеним значенням під колом</em>, потім використовуйте кнопки D-pad, щоб відрегулювати значення до ±0.99 (трохи нижче за ±1.00).",
-    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "Пристрій під’єднано через Bluetooth. Від’єднайте його та під’єднайте знову за допомогою USB-кабелю.",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "Пристрій під’єднано через Bluetooth. Від’єднайте його та під’єднайте знову, але вже за допомогою USB-кабелю.",
     "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "Ваш пристрій може бути не оригінальним контролером Sony. Якщо це не підробка, повідомте про цю проблему.",
     "": ""
 }

@@ -668,6 +668,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {
     quicktest_handle_controller_input(changes);
+    return;
   }
 
   const current_active_tab = get_current_main_tab();
@@ -985,7 +986,11 @@ window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
 window.board_model_info = board_model_info;
 window.edge_color_info = edge_color_info;
-window.show_quick_test_modal = () => show_quick_test_modal(controller, { l });
+window.show_quick_test_modal = () => {
+  show_quick_test_modal(controller, { l }).catch(error => {
+    throw new Error("Failed to show quick test modal", { cause: error });
+  });
+};
 
 // Auto-initialize the application when the module loads
 gboot();

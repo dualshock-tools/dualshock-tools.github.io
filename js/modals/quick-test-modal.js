@@ -2,14 +2,37 @@
 
 const ACCORDION_ELEMENTS = [
   'usb-test-collapse',
+  'buttons-test-collapse',
   'haptic-test-collapse',
   'adaptive-test-collapse',
   'speaker-test-collapse',
   'microphone-test-collapse'
 ];
 
-const TEST_SEQUENCE = ['usb', 'haptic', 'adaptive', 'speaker', 'microphone'];
+const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'speaker', 'microphone'];
 
+const BUTTONS = ['triangle', 'cross', 'circle', 'square', 'l1', 'r1', 'l2', 'r2', 'l3', 'r3', 'up', 'down', 'left', 'right', 'create', 'touchpad', 'options', 'ps', 'mute'];
+const BUTTON_INFILL_MAPPING = {
+  'triangle': 'qt-Triangle_infill',
+  'cross': 'qt-Cross_infill',
+  'circle': 'qt-Circle_infill',
+  'square': 'qt-Square_infill',
+  'l1': 'qt-L1_infill',
+  'r1': 'qt-R1_infill',
+  'l2': 'qt-L2_infill',
+  'r2': 'qt-R2_infill',
+  'l3': 'qt-L3_infill',
+  'r3': 'qt-R3_infill',
+  'up': 'qt-Up_infill',
+  'down': 'qt-Down_infill',
+  'left': 'qt-Left_infill',
+  'right': 'qt-Right_infill',
+  'create': 'qt-Create_infill',
+  'touchpad': 'qt-Trackpad_infill',
+  'options': 'qt-Options_infill',
+  'ps': 'qt-PS_infill',
+  'mute': 'qt-Mute_infill'
+};
 /**
  * Quick Test Modal Class
  * Handles controller feature testing including haptic feedback, adaptive triggers, speaker, and microphone functionality
@@ -19,16 +42,7 @@ export class QuickTestModal {
     this.controller = controllerInstance;
     this.l = l;
 
-    // Test state
-    this.state = {
-      haptic: null,
-      adaptive: null,
-      speaker: null,
-      microphone: null,
-      microphoneStream: null,
-      microphoneContext: null,
-      microphoneMonitoring: false
-    };
+    this.resetAllTests();
 
     // Bind event handlers to maintain proper context
     this._boundAccordionShown = (event) => this._handleAccordionShown(event);
@@ -40,6 +54,24 @@ export class QuickTestModal {
     };
 
     this._initEventListeners();
+  }
+
+  _initializeState() {
+    this.state = {
+      usb: null,
+      buttons: null,
+      haptic: null,
+      adaptive: null,
+      speaker: null,
+      microphone: null,
+      microphoneStream: null,
+      microphoneContext: null,
+      microphoneMonitoring: false,
+      buttonPressCount: {},
+      longPressTimers: {},
+      longPressThreshold: 400,
+      isTransitioning: false,
+    };
   }
 
   /**
@@ -68,7 +100,9 @@ export class QuickTestModal {
     const activeTest = this._getCurrentActiveTest();
     const allTestsCompleted = this._areAllTestsCompleted();
 
-    if (activeTest) {
+    if (activeTest === 'buttons') {
+      $instructionsText.html(this.l('Test all buttons, or long-press <kbd>Square</kbd> to Pass and <kbd>Cross</kbd> to Fail'));
+    } else if (activeTest) {
       $instructionsText.html(this.l('Press <kbd>Square</kbd> to Pass or <kbd>Cross</kbd> to Fail'));
     } else if (allTestsCompleted) {
       $instructionsText.html(this.l('Press <kbd>Circle</kbd> to close, or <kbd>Square</kbd> to start over'));
@@ -122,8 +156,89 @@ export class QuickTestModal {
   /**
    * Open the Quick Test modal
    */
-  open() {
+  async open() {
+    await this._initSvgController();
     bootstrap.Modal.getOrCreateInstance('#quickTestModal').show();
+  }
+
+  /**
+   * Initialize SVG controller for the quick test modal
+   */
+  async _initSvgController() {
+    const svgContainer = document.getElementById('quick-test-controller-svg-placeholder');
+    if (!svgContainer) {
+      console.warn('Quick test SVG container not found');
+      return;
+    }
+
+    let svgContent;
+
+    // Check if we have bundled assets (production mode)
+    if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg['dualshock-controller.svg']) {
+      svgContent = window.BUNDLED_ASSETS.svg['dualshock-controller.svg'];
+    } else {
+      // Fallback to fetching from server (development mode)
+      const response = await fetch('assets/dualshock-controller.svg');
+      if (!response.ok) {
+        throw new Error('Failed to load controller SVG');
+      }
+      svgContent = await response.text();
+    }
+
+    // Modify SVG content to use unique IDs for the quick test modal
+    svgContent = svgContent.replace(/id="([^"]+)"/g, 'id="qt-$1"');
+
+    svgContainer.innerHTML = svgContent;
+
+    // Apply initial styling to the SVG
+    const svg = svgContainer.querySelector('svg');
+    if (svg) {
+      svg.id = 'qt-controller-svg';
+      svg.style.width = '100%';
+      svg.style.height = 'auto';
+    }
+
+    // Store reference to the SVG container for scoped queries
+    this.svgContainer = svgContainer;
+
+    const lightBlue = '#7ecbff';
+    const midBlue = '#3399cc';
+    const dualshock = this._getQuickTestElement('qt-Controller');
+    this._setSvgGroupColor(dualshock, lightBlue);
+
+    ['qt-Button_outlines', 'qt-L3_outline', 'qt-R3_outline', 'qt-Trackpad_outline'].forEach(id => {
+      const group = this._getQuickTestElement(id);
+      this._setSvgGroupColor(group, midBlue);
+    });
+
+    this._resetButtonColors();
+  }
+
+  /**
+   * Get element from the quick test modal's SVG (scoped to avoid conflicts with main page)
+   */
+  _getQuickTestElement(id) {
+    if (!this.svgContainer) {
+      return null;
+    }
+    return this.svgContainer.querySelector(`#${id}`);
+  }
+
+  /**
+   * Set color for SVG group elements
+   */
+  _setSvgGroupColor(group, color) {
+    if (group) {
+      const elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+      elements.forEach(el => {
+        // Set up a smooth transition for fill and stroke if not already set
+        if (!el.style.transition) {
+          el.style.transition = 'fill 0.10s, stroke 0.10s';
+        }
+        el.setAttribute('fill', color);
+        el.setAttribute('stroke', color);
+      });
+    }
   }
 
   /**
@@ -140,6 +255,12 @@ export class QuickTestModal {
     // Small delay to ensure UI is fully expanded
     setTimeout(() => {
       switch (testType) {
+        case 'usb':
+          // USB test is manual - no auto-start needed
+          break;
+        case 'buttons':
+          this._startButtonsTest();
+          break;
         case 'haptic':
           this._startHapticTest();
           break;
@@ -165,6 +286,12 @@ export class QuickTestModal {
 
     // Stop ongoing tests when section is collapsed
     switch (testType) {
+      case 'usb':
+        // USB test is manual - no stop needed
+        break;
+      case 'buttons':
+        this._stopButtonsTest();
+        break;
       case 'adaptive':
         this._stopAdaptiveTest();
         break;
@@ -177,6 +304,111 @@ export class QuickTestModal {
     setTimeout(() => {
       this._updateInstructions();
     }, 300);
+  }
+
+  /**
+   * Start buttons test
+   */
+  _startButtonsTest() {
+    this._startIconAnimation('buttons');
+
+    // Initialize button press counts only if not already initialized
+    if (!this.state.buttonPressCount || Object.keys(this.state.buttonPressCount).length === 0) {
+      this.state.buttonPressCount = {};
+      BUTTONS.forEach(button => {
+        this.state.buttonPressCount[button] = 0;
+      });
+    }
+
+    // Check for any buttons that are already stuck pressed when the test starts
+    // and draw them as pressed
+    BUTTONS.forEach(button => {
+      if (this.controller.button_states[button] === true) {
+        this._setButtonPressed(button, true);
+      }
+    });
+  }
+
+  /**
+   * Stop buttons test
+   */
+  _stopButtonsTest() {
+    this._stopIconAnimation('buttons');
+
+    // Clear any active long-press timers
+    this._clearAllLongPressTimers();
+  }
+
+  /**
+   * Reset all button colors to light blue
+   */
+  _resetButtonColors() {
+    Object.keys(BUTTON_INFILL_MAPPING).forEach(button => {
+      const buttonElement = this._getQuickTestElement(BUTTON_INFILL_MAPPING[button]);
+      this._setSvgGroupColor(buttonElement, 'orange');
+    });
+  }
+
+  /**
+   * Update button color based on press count
+   */
+  _updateButtonColor(button) {
+    const count = this.state.buttonPressCount[button] || 0;
+    const buttonElement = this._getQuickTestElement(BUTTON_INFILL_MAPPING[button]);
+
+    if (buttonElement) {
+      let color;
+      // Special buttons (create, options, mute, ps) go straight to green on first press
+      if (['create', 'options', 'mute', 'ps'].includes(button)) {
+        color = ['orange'][count] || '#16c016ff';
+      } else {
+        // Other buttons follow the 3-press sequence
+        color = ['orange', '#a5c9fcff', '#287ffaff'][count] || '#16c016ff';
+      }
+      this._setSvgGroupColor(buttonElement, color);
+    }
+  }
+
+  /**
+   * Check if all buttons have been pressed the required number of times
+   */
+  _checkButtonsTestComplete() {
+    const allPressed = BUTTONS.every(button => {
+      const count = this.state.buttonPressCount[button] || 0;
+      // Special buttons (create, options, mute, ps) only need 1 press
+      const isSpecialButton = ['create', 'options', 'mute', 'ps'].includes(button);
+      return isSpecialButton ? count >= 1 : count >= 3;
+    });
+    if (allPressed) {
+      // Auto-pass the test
+      setTimeout(() => {
+        this.markTestResult('buttons', true);
+      }, 500);
+    }
+  }
+
+  /**
+   * Reset the buttons test to initial state
+   */
+  resetButtonsTest() {
+    // Reset button press counts
+    this.state.buttonPressCount = {};
+    BUTTONS.forEach(button => {
+      this.state.buttonPressCount[button] = 0;
+    });
+
+    // Clear any active long-press timers
+    this._clearAllLongPressTimers();
+
+    // Reset all button colors to orange (initial state)
+    this._resetButtonColors();
+
+    // Check for any buttons that are already stuck pressed and draw them as pressed
+    BUTTONS.forEach(button => {
+      if (this.controller.button_states[button] === true) {
+        this._setButtonPressed(button, true);
+      }
+    });
   }
 
   /**
@@ -209,7 +441,7 @@ export class QuickTestModal {
    */
   async _startSpeakerTest() {
     this._startIconAnimation('speaker');
-    await this.controller.setSpeakerTone(100);
+    await this.controller.setSpeakerTone(300);
     setTimeout(() => { this._stopIconAnimation('speaker'); }, 1000);
   }
 
@@ -373,12 +605,13 @@ export class QuickTestModal {
       }
     });
 
+    const numTests = TEST_SEQUENCE.length;
     if (completed === 0) {
       $summary.text(this.l('No tests completed yet.'));
       $summary.attr('class', 'text-muted ds-i18n');
     } else {
-      $summary.text(this.l(`${completed}/4 tests completed. ${passed} passed, ${completed - passed} failed.`));
-      $summary.attr('class', completed === 4 ? 'text-success' : 'text-info');
+      $summary.text(this.l(`${completed}/${numTests} tests completed. ${passed} passed, ${completed - passed} failed.`));
+      $summary.attr('class', completed === numTests ? 'text-success' : 'text-info');
     }
   }
 
@@ -425,31 +658,149 @@ export class QuickTestModal {
    * Handle controller input for test navigation and control
    */
   handleControllerInput(changes) {
+    if(this.state.isTransitioning) return;
+
     const activeTest = this._getCurrentActiveTest();
 
-    // Handle Cross button (Start test sequence OR mark test as passed)
+    // If buttons test is active, track button presses
+    if (activeTest === 'buttons') {
+      this._trackButtonPresses(changes);
+      return;
+    }
+
+    // Helper function to handle button press with transition
+    const handleButtonPress = (action) => {
+      this._setTransitioning();
+      action();
+    };
+
+    // Handle button presses
     if (changes.square === true) {
-      if (!activeTest) {
-        this._startTestSequence();
+      handleButtonPress(() => {
+        if (!activeTest) {
+          this._startTestSequence();
+        } else {
+          this.markTestResult(activeTest, true);
+        }
+      });
+    } else if (activeTest && changes.cross === true) {
+      handleButtonPress(() => this.markTestResult(activeTest, false));
+    } else if (changes.triangle === true) {
+      handleButtonPress(() => this._moveToPreviousTest());
+    } else if (changes.circle === true) {
+      handleButtonPress(() => bootstrap.Modal.getOrCreateInstance('#quickTestModal').hide());
+    }
+  }
+
+  /**
+   * Set transitioning state to prevent rapid button presses
+   */
+  _setTransitioning() {
+    this.state.isTransitioning = true;
+    setTimeout(() => {
+      this.state.isTransitioning = false;
+    }, 750);
+  }
+
+  /**
+   * Track button presses for the buttons test
+   */
+  _trackButtonPresses(changes) {
+    BUTTONS.forEach(button => {
+      const handleLongpress = ['cross', 'square', 'triangle'].includes(button);
+      if (changes[button] === true) {
+        // Button pressed - increment count and show dark blue infill
+        this.state.buttonPressCount[button]++;
+        this._setButtonPressed(button, true);
+
+        // Start long-press timer for square and cross buttons
+        if (handleLongpress) {
+          this._startLongPressTimer(button);
+        }
+      } else if (changes[button] === false) {
+        // Button released - restore appropriate color based on press count
+        this._setButtonPressed(button, false);
+
+        // Clear long-press timer for square and cross buttons
+        if (handleLongpress) {
+          this._clearLongPressTimer(button);
+        }
+      }
+    });
+
+    // Check if test is complete
+    this._checkButtonsTestComplete();
+  }
+
+  /**
+   * Set button pressed state and update visual appearance
+   */
+  _setButtonPressed(button, isPressed) {
+    const buttonElement = this._getQuickTestElement(BUTTON_INFILL_MAPPING[button]);
+    if (buttonElement) {
+      if (isPressed) {
+        // Show dark blue infill while pressed
+        this._setSvgGroupColor(buttonElement, 'rgba(0, 0, 120, 1)');
       } else {
-        this.markTestResult(activeTest, true);
+        // Restore color based on press count when released
+        this._updateButtonColor(button);
+      }
+    }
+  }
+
+  /**
+   * Start long-press timer for a button
+   */
+  _startLongPressTimer(button) {
+    if(this.state.isTransitioning) return;
+
+    // Clear any existing timer for this button
+    this._clearLongPressTimer(button);
+
+    // Start new timer
+    this.state.longPressTimers[button] = setTimeout(() => {
+      this._handleLongPress(button);
+    }, this.state.longPressThreshold);
+  }
+
+  /**
+   * Clear long-press timer for a button
+   */
+  _clearLongPressTimer(button) {
+    if (this.state.longPressTimers[button]) {
+      clearTimeout(this.state.longPressTimers[button]);
+      delete this.state.longPressTimers[button];
+    }
+  }
+
+  /**
+   * Clear all active long-press timers
+   */
+  _clearAllLongPressTimers() {
+    Object.keys(this.state.longPressTimers).forEach(button => {
+      this._clearLongPressTimer(button);
+    });
+  }
+
+  /**
+   * Handle long-press action for square and cross buttons during button test
+   */
+  _handleLongPress(button) {
+    const activeTest = this._getCurrentActiveTest();
+    if (activeTest === 'buttons') {
+     this._setTransitioning();
+
+      if (button === 'square') {
+        this.markTestResult('buttons', true);
+      } else if (button === 'cross') {
+        this.markTestResult('buttons', false);
+      } else if (button === 'triangle') {
+        this._moveToPreviousTest();
       }
     }
 
-    // Handle Square button (Pass)
-    if (activeTest && changes.cross === true) {
-      this.markTestResult(activeTest, false);
-    }
-
-    // Handle Triangle button (Move to previous test)
-    if (changes.triangle === true) {
-      this._moveToPreviousTest();
-    }
-
-    // Handle Circle button (Close the modal)
-    if (changes.circle === true) {
-      bootstrap.Modal.getOrCreateInstance('#quickTestModal').hide();
-    }
+    // Clear the timer since it has been handled
+    delete this.state.longPressTimers[button];
   }
 
   /**
@@ -497,19 +848,18 @@ export class QuickTestModal {
    */
   resetAllTests() {
     // Reset state
-    this.state = {
-      haptic: null,
-      adaptive: null,
-      speaker: null,
-      microphone: null,
-      microphoneStream: null,
-      microphoneContext: null,
-      microphoneMonitoring: false
-    };
+    this._initializeState();
+
+    // Clear any active long-press timers before resetting state
+    this._clearAllLongPressTimers();
 
     // Clean up any active tests
+    this._stopButtonsTest();
     this._stopAdaptiveTest();
     this._stopMicrophoneTest();
+
+    // Reset button colors to initial state
+    this._resetButtonColors();
 
     // Reset UI
     TEST_SEQUENCE.forEach(test => {
@@ -587,13 +937,13 @@ export function quicktest_handle_controller_input(changes) {
 /**
  * Show the Quick Test modal (legacy function for backward compatibility)
  */
-export function show_quick_test_modal(controller, { l } = {}) {
+export async function show_quick_test_modal(controller, { l } = {}) {
   // Destroy any existing instance
   destroyCurrentInstance();
 
   // Create new instance
   currentQuickTestInstance = new QuickTestModal(controller, { l });
-  currentQuickTestInstance.open();
+  await currentQuickTestInstance.open();
 }
 
 // Legacy function exports for backward compatibility (used by HTML onclick handlers)
@@ -609,6 +959,13 @@ function resetAllTests() {
   }
 }
 
+function resetButtonsTest() {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance.resetButtonsTest();
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
+window.resetButtonsTest = resetButtonsTest;

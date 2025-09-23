@@ -101,13 +101,13 @@ export class QuickTestModal {
     const allTestsCompleted = this._areAllTestsCompleted();
 
     if (activeTest === 'buttons') {
-      $instructionsText.html(this.l('Test all buttons, or long-press <kbd>Square</kbd> to Pass and <kbd>Cross</kbd> to Fail'));
+      $instructionsText.html(this.l('Test all buttons, or long-press <kbd>Square</kbd> to Pass and <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
     } else if (activeTest) {
-      $instructionsText.html(this.l('Press <kbd>Square</kbd> to Pass or <kbd>Cross</kbd> to Fail'));
+      $instructionsText.html(this.l('Press <kbd>Square</kbd> to Pass, <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
     } else if (allTestsCompleted) {
       $instructionsText.html(this.l('Press <kbd>Circle</kbd> to close, or <kbd>Square</kbd> to start over'));
     } else {
-      $instructionsText.html(this.l('Press <kbd>Square</kbd> to begin'));
+      $instructionsText.html(this.l('Press <kbd>Square</kbd> to begin or <kbd>Circle</kbd> to close'));
     }
   }
 
@@ -688,7 +688,15 @@ export class QuickTestModal {
     } else if (changes.triangle === true) {
       handleButtonPress(() => this._moveToPreviousTest());
     } else if (changes.circle === true) {
-      handleButtonPress(() => bootstrap.Modal.getOrCreateInstance('#quickTestModal').hide());
+      handleButtonPress(() => {
+        if (activeTest) {
+          // Skip the current test by expanding the next one
+          this._expandNextTest(activeTest);
+        } else {
+          // Close the modal if no test is active
+          bootstrap.Modal.getOrCreateInstance('#quickTestModal').hide();
+        }
+      });
     }
   }
 
@@ -707,7 +715,7 @@ export class QuickTestModal {
    */
   _trackButtonPresses(changes) {
     BUTTONS.forEach(button => {
-      const handleLongpress = ['cross', 'square', 'triangle'].includes(button);
+      const handleLongpress = ['cross', 'square', 'triangle', 'circle'].includes(button);
       if (changes[button] === true) {
         // Button pressed - increment count and show dark blue infill
         this.state.buttonPressCount[button]++;
@@ -796,6 +804,8 @@ export class QuickTestModal {
         this.markTestResult('buttons', false);
       } else if (button === 'triangle') {
         this._moveToPreviousTest();
+      } else if (button === 'circle') {
+        this._expandNextTest(activeTest);
       }
     }
 
@@ -913,8 +923,8 @@ function destroyCurrentInstance() {
 export function updateQuickTestButtonVisibility(controller) {
   const $button = $('#quick-test-btn');
   const model = controller?.getModel();
-  const supported = (controller?.isConnected() && (model === "DS5" || model === "DS5_Edge"));
-  $button.css('display', supported ? 'block' : 'none');
+  const supported = (controller?.isConnected() && (model === "DS5" /* || model === "DS5_Edge" */));
+  $button.toggleClass('disabled', !supported);
 }
 
 /**

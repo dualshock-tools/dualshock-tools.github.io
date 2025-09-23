@@ -314,8 +314,8 @@ class DS5Controller extends BaseController {
         { key: l("FW Type"), value: "0x" + dec2hex(fwtype), cat: "fw", isExtra: true },
         { key: l("FW Series"), value: "0x" + dec2hex(swseries), cat: "fw", isExtra: true },
         { key: l("HW Model"), value: "0x" + dec2hex32(hwinfo), cat: "hw", isExtra: true },
-        { key: l("FW Version"), value: "0x" + dec2hex32(fwversion), cat: "fw" },
-        { key: l("FW Update"), value: "0x" + dec2hex(updversion), cat: "fw" },
+        { key: l("FW Version"), value: "0x" + dec2hex32(fwversion), cat: "fw", isExtra: true },
+        { key: l("FW Update"), value: "0x" + dec2hex(updversion), cat: "fw", isExtra: true },
         { key: l("FW Update Info"), value: "0x" + dec2hex8(unk), cat: "fw", isExtra: true },
         { key: l("SBL FW Version"), value: "0x" + dec2hex32(fwversion1), cat: "fw", isExtra: true },
         { key: l("Venom FW Version"), value: "0x" + dec2hex32(fwversion2), cat: "fw", isExtra: true },
@@ -334,7 +334,7 @@ class DS5Controller extends BaseController {
 
       const nv = await this.queryNvStatus();
       const bd_addr = await this.getBdAddr();
-      infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw" });
+      infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw", isExtra: true });
 
       const pending_reboot = (nv?.status === 'pending_reboot');
 

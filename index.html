@@ -137,11 +137,17 @@
               </div>
               <br>
 
-              <div class="my-3 text-center mx-3" id="controller-svg-container">
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-primary ds-btn ds-i18n mb-3" onclick="show_quick_test_modal()" id="quick-test-btn">
+                  <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
+                  <span id="quick-test-text">Quick Test</span>
+                </button>
+              </div>
+
+              <div class="text-center mx-3" id="controller-svg-container">
                 <!-- DualSense 5 Controller SVG loaded from template -->
                 <div id="controller-svg-placeholder"></div>
               </div>
-              <br>
             </div>
 
             <div class="col-md-6 col-sm-12" style="min-width: 330px;">
@@ -150,10 +156,6 @@
                 <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calibrate_range()">Calibrate stick range</button>
                 <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
                 <button id="btnmcs" type="button" class="btn btn-outline-secondary ds-btn ds-i18n" onclick="auto_calibrate_stick_centers()">Fast calibrate stick center (OLD)</button>
-                <button type="button" class="btn btn-info ds-btn ds-i18n" onclick="show_quick_test_modal()" id="quick-test-btn" style="display: none;">
-                  <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
-                  <span id="quick-test-text">Quick Test</span>
-                </button>
                 <hr>
                 <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()" id="resetBtn">Save changes permanently</button>
                 <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>

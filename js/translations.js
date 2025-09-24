@@ -11,6 +11,7 @@ const available_langs = {
   "de_de": { "name": "Deutsch", "file": "de_de.json", "direction": "ltr"},
   "es_es": { "name": "Español", "file": "es_es.json", "direction": "ltr"},
   "fr_fr": { "name": "Français", "file": "fr_fr.json", "direction": "ltr"},
+  "fa_fa": { "name": "فارسی", "file": "fa_fa.json", "direction": "rtl"},
   "hu_hu": { "name": "Magyar", "file": "hu_hu.json", "direction": "ltr"},
   "it_it": { "name": "Italiano", "file": "it_it.json", "direction": "ltr"},
   "jp_jp": { "name": "日本語", "file": "jp_jp.json", "direction": "ltr"},

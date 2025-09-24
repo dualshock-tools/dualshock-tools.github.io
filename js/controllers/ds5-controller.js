@@ -242,7 +242,7 @@ class DS5Controller extends BaseController {
       }
       return { ok: true };
     } catch(error) {
-      la("ds5_calibrate_sticks_begin_failed", {"r": e});
+      la("ds5_calibrate_sticks_begin_failed", {"r": error});
       return { ok: false, error };
     }
   }
@@ -262,7 +262,7 @@ class DS5Controller extends BaseController {
       }
       return { ok: true };
     } catch(error) {
-      la("ds5_calibrate_sticks_sample_failed", {"r": e});
+      la("ds5_calibrate_sticks_sample_failed", {"r": error});
       return { ok: false, error };
     }
   }
@@ -283,7 +283,7 @@ class DS5Controller extends BaseController {
 
       return { ok: true };
     } catch(error) {
-      la("ds5_calibrate_sticks_end_failed", {"r": e});
+      la("ds5_calibrate_sticks_end_failed", {"r": error});
       return { ok: false, error };
     }
   }
@@ -303,7 +303,7 @@ class DS5Controller extends BaseController {
       }
       return { ok: true };
     } catch(error) {
-      la("ds5_calibrate_range_begin_failed", {"r": e});
+      la("ds5_calibrate_range_begin_failed", {"r": error});
       return { ok: false, error };
     }
   }
@@ -325,7 +325,7 @@ class DS5Controller extends BaseController {
 
       return { ok: true };
     } catch(error) {
-      la("ds5_calibrate_range_end_failed", {"r": e});
+      la("ds5_calibrate_range_end_failed", {"r": error});
       return { ok: false, error };
     }
   }
@@ -348,8 +348,8 @@ class DS5Controller extends BaseController {
         return { device: 'ds5', status: 'unknown', locked: null, code: 2, raw: ret };
       }
       return { device: 'ds5', status: 'unknown', locked: null, code: ret, raw: ret };
-    } catch (e) {
-      return { device: 'ds5', status: 'error', locked: null, code: 2, error: e };
+    } catch (error) {
+      return { device: 'ds5', status: 'error', locked: null, code: 2, error };
     }
   }
 

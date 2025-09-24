@@ -189,9 +189,9 @@ class DS5EdgeController extends DS5Controller {
       }
 
       return { ok: true };
-    } catch(e) {
-      la("ds5_calibrate_sticks_end_failed", {"r": e});
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      la("ds5_calibrate_sticks_end_failed", {"r": error});
+      return { ok: false, error };
     }
   }
 
@@ -219,9 +219,9 @@ class DS5EdgeController extends DS5Controller {
       }
 
       return { ok: true };
-    } catch(e) {
-      la("ds5_calibrate_range_end_failed", {"r": e});
-      return { ok: false, error: String(e) };
+    } catch(error) {
+      la("ds5_calibrate_range_end_failed", {"r": error});
+      return { ok: false, error };
     }
   }
 

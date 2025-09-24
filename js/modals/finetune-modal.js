@@ -17,22 +17,40 @@ export class Finetune {
     this.active_stick = null; // 'left', 'right', or null
     this._centerStepSize = 5; // Default step size for center mode
     this._circularityStepSize = 5; // Default step size for circularity mode
-    
+
     // Dependencies
     this.controller = null;
     this.ll_data = null;
     this.rr_data = null;
     this.clearCircularity = null;
-    
+
     // Closure functions
     this.refresh_finetune_sticks = this._createRefreshSticksThrottled();
     this.update_finetune_warning_messages = this._createUpdateWarningMessagesClosure();
     this.flash_finetune_warning = this._createFlashWarningClosure();
-    
+
     // Continuous adjustment state
     this.continuous_adjustment = {
       initial_delay: null,
       repeat_delay: null,
+    };
+
+    // Track previous slider values for incremental adjustments
+    this._previousSliderValues = {
+      left: 0,
+      right: 0
+    };
+
+    // Store base values when slider adjustment starts
+    this._sliderBaseValues = {
+      left: null,
+      right: null
+    };
+
+    // Track slider usage state for undo functionality
+    this._sliderUsed = {
+      left: false,
+      right: false
     };
   }
 
@@ -71,7 +89,7 @@ export class Finetune {
     this._initEventListeners();
     this._restoreShowRawNumbersCheckbox();
     this._restoreStepSizeFromLocalStorage();
-  
+
     // Lock NVS before
     const nv = await this.controller.queryNvStatus();
     if(!nv.locked) {
@@ -109,6 +127,9 @@ export class Finetune {
     this._showRawNumbersChanged();
 
     this.original_data = data;
+
+    // Update error slack button states
+    this._updateErrorSlackButtonStates();
 
     this.refresh_finetune_sticks();
   }
@@ -149,6 +170,14 @@ export class Finetune {
 
     $('#finetuneModal').on('hidden.bs.modal', () => {
       console.log("Finetune modal hidden event triggered");
+      // Reset circularity sliders to zero when modal closes
+      $('#leftCircularitySlider').val(0);
+      $('#rightCircularitySlider').val(0);
+
+      // Reset slider used states
+      this._sliderUsed.left = false;
+      this._sliderUsed.right = false;
+
       destroyCurrentInstance();
     });
 
@@ -157,6 +186,62 @@ export class Finetune {
       e.preventDefault();
       const stepSize = parseInt($(e.target).data('step'));
       this.stepSize = stepSize;
+    });
+
+    // Circularity slider event listeners
+    $('#leftCircularitySlider').on('input', (e) => {
+      console.log('Left circularity slider changed to:', e.target.value);
+      this._onCircularitySliderChange('left', parseInt(e.target.value));
+    });
+
+    $('#rightCircularitySlider').on('input', (e) => {
+      console.log('Right circularity slider changed to:', e.target.value);
+      this._onCircularitySliderChange('right', parseInt(e.target.value));
+    });
+
+    // Circularity slider start event listeners (when user starts dragging)
+    $('#leftCircularitySlider').on('mousedown touchstart', (e) => {
+      this._onCircularitySliderStart('left', parseInt(e.target.value));
+    });
+
+    $('#rightCircularitySlider').on('mousedown touchstart', (e) => {
+      this._onCircularitySliderStart('right', parseInt(e.target.value));
+    });
+
+    // Circularity slider release event listeners
+    $('#leftCircularitySlider').on('change', (e) => {
+      this._onCircularitySliderRelease('left');
+    });
+
+    $('#rightCircularitySlider').on('change', (e) => {
+      this._onCircularitySliderRelease('right');
+    });
+
+    // Reset button event listeners
+    $('#leftCircularityResetBtn').on('click', () => {
+      this._resetCircularitySlider('left');
+    });
+
+    $('#rightCircularityResetBtn').on('click', () => {
+      this._resetCircularitySlider('right');
+    });
+
+    // Error slack button event listeners
+    $('#leftErrorSlackBtn').on('click', () => {
+      this._onErrorSlackButtonClick('left');
+    });
+
+    $('#rightErrorSlackBtn').on('click', () => {
+      this._onErrorSlackButtonClick('right');
+    });
+
+    // Error slack undo button event listeners
+    $('#leftErrorSlackUndoBtn').on('click', () => {
+      this._onErrorSlackUndoButtonClick('left');
+    });
+
+    $('#rightErrorSlackUndoBtn').on('click', () => {
+      this._onErrorSlackUndoButtonClick('right');
     });
   }
 
@@ -179,6 +264,26 @@ export class Finetune {
 
     $('#finetuneModal').off('hidden.bs.modal');
     $('.dropdown-item[data-step]').off('click');
+
+    // Remove circularity slider event listeners
+    $('#leftCircularitySlider').off('input');
+    $('#rightCircularitySlider').off('input');
+    $('#leftCircularitySlider').off('mousedown touchstart');
+    $('#rightCircularitySlider').off('mousedown touchstart');
+    $('#leftCircularitySlider').off('change');
+    $('#rightCircularitySlider').off('change');
+
+    // Remove reset button event listeners
+    $('#leftCircularityResetBtn').off('click');
+    $('#rightCircularityResetBtn').off('click');
+
+    // Remove error slack button event listeners
+    $('#leftErrorSlackBtn').off('click');
+    $('#rightErrorSlackBtn').off('click');
+
+    // Remove error slack undo button event listeners
+    $('#leftErrorSlackUndoBtn').off('click');
+    $('#rightErrorSlackUndoBtn').off('click');
   }
 
   /**
@@ -240,7 +345,20 @@ export class Finetune {
    * Set the finetune mode
    */
   setMode(mode) {
-    this.mode = mode;
+    this._mode = mode;
+    this._updateUI();
+
+    // Reset toggle states when switching modes
+    if (mode === 'center') {
+      $('#left-stick-card').removeClass('show-slider');
+      $('#right-stick-card').removeClass('show-slider');
+
+      // Reset slider used states and update buttons back to slack
+      this._sliderUsed.left = false;
+      this._sliderUsed.right = false;
+      this._showErrorSlackButton('left');
+      this._showErrorSlackButton('right');
+    }
   }
 
   /**
@@ -254,6 +372,12 @@ export class Finetune {
     // Stop any continuous adjustments when switching sticks
     this.stopContinuousDpadAdjustment();
     this._clearFinetuneAxisHighlights();
+
+    // Hide slider on the previously active stick (when it becomes inactive)
+    if (this.active_stick && this._mode === 'circularity') {
+      const previousStickCard = $(`#${this.active_stick}-stick-card`);
+      previousStickCard.removeClass('show-slider');
+    }
 
     this.active_stick = stick;
 
@@ -301,6 +425,9 @@ export class Finetune {
 
     // Update step size UI when mode changes
     this._updateStepSizeUI();
+
+    // Update error slack button states when mode changes
+    this._updateErrorSlackButtonStates();
   }
 
   async _onFinetuneChange() {
@@ -352,6 +479,7 @@ export class Finetune {
 
         this.update_finetune_warning_messages();
         this._highlightActiveFinetuneAxis();
+        this._updateErrorSlackButtonStates();
 
         timeout = null;
       }, 10);
@@ -762,6 +890,380 @@ export class Finetune {
     }
 
     this._updateStepSizeUI();
+  }
+
+  /**
+   * Reset circularity sliders to zero position
+   */
+  _resetCircularitySliders() {
+    $('#leftCircularitySlider').val(0);
+    $('#rightCircularitySlider').val(0);
+  }
+
+  /**
+   * Handle the start of circularity slider adjustment
+   * Store base values and reset previous slider value
+   */
+  _onCircularitySliderStart(stick, value) {
+    console.log(`Slider start for ${stick} stick, value: ${value}`);
+
+    // Store the base values when slider adjustment starts
+    const suffixes = stick === 'left' ? ['LL', 'LT', 'LR', 'LB'] : ['RL', 'RT', 'RR', 'RB'];
+    const baseValues = {};
+
+    suffixes.forEach(suffix => {
+      const element = $(`#finetune${suffix}`);
+      baseValues[suffix] = parseInt(element.val()) || 0;
+    });
+
+    this._sliderBaseValues[stick] = baseValues;
+    this._previousSliderValues[stick] = value;
+
+    // Store base values for ll_data and rr_data arrays
+    if (stick === 'left' && this.ll_data && Array.isArray(this.ll_data)) {
+      this._sliderBaseValues[stick].ll_data = [...this.ll_data]; // Create a copy
+    } else if (stick === 'right' && this.rr_data && Array.isArray(this.rr_data)) {
+      this._sliderBaseValues[stick].rr_data = [...this.rr_data]; // Create a copy
+    }
+
+    console.log(`Base values stored for ${stick}:`, baseValues);
+  }
+
+  /**
+   * Handle circularity slider changes with incremental adjustments
+   */
+  _onCircularitySliderChange(stick, value) {
+    this._isSliderAdjusting = true;
+
+    try {
+      // Debug: Log the data structure
+      console.log(`Slider change for ${stick} stick, value: ${value}`);
+      console.log('ll_data:', this.ll_data);
+      console.log('rr_data:', this.rr_data);
+
+      // If we don't have base values, treat this as the start
+      if (!this._sliderBaseValues[stick]) {
+        this._onCircularitySliderStart(stick, value);
+        return;
+      }
+
+      // Calculate the incremental change from the previous slider position
+      const previousValue = this._previousSliderValues[stick];
+      const deltaValue = value - previousValue;
+
+      // If no change, return early
+      if (deltaValue === 0) {
+        return;
+      }
+
+      // Get the base values and suffixes for the current stick
+      const suffixes = stick === 'left' ? ['LL', 'LT', 'LR', 'LB'] : ['RL', 'RT', 'RR', 'RB'];
+      const baseValues = this._sliderBaseValues[stick];
+
+      // Calculate the total adjustment based on slider value from 0
+      // Value 0-100 maps to adjustment range (we'll use a reasonable range)
+      const maxAdjustment = 100; // Adjust this value as needed
+      const totalAdjustment = (value / 100) * maxAdjustment;
+
+      // Apply adjustments according to the requirements:
+      // LL, LT, RL, RT decrease by adjustment
+      // LR, LB, RR, RB increase by adjustment
+      suffixes.forEach(suffix => {
+        const element = $(`#finetune${suffix}`);
+        let newValue;
+
+        if (suffix === 'LL' || suffix === 'LT' || suffix === 'RL' || suffix === 'RT') {
+          // LL, LT, RL, RT decrease
+          newValue = Math.min(65535, baseValues[suffix] + totalAdjustment);
+        } else if (suffix === 'LR' || suffix === 'LB' || suffix === 'RR' || suffix === 'RB') {
+          // LR, LB, RR, RB increase
+          newValue = Math.max(0, baseValues[suffix] - totalAdjustment);
+        }
+
+        element.val(Math.round(newValue));
+      });
+
+      // Update ll_data and rr_data with incremental changes proportional to slider movement
+      const adjustmentConstant = 0.001; // Small constant for incremental adjustments
+      const totalAdjustmentFromBase = value * adjustmentConstant; // Total adjustment from slider position 0
+
+      if (stick === 'left' && this.ll_data && Array.isArray(this.ll_data)) {
+        const baseData = this._sliderBaseValues[stick].ll_data;
+        if (baseData && Array.isArray(baseData)) {
+          // Apply total adjustment from base values to maintain relative differences
+          for (let i = 0; i < this.ll_data.length; i++) {
+            this.ll_data[i] = Math.max(0, baseData[i] + totalAdjustmentFromBase);
+          }
+
+          // Convert polar coordinates to cartesian, trim to square, and convert back
+          this._trimCircularityDataToSquare(this.ll_data);
+        }
+      } else if (stick === 'right' && this.rr_data && Array.isArray(this.rr_data)) {
+        const baseData = this._sliderBaseValues[stick].rr_data;
+        if (baseData && Array.isArray(baseData)) {
+          // Apply total adjustment from base values to maintain relative differences
+          for (let i = 0; i < this.rr_data.length; i++) {
+            this.rr_data[i] = Math.max(0, baseData[i] + totalAdjustmentFromBase);
+          }
+
+          // Convert polar coordinates to cartesian, trim to square, and convert back
+          this._trimCircularityDataToSquare(this.rr_data);
+        }
+      }
+
+      // Update previous slider value
+      this._previousSliderValues[stick] = value;
+
+      // Don't trigger _onFinetuneChange during slider movement - only on release
+      // this._onFinetuneChange();
+
+      // Refresh the stick displays to show updated circularity data
+      this.refresh_finetune_sticks();
+
+    } finally {
+      this._isSliderAdjusting = false;
+    }
+  }
+
+  /**
+   * Handle slider release - clear ll_data and rr_data
+   * @param {string} stick - 'left' or 'right'
+   */
+  _onCircularitySliderRelease(stick) {
+    console.log(`Circularity slider released for ${stick} stick`);
+
+    // Mark that this slider has been used
+    this._sliderUsed[stick] = true;
+
+    // Clear the base values for this stick
+//    this._sliderBaseValues[stick] = null;
+    // Note: Don't reset _previousSliderValues[stick] to 0 to maintain slider position
+
+    // Don't reset the slider to 0 - let it maintain its position
+    // $(`#${stick}CircularitySlider`).val(0);
+
+    // Clear the circularity data - zero out the array while maintaining its size
+    if (stick === 'left' && this.ll_data && Array.isArray(this.ll_data)) {
+      this.ll_data.fill(0);
+    } else if (stick === 'right' && this.rr_data && Array.isArray(this.rr_data)) {
+      this.rr_data.fill(0);
+    }
+
+    // Call the clearCircularity function to update the display
+    this.clearCircularity();
+
+    // Trigger the change event to update the finetune data once when slider is released
+    this._onFinetuneChange();
+
+    // Toggle the slider off and change button to undo
+    const stickCard = $(`#${stick}-stick-card`);
+    stickCard.removeClass('show-slider');
+    this._showErrorSlackUndoButton(stick);
+
+    // Refresh the stick displays to show cleared circularity data
+    this.refresh_finetune_sticks();
+  }
+
+  /**
+   * Convert circularity data (polar radii) to cartesian coordinates,
+   * trim to a -1,-1 to 1,1 square, then convert back to polar radii
+   * @param {Array} data - Array of radius values representing sectors around a circle
+   */
+  _trimCircularityDataToSquare(data) {
+    const numSectors = data.length;
+
+    for (let i = 0; i < numSectors; i++) {
+      // Calculate angle for this sector
+      const angle = (i * 2 * Math.PI) / numSectors;
+      const radius = data[i];
+
+      // Convert polar to cartesian coordinates
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+
+      // Trim to -1,-1 to 1,1 square
+      const trimmedX = Math.max(-1, Math.min(1, x));
+      const trimmedY = Math.max(-1, Math.min(1, y));
+
+      // Convert back to polar coordinates
+      const trimmedRadius = Math.sqrt(trimmedX * trimmedX + trimmedY * trimmedY);
+
+      // Update the data array with the trimmed radius
+      data[i] = trimmedRadius;
+    }
+  }
+
+  /**
+   * Reset circularity slider to zero and restore input values to their base state
+   * @param {string} stick - 'left' or 'right'
+   */
+  _resetCircularitySlider(stick) {
+    console.log(`Resetting circularity slider for ${stick} stick`);
+
+    // If we have base values stored, use them to reset properly
+    if (this._sliderBaseValues[stick]) {
+      // Reset the slider to zero first
+      $(`#${stick}CircularitySlider`).val(0);
+
+      // Trigger the slider change with value 0 to recalculate input values
+      this._onCircularitySliderChange(stick, 0);
+    } else {
+      // If no base values, just reset the slider
+      $(`#${stick}CircularitySlider`).val(0);
+      this._previousSliderValues[stick] = 0;
+    }
+
+    // Reset the slider used state and update button back to slack
+    this._sliderUsed[stick] = false;
+    this._showErrorSlackButton(stick);
+
+    // Clear the circularity data display
+    this.clearCircularity();
+
+    // Trigger the change event to update the finetune data
+    this._onFinetuneChange();
+
+    // Refresh the stick displays
+    this.refresh_finetune_sticks();
+  }
+
+  /**
+   * Check if data array contains only non-zero values
+   * @param {Array} data - The data array to check
+   * @returns {boolean} True if all values are non-zero, false otherwise
+   */
+  _hasOnlyNonZeroValues(data) {
+    if (!data || !Array.isArray(data)) {
+      return false;
+    }
+    return data.every(value => value !== 0);
+  }
+
+  /**
+   * Update the state of error slack buttons based on data content
+   */
+  _updateErrorSlackButtonStates() {
+    const leftHasData = this._hasOnlyNonZeroValues(this.ll_data);
+    const rightHasData = this._hasOnlyNonZeroValues(this.rr_data);
+
+    // Handle left stick buttons
+    const leftSlackBtn = $('#leftErrorSlackBtn');
+    const leftUndoBtn = $('#leftErrorSlackUndoBtn');
+
+    if (this._sliderUsed.left) {
+      // Show undo button, hide slack button
+      this._showErrorSlackUndoButton('left');
+    } else {
+      // Show slack button, hide undo button
+      this._showErrorSlackButton('left');
+
+      // Enable/disable slack button based on data
+      if (leftHasData) {
+        leftSlackBtn.prop('disabled', false);
+        leftSlackBtn.removeClass('disabled');
+        leftSlackBtn.attr('title', 'Apply error slack adjustment for left stick');
+      } else {
+        leftSlackBtn.prop('disabled', true);
+        leftSlackBtn.addClass('disabled');
+        leftSlackBtn.attr('title', 'Error slack requires circularity data (move stick in full circles first)');
+      }
+    }
+
+    // Handle right stick buttons
+    const rightSlackBtn = $('#rightErrorSlackBtn');
+    const rightUndoBtn = $('#rightErrorSlackUndoBtn');
+
+    if (this._sliderUsed.right) {
+      // Show undo button, hide slack button
+      this._showErrorSlackUndoButton('right');
+    } else {
+      // Show slack button, hide undo button
+      this._showErrorSlackButton('right');
+
+      // Enable/disable slack button based on data
+      if (rightHasData) {
+        rightSlackBtn.prop('disabled', false);
+        rightSlackBtn.removeClass('disabled');
+        rightSlackBtn.attr('title', 'Apply error slack adjustment for right stick');
+      } else {
+        rightSlackBtn.prop('disabled', true);
+        rightSlackBtn.addClass('disabled');
+        rightSlackBtn.attr('title', 'Error slack requires circularity data (move stick in full circles first)');
+      }
+    }
+  }
+
+  /**
+   * Handle error slack button click
+   * @param {string} stick - 'left' or 'right'
+   */
+  _onErrorSlackButtonClick(stick) {
+    console.log(`Error slack button clicked for ${stick} stick`);
+
+    // Only allow toggle in circularity mode
+    if (this._mode !== 'circularity') {
+      console.log('Error slack button only works in circularity mode');
+      return;
+    }
+
+    // Toggle between showing LX/LY values and circularity slider
+    const stickCard = $(`#${stick}-stick-card`);
+    const isShowingSlider = stickCard.hasClass('show-slider');
+
+    if (isShowingSlider) {
+      // Currently showing slider, switch to values
+      stickCard.removeClass('show-slider');
+      console.log(`Switched ${stick} stick to show LX/LY values`);
+    } else {
+      // Currently showing values, switch to slider
+      stickCard.addClass('show-slider');
+      console.log(`Switched ${stick} stick to show circularity slider`);
+    }
+  }
+
+  /**
+   * Handle error slack undo button click
+   * @param {string} stick - 'left' or 'right'
+   */
+  _onErrorSlackUndoButtonClick(stick) {
+    console.log(`Error slack undo button clicked for ${stick} stick`);
+
+    // Only allow undo in circularity mode
+    if (this._mode !== 'circularity') {
+      console.log('Error slack undo button only works in circularity mode');
+      return;
+    }
+
+    // Call reset function to undo the circularity adjustment
+    this._resetCircularitySlider(stick);
+  }
+
+  /**
+   * Show undo button and hide slack button
+   * @param {string} stick - 'left' or 'right'
+   */
+  _showErrorSlackUndoButton(stick) {
+    const slackBtn = $(`#${stick}ErrorSlackBtn`);
+    const undoBtn = $(`#${stick}ErrorSlackUndoBtn`);
+
+    // Add a class to hide slack button and show undo button
+    slackBtn.addClass('d-none');
+    undoBtn.removeClass('d-none');
+    undoBtn.attr('title', `Undo circularity adjustment for ${stick} stick`);
+  }
+
+  /**
+   * Show slack button and hide undo button
+   * @param {string} stick - 'left' or 'right'
+   */
+  _showErrorSlackButton(stick) {
+    const slackBtn = $(`#${stick}ErrorSlackBtn`);
+    const undoBtn = $(`#${stick}ErrorSlackUndoBtn`);
+
+    // Add a class to hide undo button and show slack button
+    undoBtn.addClass('d-none');
+    slackBtn.removeClass('d-none');
+    slackBtn.attr('title', `Apply error slack adjustment for ${stick} stick`);
   }
 }
 

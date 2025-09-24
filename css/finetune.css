@@ -114,3 +114,32 @@ input[id^="finetune"] {
 #finetuneModal:not(.hide-raw-numbers) #finetuneStickCanvasR_large {
   display: none;
 }
+
+/* Error slack button toggle states */
+.left-stick-values,
+.right-stick-values {
+  display: block;
+}
+
+.left-stick-slider,
+.right-stick-slider {
+  display: none;
+}
+
+/* When left stick is in slider mode (only in circularity mode) */
+#finetuneModal.circularity-mode #left-stick-card.show-slider .left-stick-values {
+  display: none !important;
+}
+
+#finetuneModal.circularity-mode #left-stick-card.show-slider .left-stick-slider.finetune-circularity-mode {
+  display: block !important;
+}
+
+/* When right stick is in slider mode (only in circularity mode) */
+#finetuneModal.circularity-mode #right-stick-card.show-slider .right-stick-values {
+  display: none !important;
+}
+
+#finetuneModal.circularity-mode #right-stick-card.show-slider .right-stick-slider.finetune-circularity-mode {
+  display: block !important;
+}

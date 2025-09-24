@@ -61,8 +61,16 @@
               <div class="col col-lg-6 col-12">
 
                 <div class="card text-bg-light" id="left-stick-card" style="height: 340px;">
-                  <div class="card-header"><span class="ds-i18n">Left stick</span></div>
-                  <div class="card-body">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="ds-i18n">Left stick</span>
+                  </div>
+                  <div class="card-body position-relative">
+                    <button type="button" class="btn btn-secondary position-absolute top-0 end-0 finetune-circularity-mode" id="leftErrorSlackBtn" style="z-index: 10; margin: 0.5rem;">
+                      <svg class="bi" width="32" height="32" style="margin: -15px -8px -12px -8px;"><use xlink:href="#arrows-alt"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-warning position-absolute top-0 end-0 finetune-circularity-mode d-none" id="leftErrorSlackUndoBtn" style="z-index: 10; margin: 0.5rem;">
+                      <i class="fas fa-undo"></i>
+                    </button>
                     <div class="container-fluid">
                       <div class="finetune-grid">
                         <div class="finetune-top finetune-center-mode">
@@ -90,7 +98,8 @@
                       </div>
                     </div>
 
-                    <div class="px-2">
+                    <!-- LX/LY values display -->
+                    <div class="px-2 left-stick-values">
                       <div class="hstack">
                         <div class="vstack" style="text-align: center;">
                           <span>LX:</span>
@@ -104,14 +113,32 @@
                       </div>
                     </div>
 
+                    <!-- Circularity slider for left stick -->
+                    <div class="px-2 mt-2 finetune-circularity-mode left-stick-slider" style="display: none;">
+                      <label for="leftCircularitySlider" class="form-label ds-i18n">Increase non-circularity</label>
+                      <input type="range" class="form-range" min="0" max="100" value="0" id="leftCircularitySlider">
+                      <div class="d-flex justify-content-between">
+                        <small>0</small>
+                        <small>100</small>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div> <!-- col -->
 
               <div class="col col-lg-6 col-12">
                 <div class="card text-bg-light" id="right-stick-card" style="height: 340px;">
-                  <div class="card-header"><span class="ds-i18n">Right stick</span></div>
-                  <div class="card-body">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="ds-i18n">Right stick</span>
+                  </div>
+                  <div class="card-body position-relative">
+                    <button type="button" class="btn btn-secondary position-absolute top-0 end-0 finetune-circularity-mode" id="rightErrorSlackBtn" style="z-index: 10; margin: 0.5rem;">
+                      <svg class="bi" width="32" height="32" style="margin: -15px -8px -12px -8px;"><use xlink:href="#arrows-alt"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-warning position-absolute top-0 end-0 finetune-circularity-mode d-none" id="rightErrorSlackUndoBtn" style="z-index: 10; margin: 0.5rem;">
+                      <i class="fas fa-undo"></i>
+                    </button>
                     <div class="container-fluid">
                       <div class="finetune-grid">
                         <div class="finetune-top finetune-center-mode">
@@ -138,7 +165,8 @@
                         </div>
                       </div>
 
-                      <div class="px-2">
+                      <!-- RX/RY values display -->
+                      <div class="px-2 right-stick-values">
                         <div class="hstack">
                           <div class="vstack" style="text-align: center;">
                             <span>RX:</span>
@@ -149,6 +177,16 @@
                             <span>RY:</span>
                             <strong><pre id="finetuneStickCanvasRy-lbl" style="min-width: 80px;"></pre></strong>
                           </div>
+                        </div>
+                      </div>
+
+                      <!-- Circularity slider for right stick -->
+                      <div class="px-2 mt-2 finetune-circularity-mode right-stick-slider" style="display: none;">
+                        <label for="rightCircularitySlider" class="form-label ds-i18n">Increase non-circularity</label>
+                        <input type="range" class="form-range" min="0" max="100" value="0" id="rightCircularitySlider">
+                        <div class="d-flex justify-content-between">
+                          <small>0</small>
+                          <small>100</small>
                         </div>
                       </div>
 

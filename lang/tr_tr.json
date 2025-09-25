@@ -72,7 +72,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device: ": "Geçersiz bir cihaz bağlandı: ",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "Cihazın bir DS4 klonu gibi görünüyor. Tüm işlevler devre dışı bırakıldı.",
+    "The device appears to be a DS4 clone. All functionalities are disabled.": "Cihazın yan sanayi bir kol gibi görünüyor. Tüm işlevler devre dışı bırakıldı.",
     "Error: ": "Hata: ",
     "My handle on discord is: the_al": "Discord'daki kullanıcı adım: the_al",
     "Initializing...": "Başlatılıyor...",
@@ -258,7 +258,7 @@
     "Push the stick straight up/down/left/right as far as possible.": "Analoğu mümkün olduğunca yukarı/aşağı/sola/sağa itin.",
     "Show raw numbers": "Ham değerleri göster",
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Ayarlanacak analoğu yukarı/aşağı/sola/sağa doğru basılı tutarken, <em>dairenin altındaki vurgulanan değeri gözlemleyin</em> ve ardından değeri ±0,99’a (±1,00’ın hemen altına) ayarlamak için yön tuşlarını kullanın.",
-    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "",
-    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
+    "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "Cihaz Bluetooth üzerinden bağlı. Bunun yerine bağlantıyı kesip USB kablosu ile yeniden bağlayın.",
+    "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "Cihazınız orijinal Sony kolu olmayabilir. Eğer yansanayi değilse lütfen bu sorunu bildirin.",
     "": ""
 }

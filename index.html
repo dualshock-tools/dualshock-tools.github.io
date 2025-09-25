@@ -152,10 +152,18 @@
 
             <div class="col-md-6 col-sm-12" style="min-width: 330px;">
               <div class="vstack gap-2 p-2">
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calibrate_stick_centers()">Calibrate stick center</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calibrate_range()">Calibrate stick range</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
-                <button id="btnmcs" type="button" class="btn btn-outline-secondary ds-btn ds-i18n" onclick="auto_calibrate_stick_centers()">Fast calibrate stick center (OLD)</button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_stick_centers()" id="four-step-center-calib" style="display: none;">
+                  1. <span ds-i18n>Calibrate stick center</span>
+                </button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="auto_calibrate_stick_centers()" id="quick-center-calib" style="display: none;">
+                  1. <span ds-i18n>Fast calibrate stick center</span>
+                </button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_range()">
+                  2. <span ds-i18n>Calibrate stick range</span>
+                </button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
+                  3. <span class="ds-i18n">Finetune stick calibration</span>
+                </button>
                 <hr>
                 <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()" id="resetBtn">Save changes permanently</button>
                 <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>

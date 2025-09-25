@@ -7,11 +7,11 @@ import { sleep } from '../utils.js';
  * Handles stick range calibration
  */
 export class CalibRangeModal {
-  constructor(controllerInstance, { resetStickDiagrams, successAlert }) {
+  constructor(controllerInstance, { resetStickDiagrams }, doneCallback = null) {
     // Dependencies
     this.controller = controllerInstance;
     this.resetStickDiagrams = resetStickDiagrams;
-    this.successAlert = successAlert;
+    this.doneCallback = doneCallback;
   }
 
   async open() {
@@ -24,13 +24,15 @@ export class CalibRangeModal {
     await this.controller.calibrateRangeBegin();
   }
 
-  async onClose() {    
+  async onClose() {
     bootstrap.Modal.getOrCreateInstance('#rangeModal').hide();
     this.resetStickDiagrams();
-    
+
     const result = await this.controller.calibrateRangeOnClose();
-    if (result?.message) {
-      this.successAlert(result.message);
+
+    // Call the done callback if provided (range calibration is always successful when onClose is called)
+    if (this.doneCallback && typeof this.doneCallback === 'function') {
+      this.doneCallback(true, result?.message);
     }
   }
 }
@@ -46,9 +48,9 @@ function destroyCurrentInstance() {
 }
 
 // Legacy function exports for backward compatibility
-export async function calibrate_range(controller, dependencies) {
+export async function calibrate_range(controller, dependencies, doneCallback = null) {
   destroyCurrentInstance(); // Clean up any existing instance
-  currentCalibRangeInstance = new CalibRangeModal(controller, dependencies);
+  currentCalibRangeInstance = new CalibRangeModal(controller, dependencies, doneCallback);
   await currentCalibRangeInstance.open();
 }
 

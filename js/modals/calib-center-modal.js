@@ -8,11 +8,11 @@ import { l } from '../translations.js';
  * Handles step-by-step manual stick center calibration
  */
 export class CalibCenterModal {
-  constructor(controllerInstance, { resetStickDiagrams, successAlert, set_progress }) {
+  constructor(controllerInstance, { resetStickDiagrams, set_progress }, doneCallback = null) {
     this.controller = controllerInstance;
     this.resetStickDiagrams = resetStickDiagrams;
-    this.successAlert = successAlert;
     this.set_progress = set_progress;
+    this.doneCallback = doneCallback;
 
     this._initEventListeners();
 
@@ -103,7 +103,7 @@ export class CalibCenterModal {
     this._updateUI(6, "Stick center calibration", "Done", true);
     yield 6;
 
-    this._close();
+    this._close(true);
   }
 
   /**
@@ -126,12 +126,8 @@ export class CalibCenterModal {
     });
 
     await sleep(500);
-    this._close();
+    this._close(true, result?.message);
     this.resetStickDiagrams();
-
-    if (result?.message) {
-      this.successAlert(result.message);
-    }
   }
 
   /**
@@ -152,7 +148,12 @@ export class CalibCenterModal {
   /**
    * Close the calibration modal
    */
-  _close() {
+  _close(success = false, message = null) {
+    // Call the done callback if provided
+    if (this.doneCallback && typeof this.doneCallback === 'function') {
+      this.doneCallback(success, message);
+    }
+
     $(".modal.show").modal("hide");
   }
 
@@ -180,6 +181,9 @@ export class CalibCenterModal {
     } else {
       $("#calibCross").hide();
     }
+
+    // Show/hide Quick calibrate button - only show on step 1 (welcome screen)
+    $("#quickCalibBtn").toggle(step === 1);
   }
 
   /**
@@ -216,8 +220,8 @@ function destroyCurrentInstance() {
 }
 
 // Legacy function exports for backward compatibility
-export async function calibrate_stick_centers(controller, dependencies) {
-  currentCalibCenterInstance = new CalibCenterModal(controller, dependencies);
+export async function calibrate_stick_centers(controller, dependencies, doneCallback = null) {
+  currentCalibCenterInstance = new CalibCenterModal(controller, dependencies, doneCallback);
   await currentCalibCenterInstance.open();
 }
 
@@ -227,11 +231,37 @@ async function calib_next() {
   }
 }
 
+// Function to close current manual calibration and start auto calibration instead
+async function quick_calibrate_instead() {
+  if (currentCalibCenterInstance) {
+    // Get the callback from the current instance before closing
+    const doneCallback = currentCalibCenterInstance.doneCallback;
+
+    // Close the current manual calibration modal (without calling callback)
+    currentCalibCenterInstance.doneCallback = null; // Temporarily remove callback to avoid double-calling
+    currentCalibCenterInstance._close();
+
+    // Get the controller and dependencies from the current instance
+    const { controller } = currentCalibCenterInstance;
+    const dependencies = {
+      resetStickDiagrams: currentCalibCenterInstance.resetStickDiagrams,
+      set_progress: currentCalibCenterInstance.set_progress
+    };
+
+    // Destroy the current instance
+    destroyCurrentInstance();
+
+    // Start auto calibration with the original callback
+    await auto_calibrate_stick_centers(controller, dependencies, doneCallback);
+  }
+}
+
 // "Old" fully automatic stick center calibration
-export async function auto_calibrate_stick_centers(controller, dependencies) {
-  currentCalibCenterInstance = new CalibCenterModal(controller, dependencies);
+export async function auto_calibrate_stick_centers(controller, dependencies, doneCallback = null) {
+  currentCalibCenterInstance = new CalibCenterModal(controller, dependencies, doneCallback);
   await currentCalibCenterInstance.multiCalibrateSticks();
 }
 
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.calib_next = calib_next;
+window.quick_calibrate_instead = quick_calibrate_instead;

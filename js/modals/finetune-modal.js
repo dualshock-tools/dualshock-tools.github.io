@@ -4,6 +4,40 @@ import { draw_stick_position } from '../stick-renderer.js';
 import { dec2hex32, float_to_str } from '../utils.js';
 
 const FINETUNE_INPUT_SUFFIXES = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
+const LEFT_AND_RIGHT = ['left', 'right'];
+
+// Configuration for stick-specific operations
+const STICK_CONFIG = {
+  left: {
+    suffixes: ['LL', 'LT', 'LR', 'LB'],
+    axisX: 'LX',
+    axisY: 'LY',
+    circDataName: 'll_data',
+    canvasName: 'finetuneStickCanvasL'
+  },
+  right: {
+    suffixes: ['RL', 'RT', 'RR', 'RB'],
+    axisX: 'RX',
+    axisY: 'RY',
+    circDataName: 'rr_data',
+    canvasName: 'finetuneStickCanvasR'
+  }
+};
+
+// Event listener configurations
+const EVENT_CONFIGS = [
+  // Mode toggles
+  { selector: '#finetuneModeCenter', event: 'change', handler: (instance, e) => e.target.checked && instance.setMode('center') },
+  { selector: '#finetuneModeCircularity', event: 'change', handler: (instance, e) => e.target.checked && instance.setMode('circularity') },
+
+  // General controls
+  { selector: '#showRawNumbersCheckbox', event: 'change', handler: (instance) => instance._showRawNumbersChanged() },
+  { selector: '#learn-more-link', event: 'click', handler: (instance, e) => { e.preventDefault(); $('#learn-more-link').hide(); $('#learn-more-text').show(); } },
+  { selector: '.dropdown-item[data-step]', event: 'click', handler: (instance, e) => { e.preventDefault(); instance.stepSize = parseInt($(e.target).data('step')); } },
+
+  // Modal events
+  { selector: '#finetuneModal', event: 'hidden.bs.modal', handler: (instance) => instance._onModalHidden() }
+];
 
 /**
  * DS5 Finetuning Class
@@ -13,7 +47,6 @@ export class Finetune {
   constructor() {
     this._mode = 'center'; // 'center' or 'circularity'
     this.original_data = [];
-    this.last_written_data = [];
     this.active_stick = null; // 'left', 'right', or null
     this._centerStepSize = 5; // Default step size for center mode
     this._circularityStepSize = 5; // Default step size for circularity mode
@@ -23,6 +56,7 @@ export class Finetune {
     this.ll_data = null;
     this.rr_data = null;
     this.clearCircularity = null;
+    this.doneCallback = null;
 
     // Closure functions
     this.refresh_finetune_sticks = this._createRefreshSticksThrottled();
@@ -41,8 +75,8 @@ export class Finetune {
       right: 0
     };
 
-    // Store base values when slider adjustment starts
-    this._sliderBaseValues = {
+    // Store the values of the input fields when slider adjustment starts
+    this._inputStartValuesForSlider = {
       left: null,
       right: null
     };
@@ -80,11 +114,12 @@ export class Finetune {
     this._saveStepSizeToLocalStorage();
   }
 
-  async init(controllerInstance, { ll_data, rr_data, clear_circularity }) {
+  async init(controllerInstance, { ll_data, rr_data, clear_circularity }, doneCallback = null) {
     this.controller = controllerInstance;
     this.ll_data = ll_data;
     this.rr_data = rr_data;
     this.clearCircularity = clear_circularity;
+    this.doneCallback = doneCallback;
 
     this._initEventListeners();
     this._restoreShowRawNumbersCheckbox();
@@ -114,9 +149,9 @@ export class Finetune {
 
     const maxValue = this.controller.getFinetuneMaxValue();
     FINETUNE_INPUT_SUFFIXES.forEach((suffix, i) => {
-      const el = $("#finetune" + suffix);
-      el.attr('max', maxValue);
-      el.val(data[i]);
+      $("#finetune" + suffix)
+        .attr('max', maxValue)
+        .val(data[i]);
     });
 
     // Start in center mode
@@ -131,6 +166,10 @@ export class Finetune {
     // Update error slack button states
     this._updateErrorSlackButtonStates();
 
+    // Reset the Learn More link
+    $('#learn-more-link').show();
+    $('#learn-more-text').hide();
+
     this.refresh_finetune_sticks();
   }
 
@@ -138,110 +177,70 @@ export class Finetune {
    * Initialize event listeners for the finetune modal
    */
   _initEventListeners() {
+    // Initialize finetune input listeners
     FINETUNE_INPUT_SUFFIXES.forEach((suffix) => {
       $("#finetune" + suffix).on('change', () => this._onFinetuneChange());
     });
 
-    // Set up mode toggle event listeners
-    $("#finetuneModeCenter").on('change', (e) => {
-      if (e.target.checked) {
-        this.setMode('center');
-      }
+    // Initialize general event listeners
+    EVENT_CONFIGS.forEach(config => {
+      $(config.selector).on(config.event, (e) => config.handler(this, e));
     });
 
-    $("#finetuneModeCircularity").on('change', (e) => {
-      if (e.target.checked) {
-        this.setMode('circularity');
-      }
+    // Initialize stick-specific event listeners
+    this._initStickEventListeners();
+  }
+
+  /**
+   * Initialize stick-specific event listeners (left and right)
+   */
+  _initStickEventListeners() {
+    LEFT_AND_RIGHT.forEach(lOrR => {
+      $(`#${lOrR}-stick-card`).on('click', () => {
+        this.setStickToFinetune(lOrR);
+      });
+
+      this._initSliderListeners(lOrR);
+      this._initButtonListeners(lOrR);
+    });
+  }
+
+  /**
+   * Initialize slider event listeners for a specific stick
+   */
+  _initSliderListeners(lOrR) {
+    const sliderId = `#${lOrR}CircularitySlider`;
+
+    $(sliderId).on('input', (e) => {
+      this._onCircularitySliderChange(lOrR, parseInt(e.target.value));
     });
 
-    $("#showRawNumbersCheckbox").on('change', () => {
-      this._showRawNumbersChanged();
+    $(sliderId).on('mousedown touchstart', (e) => {
+      this._onCircularitySliderStart(lOrR, parseInt(e.target.value));
     });
 
-    $("#left-stick-card").on('click', () => {
-      console.log("Left stick card clicked");
-      this.setStickToFinetune('left');
+    $(sliderId).on('change', (e) => {
+      this._onCircularitySliderRelease(lOrR);
+    });
+  }
+
+  /**
+   * Initialize button event listeners for a specific stick
+   */
+  _initButtonListeners(lOrR) {
+    // Reset button
+    $(`#${lOrR}CircularityResetBtn`).on('click', () => {
+      this._resetCircularitySlider(lOrR);
     });
 
-    $("#right-stick-card").on('click', () => {
-      this.setStickToFinetune('right');
+    // Error slack button
+    $(`#${lOrR}ErrorSlackBtn`).on('click', () => {
+      this._onErrorSlackButtonClick(lOrR);
     });
 
-    $('#finetuneModal').on('hidden.bs.modal', () => {
-      console.log("Finetune modal hidden event triggered");
-      // Reset circularity sliders to zero when modal closes
-      $('#leftCircularitySlider').val(0);
-      $('#rightCircularitySlider').val(0);
-
-      // Reset slider used states
-      this._sliderUsed.left = false;
-      this._sliderUsed.right = false;
-
-      destroyCurrentInstance();
-    });
-
-    // Step size dropdown event listeners
-    $('.dropdown-item[data-step]').on('click', (e) => {
-      e.preventDefault();
-      const stepSize = parseInt($(e.target).data('step'));
-      this.stepSize = stepSize;
-    });
-
-    // Circularity slider event listeners
-    $('#leftCircularitySlider').on('input', (e) => {
-      console.log('Left circularity slider changed to:', e.target.value);
-      this._onCircularitySliderChange('left', parseInt(e.target.value));
-    });
-
-    $('#rightCircularitySlider').on('input', (e) => {
-      console.log('Right circularity slider changed to:', e.target.value);
-      this._onCircularitySliderChange('right', parseInt(e.target.value));
-    });
-
-    // Circularity slider start event listeners (when user starts dragging)
-    $('#leftCircularitySlider').on('mousedown touchstart', (e) => {
-      this._onCircularitySliderStart('left', parseInt(e.target.value));
-    });
-
-    $('#rightCircularitySlider').on('mousedown touchstart', (e) => {
-      this._onCircularitySliderStart('right', parseInt(e.target.value));
-    });
-
-    // Circularity slider release event listeners
-    $('#leftCircularitySlider').on('change', (e) => {
-      this._onCircularitySliderRelease('left');
-    });
-
-    $('#rightCircularitySlider').on('change', (e) => {
-      this._onCircularitySliderRelease('right');
-    });
-
-    // Reset button event listeners
-    $('#leftCircularityResetBtn').on('click', () => {
-      this._resetCircularitySlider('left');
-    });
-
-    $('#rightCircularityResetBtn').on('click', () => {
-      this._resetCircularitySlider('right');
-    });
-
-    // Error slack button event listeners
-    $('#leftErrorSlackBtn').on('click', () => {
-      this._onErrorSlackButtonClick('left');
-    });
-
-    $('#rightErrorSlackBtn').on('click', () => {
-      this._onErrorSlackButtonClick('right');
-    });
-
-    // Error slack undo button event listeners
-    $('#leftErrorSlackUndoBtn').on('click', () => {
-      this._onErrorSlackUndoButtonClick('left');
-    });
-
-    $('#rightErrorSlackUndoBtn').on('click', () => {
-      this._onErrorSlackUndoButtonClick('right');
+    // Error slack undo button
+    $(`#${lOrR}ErrorSlackUndoBtn`).on('click', () => {
+      this._onErrorSlackUndoButtonClick(lOrR);
     });
   }
 
@@ -249,41 +248,52 @@ export class Finetune {
    * Clean up event listeners for the finetune modal
    */
   removeEventListeners() {
+    // Remove finetune input listeners
     FINETUNE_INPUT_SUFFIXES.forEach((suffix) => {
       $("#finetune" + suffix).off('change');
     });
 
-    // Remove mode toggle event listeners
-    $("#finetuneModeCenter").off('change');
-    $("#finetuneModeCircularity").off('change');
+    // Remove general event listeners
+    EVENT_CONFIGS.forEach(config => {
+      $(config.selector).off(config.event);
+    });
 
-    // Remove other event listeners
-    $("#showRawNumbersCheckbox").off('change');
-    $("#left-stick-card").off('click');
-    $("#right-stick-card").off('click');
+    // Remove stick-specific event listeners
+    this._removeStickEventListeners();
+  }
 
-    $('#finetuneModal').off('hidden.bs.modal');
-    $('.dropdown-item[data-step]').off('click');
+  /**
+   * Remove stick-specific event listeners
+   */
+  _removeStickEventListeners() {
+    LEFT_AND_RIGHT.forEach(lOrR => {
+      // Remove stick card listeners
+      $(`#${lOrR}-stick-card`).off('click');
 
-    // Remove circularity slider event listeners
-    $('#leftCircularitySlider').off('input');
-    $('#rightCircularitySlider').off('input');
-    $('#leftCircularitySlider').off('mousedown touchstart');
-    $('#rightCircularitySlider').off('mousedown touchstart');
-    $('#leftCircularitySlider').off('change');
-    $('#rightCircularitySlider').off('change');
+      // Remove slider listeners
+      const sliderId = `#${lOrR}CircularitySlider`;
+      $(sliderId).off('input mousedown touchstart change');
 
-    // Remove reset button event listeners
-    $('#leftCircularityResetBtn').off('click');
-    $('#rightCircularityResetBtn').off('click');
+      // Remove button listeners
+      $(`#${lOrR}CircularityResetBtn`).off('click');
+      $(`#${lOrR}ErrorSlackBtn`).off('click');
+      $(`#${lOrR}ErrorSlackUndoBtn`).off('click');
+    });
+  }
 
-    // Remove error slack button event listeners
-    $('#leftErrorSlackBtn').off('click');
-    $('#rightErrorSlackBtn').off('click');
+  /**
+   * Handle modal hidden event
+   */
+  _onModalHidden() {
+    console.log("Finetune modal hidden event triggered");
 
-    // Remove error slack undo button event listeners
-    $('#leftErrorSlackUndoBtn').off('click');
-    $('#rightErrorSlackUndoBtn').off('click');
+    // Reset circularity sliders to zero when modal closes
+    LEFT_AND_RIGHT.forEach(lOrR => {
+      $(`#${lOrR}CircularitySlider`).val(0);
+      this._sliderUsed[lOrR] = false;
+    });
+
+    destroyCurrentInstance();
   }
 
   /**
@@ -328,7 +338,7 @@ export class Finetune {
     // Unlock save button
     this.controller.setHasChangesToWrite(true);
 
-    this._close();
+    this._close(true);
   }
 
   /**
@@ -338,7 +348,7 @@ export class Finetune {
     if(this.original_data.length == 12)
       await this._writeFinetuneData(this.original_data)
 
-    this._close();
+    this._close(false);
   }
 
   /**
@@ -350,22 +360,19 @@ export class Finetune {
 
     // Reset toggle states when switching modes
     if (mode === 'center') {
-      $('#left-stick-card').removeClass('show-slider');
-      $('#right-stick-card').removeClass('show-slider');
-
-      // Reset slider used states and update buttons back to slack
-      this._sliderUsed.left = false;
-      this._sliderUsed.right = false;
-      this._showErrorSlackButton('left');
-      this._showErrorSlackButton('right');
+      LEFT_AND_RIGHT.forEach(lOrR => {
+        $(`#${lOrR}-stick-card`).removeClass('show-slider');
+        this._sliderUsed[lOrR] = false;
+        this._showErrorSlackButton(lOrR);
+      });
     }
   }
 
   /**
    * Set which stick to finetune
    */
-  setStickToFinetune(stick) {
-    if(this.active_stick === stick) {
+  setStickToFinetune(lOrR) {
+    if(this.active_stick === lOrR) {
       return;
     }
 
@@ -379,9 +386,9 @@ export class Finetune {
       previousStickCard.removeClass('show-slider');
     }
 
-    this.active_stick = stick;
+    this.active_stick = lOrR;
 
-    const other_stick = stick === 'left' ? 'right' : 'left';
+    const other_stick = lOrR === 'left' ? 'right' : 'left';
     $(`#${this.active_stick}-stick-card`).addClass("stick-card-active");
     $(`#${other_stick}-stick-card`).removeClass("stick-card-active");
   }
@@ -445,7 +452,6 @@ export class Finetune {
       throw new Error("ERROR: Cannot read calibration data");
     }
 
-    this.last_written_data = data;
     return data;
   }
 
@@ -454,13 +460,6 @@ export class Finetune {
       return;
     }
 
-    // const deepEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-    // if (deepEqual(data, this.last_written_data)) {
-    // if (data == this.last_written_data) {   //mm this will never be true, but fixing it (per above) breaks Edge writes
-    //     return;
-    // }
-
-    this.last_written_data = data
     if (this.controller.isConnected()) {
       await this.controller.writeFinetuneData(data);
     }
@@ -473,9 +472,13 @@ export class Finetune {
       if (timeout) return;
 
       timeout = setTimeout(() => {
-        const { left, right } = this.controller.button_states.sticks;
-        this._ds5FinetuneUpdate("finetuneStickCanvasL", left.x, left.y);
-        this._ds5FinetuneUpdate("finetuneStickCanvasR", right.x, right.y);
+        const sticks = this.controller.button_states.sticks;
+
+        // Update both stick displays using configuration
+        Object.entries(STICK_CONFIG).forEach(([stick, config]) => {
+          const stickData = sticks[stick];
+          this._ds5FinetuneUpdate(config.canvasName, stickData.x, stickData.y);
+        });
 
         this.update_finetune_warning_messages();
         this._highlightActiveFinetuneAxis();
@@ -487,7 +490,7 @@ export class Finetune {
   }
 
   _createUpdateWarningMessagesClosure() {
-    let timeout = null; // to stop unnecessary flicker in center mode
+    let timeout = null; // to prevent unnecessary flicker
 
     return () => {
       if(!this.active_stick) return;
@@ -508,10 +511,18 @@ export class Finetune {
       }
 
       if (this._mode === 'circularity') {
-        // Check if stick is in extreme position (close to edges)
         const isInExtremePosition = this._isStickInExtremePosition(currentStick);
-        $('#finetuneCircularitySuccess').toggle(isInExtremePosition);
-        $('#finetuneCircularityWarning').toggle(!isInExtremePosition);
+        if(!isInExtremePosition && timeout) return;
+
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          timeout = null;
+          if(this._mode !== 'circularity') return; // in case it changed during timeout
+
+          // Check if stick is in extreme position (close to edges)
+          $('#finetuneCircularitySuccess').toggle(isInExtremePosition);
+          $('#finetuneCircularityWarning').toggle(!isInExtremePosition);
+        }, isInExtremePosition ? 0 : 200);
       }
     };
   }
@@ -573,19 +584,22 @@ export class Finetune {
 
     const ctx = c.getContext("2d");
 
-    const margins = showRawNumbers ? 15 : 5;
+    const margins = 5;
     const radius = c.width / 2 - margins;
     const sz = c.width/2 - margins;
     const hb = radius + margins;
     const yb = radius + margins;
     ctx.clearRect(0, 0, c.width, c.height);
 
-    const isLeftStick = name === "finetuneStickCanvasL";
-    const highlight = this.active_stick == (isLeftStick ? 'left' : 'right') && this._isDpadAdjustmentActive();
+    // Determine which stick this is using configuration
+    const lOrR = this._getStickFromCanvasName(name);
+    const highlight = this.active_stick === lOrR && this._isDpadAdjustmentActive();
+
     if (this._mode === 'circularity') {
       // Draw stick position with circle
+      const circularityData = lOrR === 'left' ? this.ll_data : this.rr_data;
       draw_stick_position(ctx, hb, yb, sz, plx, ply, {
-        circularity_data: isLeftStick ? this.ll_data : this.rr_data,
+        circularity_data: circularityData,
         highlight
       });
     } else {
@@ -600,6 +614,15 @@ export class Finetune {
     $("#"+ name + "y-lbl").text(float_to_str(ply, 3));
   }
 
+  /**
+   * Get lOrR from canvas name using configuration
+   */
+  _getStickFromCanvasName(canvasName) {
+    return LEFT_AND_RIGHT.find(lOrR =>
+      STICK_CONFIG[lOrR].canvasName === canvasName
+    );
+  }
+
   _showRawNumbersChanged() {
     const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
     const modal = $("#finetuneModal");
@@ -609,8 +632,14 @@ export class Finetune {
     this.refresh_finetune_sticks();
   }
 
-  _close() {
+  _close(success = false, message = null) {
     console.log("Closing finetune modal");
+
+    // Call the done callback if provided
+    if (this.doneCallback && typeof this.doneCallback === 'function') {
+      this.doneCallback(success, message);
+    }
+
     $("#finetuneModal").modal("hide");
   }
 
@@ -666,23 +695,19 @@ export class Finetune {
       return null;
     }
 
-    // Circularity mode: map quadrants to specific calibration points
-    if (stick === 'left') {
-      switch (quadrant) {
-        case 'left': return "LL";
-        case 'up': return "LT";
-        case 'right': return "LR";
-        case 'down': return "LB";
-      }
-    } else if (stick === 'right') {
-      switch (quadrant) {
-        case 'left': return "RL";
-        case 'up': return "RT";
-        case 'right': return "RR";
-        case 'down': return "RB";
-      }
-    }
-    return null; // Invalid
+    // Circularity mode: map quadrants to specific calibration points using configuration
+    const config = STICK_CONFIG[stick];
+    if (!config) return null;
+
+    const quadrantMap = {
+      'left': 0,   // LL, RL
+      'up': 1,     // LT, RT
+      'right': 2,  // LR, RR
+      'down': 3    // LB, RB
+    };
+
+    const index = quadrantMap[quadrant];
+    return index !== undefined ? config.suffixes[index] : null;
   }
 
   _handleCenterModeAdjustment(changes) {
@@ -808,10 +833,9 @@ export class Finetune {
   }
 
   _startContinuousDpadAdjustmentCenterMode(stick, targetAxis, adjustment) {
-    // In center mode, directly map to X/Y axes
-    const inputSuffix = stick === 'left' ?
-    (targetAxis === 'X' ? 'LX' : 'LY') :
-    (targetAxis === 'X' ? 'RX' : 'RY');
+    // In center mode, directly map to X/Y axes using configuration
+    const config = STICK_CONFIG[stick];
+    const inputSuffix = targetAxis === 'X' ? config.axisX : config.axisY;
     this._startContinuousAdjustmentWithSuffix(inputSuffix, adjustment);
   }
 
@@ -896,158 +920,116 @@ export class Finetune {
    * Reset circularity sliders to zero position
    */
   _resetCircularitySliders() {
-    $('#leftCircularitySlider').val(0);
-    $('#rightCircularitySlider').val(0);
+    $(`#leftCircularitySlider`).val(0);
+    $(`#rightCircularitySlider`).val(0);
   }
 
   /**
    * Handle the start of circularity slider adjustment
    * Store base values and reset previous slider value
    */
-  _onCircularitySliderStart(stick, value) {
-    console.log(`Slider start for ${stick} stick, value: ${value}`);
+  _onCircularitySliderStart(lOrR, value) {
+    console.log(`Slider start for ${lOrR} stick, value: ${value}`);
 
-    // Store the base values when slider adjustment starts
-    const suffixes = stick === 'left' ? ['LL', 'LT', 'LR', 'LB'] : ['RL', 'RT', 'RR', 'RB'];
+    const config = STICK_CONFIG[lOrR];
     const baseValues = {};
 
-    suffixes.forEach(suffix => {
+    // Store the base values when slider adjustment starts
+    config.suffixes.forEach(suffix => {
       const element = $(`#finetune${suffix}`);
       baseValues[suffix] = parseInt(element.val()) || 0;
     });
 
-    this._sliderBaseValues[stick] = baseValues;
-    this._previousSliderValues[stick] = value;
+    this._inputStartValuesForSlider[lOrR] = baseValues;
+    this._previousSliderValues[lOrR] = value;
 
-    // Store base values for ll_data and rr_data arrays
-    if (stick === 'left' && this.ll_data && Array.isArray(this.ll_data)) {
-      this._sliderBaseValues[stick].ll_data = [...this.ll_data]; // Create a copy
-    } else if (stick === 'right' && this.rr_data && Array.isArray(this.rr_data)) {
-      this._sliderBaseValues[stick].rr_data = [...this.rr_data]; // Create a copy
+    // Store base values for circularity data arrays
+    const circData = this[config.circDataName];
+    if (circData && Array.isArray(circData)) {
+      this._inputStartValuesForSlider[lOrR][config.circDataName] = [...circData]; // Create a copy
     }
 
-    console.log(`Base values stored for ${stick}:`, baseValues);
+    console.log(`Base values stored for ${lOrR}:`, baseValues);
   }
 
   /**
    * Handle circularity slider changes with incremental adjustments
    */
-  _onCircularitySliderChange(stick, value) {
-    this._isSliderAdjusting = true;
+  _onCircularitySliderChange(lOrR, value) {
+    // Debug: Log the data structure
+    console.log(`Slider change for ${lOrR} stick, value: ${value}`);
 
-    try {
-      // Debug: Log the data structure
-      console.log(`Slider change for ${stick} stick, value: ${value}`);
-      console.log('ll_data:', this.ll_data);
-      console.log('rr_data:', this.rr_data);
-
-      // If we don't have base values, treat this as the start
-      if (!this._sliderBaseValues[stick]) {
-        this._onCircularitySliderStart(stick, value);
-        return;
-      }
-
-      // Calculate the incremental change from the previous slider position
-      const previousValue = this._previousSliderValues[stick];
-      const deltaValue = value - previousValue;
-
-      // If no change, return early
-      if (deltaValue === 0) {
-        return;
-      }
-
-      // Get the base values and suffixes for the current stick
-      const suffixes = stick === 'left' ? ['LL', 'LT', 'LR', 'LB'] : ['RL', 'RT', 'RR', 'RB'];
-      const baseValues = this._sliderBaseValues[stick];
-
-      // Calculate the total adjustment based on slider value from 0
-      // Value 0-100 maps to adjustment range (we'll use a reasonable range)
-      const maxAdjustment = 100; // Adjust this value as needed
-      const totalAdjustment = (value / 100) * maxAdjustment;
-
-      // Apply adjustments according to the requirements:
-      // LL, LT, RL, RT decrease by adjustment
-      // LR, LB, RR, RB increase by adjustment
-      suffixes.forEach(suffix => {
-        const element = $(`#finetune${suffix}`);
-        let newValue;
-
-        if (suffix === 'LL' || suffix === 'LT' || suffix === 'RL' || suffix === 'RT') {
-          // LL, LT, RL, RT decrease
-          newValue = Math.min(65535, baseValues[suffix] + totalAdjustment);
-        } else if (suffix === 'LR' || suffix === 'LB' || suffix === 'RR' || suffix === 'RB') {
-          // LR, LB, RR, RB increase
-          newValue = Math.max(0, baseValues[suffix] - totalAdjustment);
-        }
-
-        element.val(Math.round(newValue));
-      });
-
-      // Update ll_data and rr_data with incremental changes proportional to slider movement
-      const adjustmentConstant = 0.001; // Small constant for incremental adjustments
-      const totalAdjustmentFromBase = value * adjustmentConstant; // Total adjustment from slider position 0
-
-      if (stick === 'left' && this.ll_data && Array.isArray(this.ll_data)) {
-        const baseData = this._sliderBaseValues[stick].ll_data;
-        if (baseData && Array.isArray(baseData)) {
-          // Apply total adjustment from base values to maintain relative differences
-          for (let i = 0; i < this.ll_data.length; i++) {
-            this.ll_data[i] = Math.max(0, baseData[i] + totalAdjustmentFromBase);
-          }
-
-          // Convert polar coordinates to cartesian, trim to square, and convert back
-          this._trimCircularityDataToSquare(this.ll_data);
-        }
-      } else if (stick === 'right' && this.rr_data && Array.isArray(this.rr_data)) {
-        const baseData = this._sliderBaseValues[stick].rr_data;
-        if (baseData && Array.isArray(baseData)) {
-          // Apply total adjustment from base values to maintain relative differences
-          for (let i = 0; i < this.rr_data.length; i++) {
-            this.rr_data[i] = Math.max(0, baseData[i] + totalAdjustmentFromBase);
-          }
-
-          // Convert polar coordinates to cartesian, trim to square, and convert back
-          this._trimCircularityDataToSquare(this.rr_data);
-        }
-      }
-
-      // Update previous slider value
-      this._previousSliderValues[stick] = value;
-
-      // Don't trigger _onFinetuneChange during slider movement - only on release
-      // this._onFinetuneChange();
-
-      // Refresh the stick displays to show updated circularity data
-      this.refresh_finetune_sticks();
-
-    } finally {
-      this._isSliderAdjusting = false;
+    // If we don't have base values, treat this as the start
+    if (!this._inputStartValuesForSlider[lOrR]) {
+      this._onCircularitySliderStart(lOrR, value);
+      return;
     }
+
+    // Calculate the incremental change from the previous slider position
+    const previousValue = this._previousSliderValues[lOrR];
+    const deltaValue = value - previousValue;
+
+    // If no change, return early
+    if (deltaValue === 0) {
+      return;
+    }
+
+    // Get the start values and suffixes for the current stick
+    const config = STICK_CONFIG[lOrR];
+    const startValues = this._inputStartValuesForSlider[lOrR];
+
+    // Calculate the total adjustment based on slider value from 0
+    // Value 0-100 maps to adjustment range (we'll use a reasonable range)
+    const maxAdjustment = 175; // Adjust this value as needed
+    const totalAdjustment = (value / 100) * maxAdjustment;
+
+    config.suffixes.forEach(suffix => {
+      const element = $(`#finetune${suffix}`);
+      let newValue;
+
+      if (suffix.endsWith('L') || suffix.endsWith('T')) {
+        newValue = Math.min(65535, startValues[suffix] + totalAdjustment);
+      } else if (suffix.endsWith('R') || suffix.endsWith('B')) {
+        newValue = Math.max(0, startValues[suffix] - totalAdjustment);
+      }
+
+      element.val(Math.round(newValue));
+    });
+
+    // Update circularity data with incremental changes proportional to slider movement
+    const adjustmentConstant = 0.00085; // Small constant for incremental adjustments
+    const totalAdjustmentFromBase = totalAdjustment * adjustmentConstant; // Total adjustment from slider position 0
+
+    const startingData = this._inputStartValuesForSlider[lOrR][config.circDataName];
+    const circData = this[config.circDataName];
+
+    // Apply total adjustment from base values to maintain relative differences
+    startingData.forEach((value, i) => circData[i] = Math.max(0, value + totalAdjustmentFromBase));
+
+    // Convert polar coordinates to cartesian, trim to square, and convert back
+    this._trimCircularityDataToSquare(circData);
+
+    // Update previous slider value
+    this._previousSliderValues[lOrR] = value;
+
+    // Refresh the stick displays to show updated circularity data
+    this.refresh_finetune_sticks();
   }
 
   /**
-   * Handle slider release - clear ll_data and rr_data
-   * @param {string} stick - 'left' or 'right'
+   * Handle slider release - clear circularity data
+   * @param {string} lOrR - 'left' or 'right'
    */
-  _onCircularitySliderRelease(stick) {
-    console.log(`Circularity slider released for ${stick} stick`);
+  _onCircularitySliderRelease(lOrR) {
+    console.log(`Circularity slider released for ${lOrR} stick`);
 
     // Mark that this slider has been used
-    this._sliderUsed[stick] = true;
-
-    // Clear the base values for this stick
-//    this._sliderBaseValues[stick] = null;
-    // Note: Don't reset _previousSliderValues[stick] to 0 to maintain slider position
-
-    // Don't reset the slider to 0 - let it maintain its position
-    // $(`#${stick}CircularitySlider`).val(0);
+    this._sliderUsed[lOrR] = true;
 
     // Clear the circularity data - zero out the array while maintaining its size
-    if (stick === 'left' && this.ll_data && Array.isArray(this.ll_data)) {
-      this.ll_data.fill(0);
-    } else if (stick === 'right' && this.rr_data && Array.isArray(this.rr_data)) {
-      this.rr_data.fill(0);
-    }
+    const config = STICK_CONFIG[lOrR];
+    const circData = this[config.circDataName];
+    circData.fill(0);
 
     // Call the clearCircularity function to update the display
     this.clearCircularity();
@@ -1056,9 +1038,9 @@ export class Finetune {
     this._onFinetuneChange();
 
     // Toggle the slider off and change button to undo
-    const stickCard = $(`#${stick}-stick-card`);
+    const stickCard = $(`#${lOrR}-stick-card`);
     stickCard.removeClass('show-slider');
-    this._showErrorSlackUndoButton(stick);
+    this._showErrorSlackUndoButton(lOrR);
 
     // Refresh the stick displays to show cleared circularity data
     this.refresh_finetune_sticks();
@@ -1071,11 +1053,9 @@ export class Finetune {
    */
   _trimCircularityDataToSquare(data) {
     const numSectors = data.length;
-
-    for (let i = 0; i < numSectors; i++) {
+    data.forEach((radius, i) => {
       // Calculate angle for this sector
       const angle = (i * 2 * Math.PI) / numSectors;
-      const radius = data[i];
 
       // Convert polar to cartesian coordinates
       const x = radius * Math.cos(angle);
@@ -1087,35 +1067,27 @@ export class Finetune {
 
       // Convert back to polar coordinates
       const trimmedRadius = Math.sqrt(trimmedX * trimmedX + trimmedY * trimmedY);
-
-      // Update the data array with the trimmed radius
       data[i] = trimmedRadius;
-    }
+    });
   }
 
   /**
    * Reset circularity slider to zero and restore input values to their base state
-   * @param {string} stick - 'left' or 'right'
+   * @param {string} lOrR - 'left' or 'right'
    */
-  _resetCircularitySlider(stick) {
-    console.log(`Resetting circularity slider for ${stick} stick`);
+  _resetCircularitySlider(lOrR) {
+    console.log(`Resetting circularity slider for ${lOrR} stick`);
 
-    // If we have base values stored, use them to reset properly
-    if (this._sliderBaseValues[stick]) {
-      // Reset the slider to zero first
-      $(`#${stick}CircularitySlider`).val(0);
+    // If we have starting values stored, use them to reset properly
+    // Reset the slider to zero first
+    $(`#${lOrR}CircularitySlider`).val(0);
 
-      // Trigger the slider change with value 0 to recalculate input values
-      this._onCircularitySliderChange(stick, 0);
-    } else {
-      // If no base values, just reset the slider
-      $(`#${stick}CircularitySlider`).val(0);
-      this._previousSliderValues[stick] = 0;
-    }
+    // Trigger the slider change with value 0 to recalculate input values
+    this._onCircularitySliderChange(lOrR, 0);
 
     // Reset the slider used state and update button back to slack
-    this._sliderUsed[stick] = false;
-    this._showErrorSlackButton(stick);
+    this._sliderUsed[lOrR] = false;
+    this._showErrorSlackButton(lOrR);
 
     // Clear the circularity data display
     this.clearCircularity();
@@ -1143,62 +1115,30 @@ export class Finetune {
    * Update the state of error slack buttons based on data content
    */
   _updateErrorSlackButtonStates() {
-    const leftHasData = this._hasOnlyNonZeroValues(this.ll_data);
-    const rightHasData = this._hasOnlyNonZeroValues(this.rr_data);
-
-    // Handle left stick buttons
-    const leftSlackBtn = $('#leftErrorSlackBtn');
-    const leftUndoBtn = $('#leftErrorSlackUndoBtn');
-
-    if (this._sliderUsed.left) {
-      // Show undo button, hide slack button
-      this._showErrorSlackUndoButton('left');
-    } else {
-      // Show slack button, hide undo button
-      this._showErrorSlackButton('left');
-
-      // Enable/disable slack button based on data
-      if (leftHasData) {
-        leftSlackBtn.prop('disabled', false);
-        leftSlackBtn.removeClass('disabled');
-        leftSlackBtn.attr('title', 'Apply error slack adjustment for left stick');
+    Object.entries(STICK_CONFIG).forEach(([lOrR, config]) => {
+      if (this._sliderUsed[lOrR]) {
+        // Show undo button, hide slack button
+        this._showErrorSlackUndoButton(lOrR);
       } else {
-        leftSlackBtn.prop('disabled', true);
-        leftSlackBtn.addClass('disabled');
-        leftSlackBtn.attr('title', 'Error slack requires circularity data (move stick in full circles first)');
+        // Show slack button, hide undo button
+        this._showErrorSlackButton(lOrR);
+
+        const hasData = this._hasOnlyNonZeroValues(this[config.circDataName]);
+        const slackBtn = $(`#${lOrR}ErrorSlackBtn`);
+        slackBtn
+          .prop('disabled', !hasData)
+          .toggleClass('btn-secondary', hasData)
+          .toggleClass('btn-outline-secondary', !hasData);
       }
-    }
-
-    // Handle right stick buttons
-    const rightSlackBtn = $('#rightErrorSlackBtn');
-    const rightUndoBtn = $('#rightErrorSlackUndoBtn');
-
-    if (this._sliderUsed.right) {
-      // Show undo button, hide slack button
-      this._showErrorSlackUndoButton('right');
-    } else {
-      // Show slack button, hide undo button
-      this._showErrorSlackButton('right');
-
-      // Enable/disable slack button based on data
-      if (rightHasData) {
-        rightSlackBtn.prop('disabled', false);
-        rightSlackBtn.removeClass('disabled');
-        rightSlackBtn.attr('title', 'Apply error slack adjustment for right stick');
-      } else {
-        rightSlackBtn.prop('disabled', true);
-        rightSlackBtn.addClass('disabled');
-        rightSlackBtn.attr('title', 'Error slack requires circularity data (move stick in full circles first)');
-      }
-    }
+    });
   }
 
   /**
    * Handle error slack button click
-   * @param {string} stick - 'left' or 'right'
+   * @param {string} lOrR - 'left' or 'right'
    */
-  _onErrorSlackButtonClick(stick) {
-    console.log(`Error slack button clicked for ${stick} stick`);
+  _onErrorSlackButtonClick(lOrR) {
+    console.log(`Error slack button clicked for ${lOrR} stick`);
 
     // Only allow toggle in circularity mode
     if (this._mode !== 'circularity') {
@@ -1207,63 +1147,48 @@ export class Finetune {
     }
 
     // Toggle between showing LX/LY values and circularity slider
-    const stickCard = $(`#${stick}-stick-card`);
+    const stickCard = $(`#${lOrR}-stick-card`);
     const isShowingSlider = stickCard.hasClass('show-slider');
-
-    if (isShowingSlider) {
-      // Currently showing slider, switch to values
-      stickCard.removeClass('show-slider');
-      console.log(`Switched ${stick} stick to show LX/LY values`);
-    } else {
-      // Currently showing values, switch to slider
-      stickCard.addClass('show-slider');
-      console.log(`Switched ${stick} stick to show circularity slider`);
-    }
+    stickCard.toggleClass('show-slider', !isShowingSlider);
   }
 
   /**
    * Handle error slack undo button click
-   * @param {string} stick - 'left' or 'right'
+   * @param {string} lOrR - 'left' or 'right'
    */
-  _onErrorSlackUndoButtonClick(stick) {
-    console.log(`Error slack undo button clicked for ${stick} stick`);
+  _onErrorSlackUndoButtonClick(lOrR) {
+    console.log(`Error slack undo button clicked for ${lOrR} stick`);
 
-    // Only allow undo in circularity mode
-    if (this._mode !== 'circularity') {
-      console.log('Error slack undo button only works in circularity mode');
-      return;
-    }
+    this._resetCircularitySlider(lOrR);
+  }
 
-    // Call reset function to undo the circularity adjustment
-    this._resetCircularitySlider(stick);
+  /**
+   * Toggle button visibility between slack and undo buttons
+   * @param {string} lOrR - 'left' or 'right'
+   * @param {boolean} showUndo - true to show undo button, false to show slack button
+   */
+  _toggleErrorSlackButtons(lOrR, showUndo) {
+    const undoBtn = $(`#${lOrR}ErrorSlackUndoBtn`);
+    const slackBtn = $(`#${lOrR}ErrorSlackBtn`);
+
+    undoBtn.toggleClass('d-none', !showUndo);
+    slackBtn.toggleClass('d-none', showUndo);
   }
 
   /**
    * Show undo button and hide slack button
-   * @param {string} stick - 'left' or 'right'
+   * @param {string} lOrR - 'left' or 'right'
    */
-  _showErrorSlackUndoButton(stick) {
-    const slackBtn = $(`#${stick}ErrorSlackBtn`);
-    const undoBtn = $(`#${stick}ErrorSlackUndoBtn`);
-
-    // Add a class to hide slack button and show undo button
-    slackBtn.addClass('d-none');
-    undoBtn.removeClass('d-none');
-    undoBtn.attr('title', `Undo circularity adjustment for ${stick} stick`);
+  _showErrorSlackUndoButton(lOrR) {
+    this._toggleErrorSlackButtons(lOrR, true);
   }
 
   /**
    * Show slack button and hide undo button
-   * @param {string} stick - 'left' or 'right'
+   * @param {string} lOrR - 'left' or 'right'
    */
-  _showErrorSlackButton(stick) {
-    const slackBtn = $(`#${stick}ErrorSlackBtn`);
-    const undoBtn = $(`#${stick}ErrorSlackUndoBtn`);
-
-    // Add a class to hide undo button and show slack button
-    undoBtn.addClass('d-none');
-    slackBtn.removeClass('d-none');
-    slackBtn.attr('title', `Apply error slack adjustment for ${stick} stick`);
+  _showErrorSlackButton(lOrR) {
+    this._toggleErrorSlackButtons(lOrR, false);
   }
 }
 
@@ -1282,10 +1207,10 @@ function destroyCurrentInstance() {
 }
 
 // Function to create and initialize finetune instance
-export async function ds5_finetune(controller, dependencies) {
+export async function ds5_finetune(controller, dependencies, doneCallback = null) {
   // Create new instance
   currentFinetuneInstance = new Finetune();
-  await currentFinetuneInstance.init(controller, dependencies);
+  await currentFinetuneInstance.init(controller, dependencies, doneCallback);
 }
 
 export function finetune_handle_controller_input(changes) {

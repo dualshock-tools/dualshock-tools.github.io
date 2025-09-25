@@ -74,7 +74,9 @@ class ControllerFactory {
           showInfo: false, 
           showFinetune: false, 
           showMute: false, 
-          showInfoTab: false 
+          showInfoTab: false,
+          showFourStepCalib: true,
+          showQuickCalib: false
         };
 
       case 0x0ce6: // DS5
@@ -83,7 +85,9 @@ class ControllerFactory {
           showInfo: true, 
           showFinetune: true, 
           showMute: true, 
-          showInfoTab: true 
+          showInfoTab: true,
+          showFourStepCalib: false,
+          showQuickCalib: true
         };
 
       default:
@@ -91,7 +95,9 @@ class ControllerFactory {
           showInfo: false, 
           showFinetune: false, 
           showMute: false, 
-          showInfoTab: false 
+          showInfoTab: false,
+          showFourStepCalib: false,
+          showQuickCalib: false
         };
     }
   }

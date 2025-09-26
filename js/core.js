@@ -775,10 +775,6 @@ function close_all_modals() {
   $('.modal.show').modal('hide'); // Close any open modals
 }
 
-function set_progress(i) {
-  $(".progress-bar").css('width', '' + i + '%')
-}
-
 function render_info_to_dom(infoItems) {
   // Clear all info sections
   $("#fwinfo").html("");
@@ -1016,18 +1012,33 @@ window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
 window.calibrate_range = () => calibrate_range(
   controller,
-  { resetStickDiagrams },
-  (success, message) => { success && successAlert(message); success && switchToRangeMode(); }
+  (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      successAlert(message);
+      switchToRangeMode();
+    }
+  }
 );
 window.calibrate_stick_centers = () => calibrate_stick_centers(
   controller,
-  { resetStickDiagrams, set_progress },
-  (success, message) => { success && successAlert(message); success && switchTo10xZoomMode(); }
+  (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      successAlert(message);
+      switchTo10xZoomMode();
+    }
+  }
 );
 window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(
   controller,
-  { resetStickDiagrams, set_progress },
-  (success, message) => { success && successAlert(message); success && switchTo10xZoomMode(); }
+  (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      successAlert(message);
+      switchTo10xZoomMode();
+    }
+  }
 );
 window.ds5_finetune = () => ds5_finetune(
   controller,

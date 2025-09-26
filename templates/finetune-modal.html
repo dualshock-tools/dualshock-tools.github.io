@@ -109,7 +109,7 @@
 
                     <!-- LX/LY values display -->
                     <div class="px-2 left-stick-values">
-                      <div class="spacer finetune-center-mode" style="height: 35px;">&nbsp;</div>
+                      <div class="spacer finetune-center-mode hide-raw-numbers" style="height: 35px;">&nbsp;</div>
 
                       <div class="hstack">
                         <div class="vstack" style="text-align: center;">
@@ -174,7 +174,7 @@
 
                       <!-- RX/RY values display -->
                       <div class="px-2 right-stick-values">
-                        <div class="spacer finetune-center-mode" style="height: 35px;">&nbsp;</div>
+                        <div class="spacer finetune-center-mode hide-raw-numbers" style="height: 35px;">&nbsp;</div>
 
                         <div class="hstack">
                           <div class="vstack" style="text-align: center;">
@@ -229,6 +229,19 @@
               <li><a class="dropdown-item" href="#" data-step="3">3</a></li>
               <li><a class="dropdown-item" href="#" data-step="2">2</a></li>
               <li><a class="dropdown-item" href="#" data-step="1">1</a></li>
+            </ul>
+          </div>
+          <div class="dropdown me-2">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="quickCalibrateDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-bolt"></i>&nbsp;<span class="ds-i18n">Quick calibrate</span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="quickCalibrateDropdown">
+              <li><a class="dropdown-item" href="#" onclick="finetune_quick_calibrate_center()">
+                <i class="fas fa-crosshairs"></i>&nbsp;<span class="ds-i18n">Center</span>
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="finetune_quick_calibrate_range()">
+                <i class="fas fa-expand-arrows-alt"></i>&nbsp;<span class="ds-i18n">Circularity</span>
+              </a></li>
             </ul>
           </div>
           <button type="button" class="btn btn-secondary ds-i18n" onclick="finetune_cancel()">Cancel</button>

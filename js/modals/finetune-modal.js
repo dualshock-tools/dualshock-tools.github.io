@@ -2,6 +2,8 @@
 
 import { draw_stick_position } from '../stick-renderer.js';
 import { dec2hex32, float_to_str } from '../utils.js';
+import { auto_calibrate_stick_centers } from './calib-center-modal.js';
+import { calibrate_range } from './calib-range-modal.js';
 
 const FINETUNE_INPUT_SUFFIXES = ["LL", "LT", "RL", "RT", "LR", "LB", "RR", "RB", "LX", "LY", "RX", "RY"];
 const LEFT_AND_RIGHT = ['left', 'right'];
@@ -50,6 +52,7 @@ export class Finetune {
     this.active_stick = null; // 'left', 'right', or null
     this._centerStepSize = 5; // Default step size for center mode
     this._circularityStepSize = 5; // Default step size for circularity mode
+    this.isQuickCalibrating = false; // Prevents dialog destruction during quick calibration
 
     // Dependencies
     this.controller = null;
@@ -147,12 +150,7 @@ export class Finetune {
     const modal = new bootstrap.Modal(document.getElementById('finetuneModal'), {})
     modal.show();
 
-    const maxValue = this.controller.getFinetuneMaxValue();
-    FINETUNE_INPUT_SUFFIXES.forEach((suffix, i) => {
-      $("#finetune" + suffix)
-        .attr('max', maxValue)
-        .val(data[i]);
-    });
+    this._initializeFinetuneInputs(data);
 
     // Start in center mode
     this.setMode('center');
@@ -287,6 +285,12 @@ export class Finetune {
   _onModalHidden() {
     console.log("Finetune modal hidden event triggered");
 
+    // Don't destroy the instance if quick calibration is in progress
+    if (this.isQuickCalibrating) {
+      console.log("Quick calibration in progress, preventing dialog destruction");
+      return;
+    }
+
     // Reset circularity sliders to zero when modal closes
     LEFT_AND_RIGHT.forEach(lOrR => {
       $(`#${lOrR}CircularitySlider`).val(0);
@@ -328,6 +332,26 @@ export class Finetune {
       this._handleCenterModeAdjustment(changes);
     } else {
       this._handleCircularityModeAdjustment(changes);
+    }
+  }
+
+  /* Set the quick calibrating state to prevent dialog destruction
+  * @param {boolean} isCalibrating - Whether quick calibration is in progress
+  */
+  setQuickCalibrating(isCalibrating) {
+    this.isQuickCalibrating = isCalibrating;
+    const finetuneModal = bootstrap.Modal.getInstance('#finetuneModal');
+    finetuneModal.toggle(!isCalibrating);
+
+    if(!isCalibrating) {
+      this.clearCircularity();
+
+        // Refresh the finetune data after calibration
+      this._readFinetuneData().then((data) => {
+        this._initializeFinetuneInputs(data);
+        this.refresh_finetune_sticks();
+        console.log('Finetune modal refreshed');
+      });
     }
   }
 
@@ -404,6 +428,19 @@ export class Finetune {
       const isChecked = savedState === 'true';
       $("#showRawNumbersCheckbox").prop('checked', isChecked);
     }
+  }
+
+  /**
+   * Initialize finetune input fields with data and max values
+   * @param {Array} data - Array of finetune values
+   */
+  _initializeFinetuneInputs(data) {
+    const maxValue = this.controller.getFinetuneMaxValue();
+    FINETUNE_INPUT_SUFFIXES.forEach((suffix, i) => {
+      $("#finetune" + suffix)
+        .attr('max', maxValue)
+        .val(data[i]);
+    });
   }
 
   /**
@@ -1240,5 +1277,28 @@ export function isFinetuneVisible() {
   return !!currentFinetuneInstance;
 }
 
+// Quick calibrate functions
+async function finetune_quick_calibrate_center() {
+  // Hide the finetune modal
+  currentFinetuneInstance.setQuickCalibrating(true);
+
+  const { controller } = currentFinetuneInstance;
+  await auto_calibrate_stick_centers(controller, (success, message) => {
+    currentFinetuneInstance.setQuickCalibrating(false);
+  });
+}
+
+async function finetune_quick_calibrate_range() {
+  // Hide the finetune modal
+  currentFinetuneInstance.setQuickCalibrating(true);
+
+  const { controller } = currentFinetuneInstance;
+  await calibrate_range(controller, (success, message) => {
+    currentFinetuneInstance.setQuickCalibrating(false);
+  });
+}
+
 window.finetune_cancel = finetune_cancel;
 window.finetune_save = finetune_save;
+window.finetune_quick_calibrate_center = finetune_quick_calibrate_center;
+window.finetune_quick_calibrate_range = finetune_quick_calibrate_range;

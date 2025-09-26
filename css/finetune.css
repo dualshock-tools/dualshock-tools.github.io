@@ -89,6 +89,11 @@ input[id^="finetune"] {
   display: none;
 }
 
+/* Hide spacers when raw numbers are hidden */
+#finetuneModal.hide-raw-numbers .spacer.hide-raw-numbers {
+  display: none;
+}
+
 /* Adjust grid layout when raw numbers are hidden - center the canvas */
 #finetuneModal.hide-raw-numbers .finetune-grid {
   grid-template-columns: 1fr;

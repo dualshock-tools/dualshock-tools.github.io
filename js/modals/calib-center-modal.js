@@ -8,10 +8,8 @@ import { l } from '../translations.js';
  * Handles step-by-step manual stick center calibration
  */
 export class CalibCenterModal {
-  constructor(controllerInstance, { resetStickDiagrams, set_progress }, doneCallback = null) {
+  constructor(controllerInstance, doneCallback = null) {
     this.controller = controllerInstance;
-    this.resetStickDiagrams = resetStickDiagrams;
-    this.set_progress = set_progress;
     this.doneCallback = doneCallback;
 
     this._initEventListeners();
@@ -29,6 +27,14 @@ export class CalibCenterModal {
       console.log("Closing calibration modal");
       destroyCurrentInstance();
     });
+  }
+
+  /**
+   * Set progress bar width
+   * @param {number} i - Progress percentage (0-100)
+   */
+  setProgress(i) {
+    $("#calib-center-progress").css('width', '' + i + '%')
   }
 
   /**
@@ -113,21 +119,20 @@ export class CalibCenterModal {
     if(!this.controller.isConnected())
       return;
 
-    this.set_progress(0);
+    this.setProgress(0);
     new bootstrap.Modal(document.getElementById('calibrateModal'), {}).show();
 
     await sleep(1000);
 
     // Use the controller manager's calibrateSticks method with UI progress updates
-    this.set_progress(10);
+    this.setProgress(10);
 
     const result = await this.controller.calibrateSticks((progress) => {
-      this.set_progress(progress);
+      this.setProgress(progress);
     });
 
     await sleep(500);
     this._close(true, result?.message);
-    this.resetStickDiagrams();
   }
 
   /**
@@ -220,8 +225,8 @@ function destroyCurrentInstance() {
 }
 
 // Legacy function exports for backward compatibility
-export async function calibrate_stick_centers(controller, dependencies, doneCallback = null) {
-  currentCalibCenterInstance = new CalibCenterModal(controller, dependencies, doneCallback);
+export async function calibrate_stick_centers(controller, doneCallback = null) {
+  currentCalibCenterInstance = new CalibCenterModal(controller, doneCallback);
   await currentCalibCenterInstance.open();
 }
 
@@ -241,24 +246,20 @@ async function quick_calibrate_instead() {
     currentCalibCenterInstance.doneCallback = null; // Temporarily remove callback to avoid double-calling
     currentCalibCenterInstance._close();
 
-    // Get the controller and dependencies from the current instance
+    // Get the controller from the current instance
     const { controller } = currentCalibCenterInstance;
-    const dependencies = {
-      resetStickDiagrams: currentCalibCenterInstance.resetStickDiagrams,
-      set_progress: currentCalibCenterInstance.set_progress
-    };
 
     // Destroy the current instance
     destroyCurrentInstance();
 
     // Start auto calibration with the original callback
-    await auto_calibrate_stick_centers(controller, dependencies, doneCallback);
+    await auto_calibrate_stick_centers(controller, {}, doneCallback);
   }
 }
 
 // "Old" fully automatic stick center calibration
-export async function auto_calibrate_stick_centers(controller, dependencies, doneCallback = null) {
-  currentCalibCenterInstance = new CalibCenterModal(controller, dependencies, doneCallback);
+export async function auto_calibrate_stick_centers(controller, doneCallback = null) {
+  currentCalibCenterInstance = new CalibCenterModal(controller, doneCallback);
   await currentCalibCenterInstance.multiCalibrateSticks();
 }
 

@@ -45,7 +45,7 @@ const paths = {
       'web-app-manifest-192x192.png',
       'web-app-manifest-512x512.png',
       'site.webmanifest',
-      'donate.png',
+      'assets/donate.png',
       'googlec4c2e36a49e62fa3.html',
       'fa.min.css'
     ],
@@ -282,11 +282,11 @@ function languages() {
 function assets() {
   if (isProduction) {
     // In production, SVGs are bundled into the HTML file, so only copy other assets
-    return gulp.src(paths.src.assets, { base: '.' })
+    return gulp.src(paths.src.assets, { base: '.', encoding: false })
       .pipe(gulp.dest(paths.dist));
   }
   
-  return gulp.src([...paths.src.assets, paths.src.svg], { base: '.' })
+  return gulp.src([...paths.src.assets, paths.src.svg], { base: '.', encoding: false })
     .pipe(gulp.dest(paths.dist));
 }
 

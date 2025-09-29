@@ -1,16 +1,6 @@
 'use strict';
 
-const ACCORDION_ELEMENTS = [
-  'usb-test-collapse',
-  'buttons-test-collapse',
-  'haptic-test-collapse',
-  'adaptive-test-collapse',
-  'lights-test-collapse',
-  'speaker-test-collapse',
-  'microphone-test-collapse'
-];
-
-const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'lights', 'speaker', 'microphone'];
+const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
   'usb': 'USB Connector',
   'buttons': 'Buttons',
@@ -18,7 +8,8 @@ const TEST_NAMES = {
   'adaptive': 'Adaptive Trigger',
   'lights': 'Lights',
   'speaker': 'Speaker',
-  'microphone': 'Microphone'
+  'headphone': 'Headphone Jack',
+  'microphone': 'Microphone',
 };
 
 const BUTTONS = ['triangle', 'cross', 'circle', 'square', 'l1', 'r1', 'l2', 'r2', 'l3', 'r3', 'up', 'down', 'left', 'right', 'create', 'touchpad', 'options', 'ps', 'mute'];
@@ -76,6 +67,7 @@ export class QuickTestModal {
       lights: null,
       speaker: null,
       microphone: null,
+      headphone: null,
       microphoneStream: null,
       microphoneContext: null,
       microphoneMonitoring: false,
@@ -158,7 +150,8 @@ export class QuickTestModal {
       'adaptive': 'fas fa-hand-pointer',
       'lights': 'fas fa-lightbulb',
       'speaker': 'fas fa-volume-up',
-      'microphone': 'fas fa-microphone'
+      'microphone': 'fas fa-microphone',
+      'headphone': 'fas fa-headphones'
     };
 
     const testContent = this._getTestContent(testType);
@@ -304,6 +297,26 @@ export class QuickTestModal {
               <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
             </button>
             <button type="button" class="btn btn-danger" id="microphone-fail-btn" onclick="markTestResult('microphone', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      case 'headphone':
+        return `
+          <p class="ds-i18n">This test checks the headphone jack functionality.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong></p>
+          <ol class="ds-i18n">
+            <li>Plug in headphones to the 3.5mm jack</li>
+            <li>Click "Test Speaker" to listen for the tone through the headphones</li>
+          </ol>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-primary" id="headphone-test-btn" onclick="testHeadphoneAudio()">
+              <i class="fas fa-volume-up me-1"></i><span class="ds-i18n">Test Speaker</span>
+            </button>
+            <button type="button" class="btn btn-success" id="headphone-pass-btn" onclick="markTestResult('headphone', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="headphone-fail-btn" onclick="markTestResult('headphone', false)">
               <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
             </button>
           </div>
@@ -558,6 +571,9 @@ export class QuickTestModal {
         case 'microphone':
           this._startMicrophoneTest();
           break;
+        case 'headphone':
+          // Headphone test is manual - no auto-start needed
+          break;
       }
     }, 100);
   }
@@ -585,6 +601,9 @@ export class QuickTestModal {
         break;
       case 'microphone':
         this._stopMicrophoneTest();
+        break;
+      case 'headphone':
+        // Headphone test is manual - no stop needed
         break;
     }
 
@@ -911,6 +930,29 @@ export class QuickTestModal {
     }
 
     $levelContainer.hide();
+  }
+
+  /**
+   * Test headphone audio output by playing through controller headphones
+   * This specifically routes audio to headphones instead of the built-in speaker
+   */
+  async testHeadphoneAudio() {
+    this._startIconAnimation('headphone');
+
+    try {
+      // Play a test tone through the controller's headphone output
+      // The third parameter specifies "headphones" as the output destination
+      await this.controller.setSpeakerTone(500, ({success}) => {}, "headphones");
+
+      // Stop the animation after the tone completes
+      setTimeout(() => {
+        this._stopIconAnimation('headphone');
+      }, 700); // Slightly longer than tone duration
+
+    } catch (error) {
+      console.error('Error testing headphone audio:', error);
+      this._stopIconAnimation('headphone');
+    }
   }
 
   /**
@@ -1458,9 +1500,16 @@ function addTestBack(testType) {
   }
 }
 
+function testHeadphoneAudio() {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance.testHeadphoneAudio();
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
 window.resetButtonsTest = resetButtonsTest;
 window.skipTest = skipTest;
 window.addTestBack = addTestBack;
+window.testHeadphoneAudio = testHeadphoneAudio;

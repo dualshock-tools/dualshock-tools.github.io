@@ -382,14 +382,15 @@ class ControllerManager {
    * Test speaker tone (DS5 only)
    * @param {number} duration - Duration in milliseconds (optional)
    * @param {Function} doneCb - Callback function called when tone ends (optional)
+   * @param {string} output - Audio output destination: "speaker" (default) or "headphones" (optional)
    */
-  async setSpeakerTone(duration = 1000, doneCb = ({success}) => {}) {
+  async setSpeakerTone(duration = 1000, doneCb = ({success}) => {}, output = "speaker") {
     try {
       if (!this.currentController.setSpeakerTone) {
         throw new Error(this.l("Speaker tone not supported on this controller"));
       }
 
-      await this.currentController.setSpeakerTone();
+      await this.currentController.setSpeakerTone(output);
 
       // If duration is specified, automatically reset speaker after the duration
       if (duration > 0) {

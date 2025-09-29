@@ -75,6 +75,14 @@ dl.row dd {
   animation: glow 1.5s ease-in-out infinite !important;
 }
 
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-lights {
+  animation: glow 1.2s ease-in-out infinite !important;
+}
+
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-headphone {
+  animation: pulse 1s ease-in-out infinite !important;
+}
+
 /* Skip button hover behavior */
 .skip-btn {
   opacity: 0;

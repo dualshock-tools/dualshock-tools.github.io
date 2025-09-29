@@ -5,16 +5,18 @@ const ACCORDION_ELEMENTS = [
   'buttons-test-collapse',
   'haptic-test-collapse',
   'adaptive-test-collapse',
+  'lights-test-collapse',
   'speaker-test-collapse',
   'microphone-test-collapse'
 ];
 
-const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'speaker', 'microphone'];
+const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'lights', 'speaker', 'microphone'];
 const TEST_NAMES = {
   'usb': 'USB Connector',
   'buttons': 'Buttons',
   'haptic': 'Haptic Vibration',
   'adaptive': 'Adaptive Trigger',
+  'lights': 'Lights',
   'speaker': 'Speaker',
   'microphone': 'Microphone'
 };
@@ -49,7 +51,6 @@ export class QuickTestModal {
   constructor(controllerInstance, { l }) {
     this.controller = controllerInstance;
     this.l = l;
-    this._modalListenersAdded = false;
 
     this.resetAllTests();
 
@@ -59,7 +60,6 @@ export class QuickTestModal {
     this._boundAccordionShown = (event) => this._handleAccordionShown(event);
     this._boundAccordionHidden = (event) => this._handleAccordionHidden(event);
     this._boundModalHidden = () => {
-      console.log("Quick Test modal hidden event triggered");
       this.resetAllTests();
       destroyCurrentInstance();
     };
@@ -73,6 +73,7 @@ export class QuickTestModal {
       buttons: null,
       haptic: null,
       adaptive: null,
+      lights: null,
       speaker: null,
       microphone: null,
       microphoneStream: null,
@@ -83,6 +84,7 @@ export class QuickTestModal {
       longPressThreshold: 400,
       isTransitioning: false,
       skippedTests: [],
+      lightsAnimationInterval: null,
     };
   }
 
@@ -154,6 +156,7 @@ export class QuickTestModal {
       'buttons': 'fas fa-gamepad',
       'haptic': 'fas fa-mobile-alt',
       'adaptive': 'fas fa-hand-pointer',
+      'lights': 'fas fa-lightbulb',
       'speaker': 'fas fa-volume-up',
       'microphone': 'fas fa-microphone'
     };
@@ -207,7 +210,7 @@ export class QuickTestModal {
         `;
       case 'buttons':
         return `
-          <p class="ds-i18n">This test checks all controller buttons by requiring you to press each button three times.</p>
+          <p class="ds-i18n">This test checks all controller buttons by requiring you to press each button up to three times.</p>
           <p class="ds-i18n"><strong>Instructions:</strong> Press each button until they turn green.</p>
           <div class="d-flex justify-content-center mb-3">
             <div style="width: 80%; max-width: 400px;" id="quick-test-controller-svg-placeholder">
@@ -252,6 +255,23 @@ export class QuickTestModal {
               <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
             </button>
             <button type="button" class="btn btn-danger" id="adaptive-fail-btn" onclick="markTestResult('adaptive', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      case 'lights':
+        return `
+          <p class="ds-i18n">This test will cycle through red, green, and blue colors on the controller lightbar, animate the player indicator lights, and flash the mute button.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Watch the controller lights change colors, the player lights animate, and the mute button flash.</p>
+          <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <span class="ds-i18n">The lights will automatically cycle through colors and patterns until you mark the test as passed or failed.</span>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="lights-pass-btn" onclick="markTestResult('lights', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="lights-fail-btn" onclick="markTestResult('lights', false)">
               <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
             </button>
           </div>
@@ -367,14 +387,13 @@ export class QuickTestModal {
       }
     });
 
-    // Only add modal listeners once
-    if (!this._modalListenersAdded) {
-      $('#quickTestModal').on('hidden.bs.modal', this._boundModalHidden);
-      $('#quickTestModal').on('shown.bs.modal', () => {
-        this._updateInstructions();
-      });
-      this._modalListenersAdded = true;
-    }
+    // Always try to add modal listeners (remove first to avoid duplicates)
+    this._removeModalEventListeners();
+    const $modal = $('#quickTestModal');
+    $modal.on('hidden.bs.modal', this._boundModalHidden);
+    $modal.on('shown.bs.modal', () => {
+      this._updateInstructions();
+    });
   }
 
   /**
@@ -386,20 +405,27 @@ export class QuickTestModal {
       const elementId = `${testType}-test-collapse`;
       const $element = $(`#${elementId}`);
       if ($element.length) {
-        $element.off('shown.bs.collapse', this._boundAccordionShown);
-        $element.off('hidden.bs.collapse', this._boundAccordionHidden);
+        $element.off('shown.bs.collapse');
+        $element.off('hidden.bs.collapse');
       }
     });
+  }
+
+  /**
+   * Remove modal event listeners only
+   */
+  _removeModalEventListeners() {
+    const $modal = $('#quickTestModal');
+    $modal.off('hidden.bs.modal', this._boundModalHidden);
+    $modal.off('shown.bs.modal');
   }
 
   /**
    * Remove event listeners
    */
   removeEventListeners() {
-    console.log("Removing event listeners");
     this._removeAccordionEventListeners();
-    $('#quickTestModal').off('hidden.bs.modal', this._boundModalHidden);
-    this._modalListenersAdded = false;
+    this._removeModalEventListeners();
   }
 
   /**
@@ -523,6 +549,9 @@ export class QuickTestModal {
         case 'adaptive':
           this._startAdaptiveTest();
           break;
+        case 'lights':
+          this._startLightsTest();
+          break;
         case 'speaker':
           this._startSpeakerTest();
           break;
@@ -550,6 +579,9 @@ export class QuickTestModal {
         break;
       case 'adaptive':
         this._stopAdaptiveTest();
+        break;
+      case 'lights':
+        this._stopLightsTest();
         break;
       case 'microphone':
         this._stopMicrophoneTest();
@@ -613,14 +645,9 @@ export class QuickTestModal {
     const buttonElement = this._getQuickTestElement(BUTTON_INFILL_MAPPING[button]);
 
     if (buttonElement) {
-      let color;
-      // Special buttons (create, options, mute, ps) go straight to green on first press
-      if (['create', 'options', 'mute', 'ps'].includes(button)) {
-        color = ['orange'][count] || '#16c016ff';
-      } else {
-        // Other buttons follow the 3-press sequence
-        color = ['orange', '#a5c9fcff', '#287ffaff'][count] || '#16c016ff';
-      }
+      const checkOnce = ['create', 'touchpad', 'options', 'l3', 'ps', 'mute', 'r3'].includes(button);
+      const colors = checkOnce ? ['orange'] : ['orange', '#a5c9fcff', '#287ffaff'];
+      const color = colors[count] || '#16c016ff';
       this._setSvgGroupColor(buttonElement, color);
     }
   }
@@ -632,8 +659,8 @@ export class QuickTestModal {
     const allPressed = BUTTONS.every(button => {
       const count = this.state.buttonPressCount[button] || 0;
       // Special buttons (create, options, mute, ps) only need 1 press
-      const isSpecialButton = ['create', 'options', 'mute', 'ps'].includes(button);
-      return isSpecialButton ? count >= 1 : count >= 3;
+      const checkOnce = ['create', 'touchpad', 'options', 'l3', 'ps', 'mute', 'r3'].includes(button);
+      return checkOnce ? count >= 1 : count >= 3;
     });
     if (allPressed) {
       // Auto-pass the test
@@ -690,6 +717,84 @@ export class QuickTestModal {
     this._stopIconAnimation('adaptive');
     console.log("Stopping Adaptive Trigger Test", this.controller);
     await this.controller.setAdaptiveTriggerPreset({ left: 'off', right: 'off' });
+  }
+
+  /**
+   * Start lights test - cycles through colors and animates player lights
+   */
+  async _startLightsTest() {
+    this._startIconAnimation('lights');
+    const { currentController } = this.controller;
+
+    if (!currentController?.setLightbarColor || !currentController?.setPlayerIndicator) {
+      console.warn('Controller does not support light control');
+      alert('This controller does not support light control. Only DualSense (DS5) controllers support this feature.');
+      this._stopIconAnimation('lights');
+      return;
+    }
+
+    const colors = [
+      { r: 255, g: 0, b: 0 },   // Red
+      { r: 0, g: 255, b: 0 },   // Green
+      { r: 0, g: 0, b: 255 },   // Blue
+    ];
+
+    const playerPatterns = [
+      0b10001,  // Light 1 & 5
+      0b01010,  // Light 2 & 4
+      0b00100,  // Light 3
+      0b01010,  // Light 4 & 2
+      0b10001,  // Light 5 & 1
+      0b11111,  // All lights
+      0b00000,  // No lights
+      0b11111,  // All lights
+      0b00000,  // No lights
+    ];
+
+    let colorIndex = 0;
+    let patternIndex = 0;
+
+    // Set mute LED - cycle through off, solid, pulsing
+    if (currentController.setMuteLed) {
+      await currentController.setMuteLed(2); // pulsing
+    }
+
+    // Start the animation
+    this.state.lightsAnimationInterval = setInterval(async () => {
+      try {
+        const color = colors[colorIndex];
+        const pattern = playerPatterns[patternIndex];
+
+        // Set lightbar color and player indicator
+        await currentController.setLightbarColor(color.r, color.g, color.b);
+        await currentController.setPlayerIndicator(pattern);
+
+        // Cycle through colors every 3 pattern changes
+        patternIndex = (patternIndex + 1) % playerPatterns.length;
+        if (patternIndex === 0) {
+          colorIndex = (colorIndex + 1) % colors.length;
+        }
+      } catch (error) {
+        console.error('Error during lights test:', error);
+      }
+    }, 200);
+  }
+
+  /**
+   * Stop lights test and reset lights
+   */
+  async _stopLightsTest() {
+    if(!this.state) return;
+
+    this._stopIconAnimation('lights');
+
+    // Clear the animation interval
+    if (this.state.lightsAnimationInterval) {
+      clearInterval(this.state.lightsAnimationInterval);
+      this.state.lightsAnimationInterval = null;
+    }
+
+    await this.controller.currentController.resetLights();
   }
 
   /**
@@ -787,6 +892,8 @@ export class QuickTestModal {
    * Stop microphone test
    */
   _stopMicrophoneTest() {
+    if(!this.state) return;
+
     const $levelContainer = $('#mic-level-container');
 
     this.state.microphoneMonitoring = false;
@@ -944,7 +1051,7 @@ export class QuickTestModal {
       }
     });
 
-    const numTests = TEST_SEQUENCE.length;
+    const numTests = TEST_SEQUENCE.length - skipped;
     const totalProcessed = completed + skipped;
 
     if (totalProcessed === 0) {
@@ -1134,6 +1241,8 @@ export class QuickTestModal {
    * Clear all active long-press timers
    */
   _clearAllLongPressTimers() {
+    if(!this.state) return;
+
     Object.keys(this.state.longPressTimers).forEach(button => {
       this._clearLongPressTimer(button);
     });
@@ -1210,19 +1319,20 @@ export class QuickTestModal {
    * Reset all tests to initial state
    */
   resetAllTests() {
+    // Clear any active long-press timers before resetting state
+    this._clearAllLongPressTimers();
+
+    // Clean up any active tests BEFORE resetting state
+    this._stopButtonsTest();
+    this._stopAdaptiveTest();
+    this._stopLightsTest();
+    this._stopMicrophoneTest();
+
     // Reset state
     this._initializeState();
 
     // Load saved skipped tests from localStorage
     this._loadSkippedTestsFromStorage();
-
-    // Clear any active long-press timers before resetting state
-    this._clearAllLongPressTimers();
-
-    // Clean up any active tests
-    this._stopButtonsTest();
-    this._stopAdaptiveTest();
-    this._stopMicrophoneTest();
 
     // Reset button colors to initial state
     this._resetButtonColors();

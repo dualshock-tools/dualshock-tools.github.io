@@ -738,6 +738,89 @@ class DS5Controller extends BaseController {
   }
 
   /**
+   * Set lightbar color
+   * @param {number} red - Red component (0-255)
+   * @param {number} green - Green component (0-255)
+   * @param {number} blue - Blue component (0-255)
+   */
+  async setLightbarColor(red = 0, green = 0, blue = 0) {
+    try {
+      const { validFlag1 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        ledCRed: Math.max(0, Math.min(255, red)),
+        ledCGreen: Math.max(0, Math.min(255, green)),
+        ledCBlue: Math.max(0, Math.min(255, blue)),
+        validFlag1: validFlag1 | DS5_VALID_FLAG1.LIGHTBAR_COLOR,
+      });
+      await this.sendOutputReport(outputStruct.pack(), 'set lightbar color');
+      outputStruct.validFlag1 &= ~DS5_VALID_FLAG1.LIGHTBAR_COLOR;
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+    } catch (error) {
+      throw new Error("Failed to set lightbar color", { cause: error });
+    }
+  }
+
+  /**
+   * Set player indicator lights
+   * @param {number} pattern - Player indicator pattern (0-31, each bit represents a light)
+   */
+  async setPlayerIndicator(pattern = 0) {
+    try {
+      const { validFlag1 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        playerIndicator: Math.max(0, Math.min(31, pattern)),
+        validFlag1: validFlag1 | DS5_VALID_FLAG1.PLAYER_INDICATOR,
+      });
+      await this.sendOutputReport(outputStruct.pack(), 'set player indicator');
+      outputStruct.validFlag1 &= ~DS5_VALID_FLAG1.PLAYER_INDICATOR;
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+    } catch (error) {
+      throw new Error("Failed to set player indicator", { cause: error });
+    }
+  }
+
+  /**
+   * Reset lights to default state (turn off)
+   */
+  async resetLights() {
+    try {
+      await this.setLightbarColor(0, 0, 0);
+      await this.setPlayerIndicator(0);
+      await this.setMuteLed(0);
+    } catch (error) {
+      throw new Error("Failed to reset lights", { cause: error });
+    }
+  }
+
+  /**
+   * Set mute button LED state
+   * @param {number} state - Mute LED state (0 = off, 1 = solid, 2 = pulsing)
+   */
+  async setMuteLed(state = 0) {
+    try {
+      const { validFlag1 } = this.currentOutputState;
+      const outputStruct = new DS5OutputStruct({
+        ...this.currentOutputState,
+        muteLedControl: Math.max(0, Math.min(2, state)),
+        validFlag1: validFlag1 | DS5_VALID_FLAG1.MUTE_LED,
+      });
+      await this.sendOutputReport(outputStruct.pack(), 'set mute LED');
+      outputStruct.validFlag1 &= ~DS5_VALID_FLAG1.MUTE_LED;
+
+      // Update current state to reflect the changes
+      this.updateCurrentOutputState(outputStruct);
+    } catch (error) {
+      throw new Error("Failed to set mute LED", { cause: error });
+    }
+  }
+
+  /**
   * Parse DS5 battery status from input data
   */
   parseBatteryStatus(data) {

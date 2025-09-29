@@ -260,5 +260,6 @@
     "While holding the stick to be adjusted straight up/down/left/right, <em>observe the highlighted value below the circle</em>, then use the D-pad buttons to adjust the value to ±0.99 (just below ±1.00).": "Утримуючи стік, який потрібно налаштувати, максимально вгору/вниз/вліво/вправо, <em>стежте за виділеним значенням під колом</em>, потім використовуйте кнопки D-pad, щоб відрегулювати значення до ±0.99 (трохи нижче за ±1.00).",
     "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "Пристрій під’єднано через Bluetooth. Від’єднайте його та під’єднайте знову, але вже за допомогою USB-кабелю.",
     "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "Ваш пристрій може бути не оригінальним контролером Sony. Якщо це не підробка, повідомте про цю проблему.",
+    "Step size": "",
     "": ""
 }

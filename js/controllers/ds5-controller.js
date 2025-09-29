@@ -685,25 +685,33 @@ class DS5Controller extends BaseController {
 
   /**
    * Test speaker tone by controlling speaker volume and audio settings
-   * This creates a brief audio feedback through the controller's speaker
+   * This creates a brief audio feedback through the controller's speaker or headphones
+   * @param {string} output - Audio output destination: "speaker" (default) or "headphones"
    */
-  async setSpeakerTone() {
+  async setSpeakerTone(output = "speaker") {
     try {
       const { validFlag0 } = this.currentOutputState;
       const outputStruct = new DS5OutputStruct({
         ...this.currentOutputState,
         speakerVolume: 85,
-        validFlag0: validFlag0 | DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL,
+        headphoneVolume: 55,
+        validFlag0: validFlag0 | DS5_VALID_FLAG0.HEADPHONE_VOLUME | DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL,
       });
-      await this.sendOutputReport(outputStruct.pack(), 'play speaker tone');
-      outputStruct.validFlag0 &= ~(DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL);
+      await this.sendOutputReport(outputStruct.pack(), output === "headphones" ? 'play headphone tone' : 'play speaker tone');
+      outputStruct.validFlag0 &= ~(DS5_VALID_FLAG0.HEADPHONE_VOLUME | DS5_VALID_FLAG0.SPEAKER_VOLUME | DS5_VALID_FLAG0.AUDIO_CONTROL);
 
-      // Send feature reports to enable speaker audio
-      // Audio configuration command
-      await this.sendFeatureReport(128, [6, 4, 0, 0, 8]);
-
-      // Enable speaker tone
-      await this.sendFeatureReport(128, [6, 2, 1, 1, 0]);
+      // Send feature reports to enable audio
+      if (output === "headphones") {
+        // Audio configuration command for headphones
+        await this.sendFeatureReport(128, [6, 4, 0, 0, 0, 0, 4, 0, 6]);
+        // Enable headphone tone
+        await this.sendFeatureReport(128, [6, 2, 1, 1, 0]);
+      } else {
+        // Audio configuration command for speakers
+        await this.sendFeatureReport(128, [6, 4, 0, 0, 8]);
+        // Enable speaker tone
+        await this.sendFeatureReport(128, [6, 2, 1, 1, 0]);
+      }
 
       // Update current state to reflect the changes
       this.updateCurrentOutputState(outputStruct);

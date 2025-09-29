@@ -50,27 +50,37 @@ dl.row dd {
   50% { text-shadow: 0 0 15px rgba(13, 110, 253, 0.8), 0 0 25px rgba(13, 110, 253, 0.6); }
 }
 
-/* Animation classes for different test types */
-i.fas.test-icon-usb {
+/* Animation classes for different test types - only animate when accordion is expanded */
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-usb {
   animation: pulse 1s ease-in-out infinite !important;
 }
 
-i.fas.test-icon-buttons {
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-buttons {
   animation: bounce 0.6s ease-in-out infinite !important;
 }
 
-i.fas.test-icon-haptic {
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-haptic {
   animation: shake 0.5s ease-in-out infinite !important;
 }
 
-i.fas.test-icon-adaptive {
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-adaptive {
   animation: pulse 1s ease-in-out infinite !important;
 }
 
-i.fas.test-icon-speaker {
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-speaker {
   animation: bounce 0.6s ease-in-out infinite !important;
 }
 
-i.fas.test-icon-microphone {
+.accordion-item:has(.accordion-collapse.show) i.fas.test-icon-microphone {
   animation: glow 1.5s ease-in-out infinite !important;
+}
+
+/* Skip button hover behavior */
+.skip-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.accordion-header:hover .skip-btn {
+  opacity: 1;
 }

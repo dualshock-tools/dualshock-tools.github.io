@@ -10,6 +10,14 @@ const ACCORDION_ELEMENTS = [
 ];
 
 const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'speaker', 'microphone'];
+const TEST_NAMES = {
+  'usb': 'USB Connector',
+  'buttons': 'Buttons',
+  'haptic': 'Haptic Vibration',
+  'adaptive': 'Adaptive Trigger',
+  'speaker': 'Speaker',
+  'microphone': 'Microphone'
+};
 
 const BUTTONS = ['triangle', 'cross', 'circle', 'square', 'l1', 'r1', 'l2', 'r2', 'l3', 'r3', 'up', 'down', 'left', 'right', 'create', 'touchpad', 'options', 'ps', 'mute'];
 const BUTTON_INFILL_MAPPING = {
@@ -41,8 +49,11 @@ export class QuickTestModal {
   constructor(controllerInstance, { l }) {
     this.controller = controllerInstance;
     this.l = l;
+    this._modalListenersAdded = false;
 
     this.resetAllTests();
+
+    this._loadSkippedTestsFromStorage();
 
     // Bind event handlers to maintain proper context
     this._boundAccordionShown = (event) => this._handleAccordionShown(event);
@@ -71,7 +82,226 @@ export class QuickTestModal {
       longPressTimers: {},
       longPressThreshold: 400,
       isTransitioning: false,
+      skippedTests: [],
     };
+  }
+
+  /**
+   * Save skipped tests to localStorage
+   */
+  _saveSkippedTestsToStorage() {
+    try {
+      localStorage.setItem('quickTestSkippedTests', JSON.stringify(this.state.skippedTests));
+    } catch (error) {
+      console.warn('Failed to save skipped tests to localStorage:', error);
+    }
+  }
+
+  /**
+   * Load skipped tests from localStorage
+   */
+  _loadSkippedTestsFromStorage() {
+    try {
+      const saved = localStorage.getItem('quickTestSkippedTests');
+      if (saved) {
+        const skippedTests = JSON.parse(saved);
+        if (Array.isArray(skippedTests)) {
+          this.state.skippedTests = skippedTests.filter(test => TEST_SEQUENCE.includes(test));
+          // Apply the skipped tests to the UI
+          this._applySkippedTestsToUI();
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load skipped tests from localStorage:', error);
+      this.state.skippedTests = [];
+    }
+  }
+
+  /**
+   * Apply skipped tests to the UI (rebuild accordion with non-skipped tests)
+   */
+  _applySkippedTestsToUI() {
+    this._buildDynamicAccordion();
+    this._updateSkippedTestsDropdown();
+  }
+
+  /**
+   * Build dynamic accordion with only non-skipped tests
+   */
+  _buildDynamicAccordion() {
+    const $accordion = $('#quickTestAccordion');
+    $accordion.empty();
+
+    // Get non-skipped tests in order
+    const activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+
+    activeTests.forEach(testType => {
+      const accordionItem = this._createAccordionItem(testType);
+      $accordion.append(accordionItem);
+    });
+
+    // Re-initialize event listeners for the new accordion items
+    this._initEventListeners();
+  }
+
+  /**
+   * Create an accordion item for a specific test type
+   */
+  _createAccordionItem(testType) {
+    const testName = TEST_NAMES[testType];
+    const testIcons = {
+      'usb': 'fas fa-plug',
+      'buttons': 'fas fa-gamepad',
+      'haptic': 'fas fa-mobile-alt',
+      'adaptive': 'fas fa-hand-pointer',
+      'speaker': 'fas fa-volume-up',
+      'microphone': 'fas fa-microphone'
+    };
+
+    const testContent = this._getTestContent(testType);
+
+    return $(`
+      <div class="accordion-item" id="${testType}-test-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${testType}-test-collapse" aria-expanded="false" aria-controls="${testType}-test-collapse">
+            <div class="d-flex align-items-center w-100">
+              <i class="${testIcons[testType]} me-3 test-icon-${testType}"></i>
+              <span class="flex-grow-1 ds-i18n">${testName}</span>
+              <a href="#" class="btn btn-link text-decoration-none skip-btn" id="${testType}-skip-btn" onclick="skipTest('${testType}'); return false;">
+                <span class="ds-i18n">skip</span>
+              </a>
+              <span class="badge bg-secondary me-2" id="${testType}-test-status">Not tested</span>
+            </div>
+          </button>
+        </h2>
+        <div id="${testType}-test-collapse" class="accordion-collapse collapse" data-bs-parent="#quickTestAccordion">
+          <div class="accordion-body">
+            ${testContent}
+          </div>
+        </div>
+      </div>
+    `);
+  }
+
+  /**
+   * Get the content for a specific test type
+   */
+  _getTestContent(testType) {
+    switch (testType) {
+      case 'usb':
+        return `
+          <p class="ds-i18n">This test checks the reliability of the USB port.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Wiggle the USB cable to see if the controller disconnects.</p>
+          <div class="alert alert-warning mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span class="ds-i18n">Be gentle to avoid damage.</span>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="usb-pass-btn" onclick="markTestResult('usb', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="usb-fail-btn" onclick="markTestResult('usb', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      case 'buttons':
+        return `
+          <p class="ds-i18n">This test checks all controller buttons by requiring you to press each button three times.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Press each button until they turn green.</p>
+          <div class="d-flex justify-content-center mb-3">
+            <div style="width: 80%; max-width: 400px;" id="quick-test-controller-svg-placeholder">
+              <!-- SVG will be loaded dynamically -->
+            </div>
+          </div>
+          <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <span class="ds-i18n">The test will automatically pass when all buttons have turned green.</span>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="buttons-pass-btn" onclick="markTestResult('buttons', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="buttons-fail-btn" onclick="markTestResult('buttons', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="buttons-reset-btn" onclick="resetButtonsTest()">
+              <i class="fas fa-redo me-1"></i><span class="ds-i18n">Restart</span>
+            </button>
+          </div>
+        `;
+      case 'haptic':
+        return `
+          <p class="ds-i18n">This test will activate the controller's vibration motors for 3 seconds.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Feel for vibration in the controller.</p>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="haptic-pass-btn" onclick="markTestResult('haptic', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="haptic-fail-btn" onclick="markTestResult('haptic', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      case 'adaptive':
+        return `
+          <p class="ds-i18n">This test will enable heavy resistance on both L2 and R2 triggers.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Press L2 and R2 triggers to feel the trigger resistance.</p>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="adaptive-pass-btn" onclick="markTestResult('adaptive', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="adaptive-fail-btn" onclick="markTestResult('adaptive', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      case 'speaker':
+        return `
+          <p class="ds-i18n">This test will play a tone through the controller's built-in speaker.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Listen for a tone from the controller speaker.</p>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="speaker-pass-btn" onclick="markTestResult('speaker', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="speaker-fail-btn" onclick="markTestResult('speaker', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      case 'microphone':
+        return `
+          <p class="ds-i18n">This test will monitor the controller's microphone input levels.</p>
+          <p class="ds-i18n"><strong>Instructions:</strong> Blow gently into the controller's microphone. You should see the audio level indicator respond.</p>
+          <div class="mb-3" id="mic-level-container" style="display: none;">
+            <label class="form-label ds-i18n">Microphone Level:</label>
+            <div class="progress">
+              <div class="progress-bar bg-info" role="progressbar" id="mic-level-bar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="microphone-pass-btn" onclick="markTestResult('microphone', true)">
+              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="microphone-fail-btn" onclick="markTestResult('microphone', false)">
+              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+            </button>
+          </div>
+        `;
+      default:
+        return '';
+    }
+  }
+
+  /**
+   * Clear saved skipped tests from localStorage
+   */
+  _clearSkippedTestsFromStorage() {
+    try {
+      localStorage.removeItem('quickTestSkippedTests');
+    } catch (error) {
+      console.warn('Failed to clear skipped tests from localStorage:', error);
+    }
   }
 
   /**
@@ -115,7 +345,7 @@ export class QuickTestModal {
    * Check if all tests have been completed
    */
   _areAllTestsCompleted() {
-    return TEST_SEQUENCE.every(test => this.state[test] !== null);
+    return TEST_SEQUENCE.every(test => this.state[test] !== null || this.state.skippedTests.includes(test));
   }
 
   /**
@@ -123,7 +353,13 @@ export class QuickTestModal {
    */
   // Set up event listeners for accordion collapse events to auto-start tests
   _initEventListeners() {
-    ACCORDION_ELEMENTS.forEach(elementId => {
+    // Remove existing listeners first
+    this._removeAccordionEventListeners();
+
+    // Add listeners for currently active tests
+    const activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+    activeTests.forEach(testType => {
+      const elementId = `${testType}-test-collapse`;
       const $element = $(`#${elementId}`);
       if ($element.length) {
         $element.on('shown.bs.collapse', this._boundAccordionShown);
@@ -131,9 +367,28 @@ export class QuickTestModal {
       }
     });
 
-    $('#quickTestModal').on('hidden.bs.modal', this._boundModalHidden);
-    $('#quickTestModal').on('shown.bs.modal', () => {
-      this._updateInstructions();
+    // Only add modal listeners once
+    if (!this._modalListenersAdded) {
+      $('#quickTestModal').on('hidden.bs.modal', this._boundModalHidden);
+      $('#quickTestModal').on('shown.bs.modal', () => {
+        this._updateInstructions();
+      });
+      this._modalListenersAdded = true;
+    }
+  }
+
+  /**
+   * Remove accordion event listeners only
+   */
+  _removeAccordionEventListeners() {
+    // Remove listeners from all possible test elements
+    TEST_SEQUENCE.forEach(testType => {
+      const elementId = `${testType}-test-collapse`;
+      const $element = $(`#${elementId}`);
+      if ($element.length) {
+        $element.off('shown.bs.collapse', this._boundAccordionShown);
+        $element.off('hidden.bs.collapse', this._boundAccordionHidden);
+      }
     });
   }
 
@@ -142,21 +397,17 @@ export class QuickTestModal {
    */
   removeEventListeners() {
     console.log("Removing event listeners");
-    ACCORDION_ELEMENTS.forEach(elementId => {
-      const $element = $(`#${elementId}`);
-      if ($element.length) {
-        $element.off('shown.bs.collapse', this._boundAccordionShown);
-        $element.off('hidden.bs.collapse', this._boundAccordionHidden);
-      }
-    });
-
+    this._removeAccordionEventListeners();
     $('#quickTestModal').off('hidden.bs.modal', this._boundModalHidden);
+    this._modalListenersAdded = false;
   }
 
   /**
    * Open the Quick Test modal
    */
   async open() {
+    // Build the dynamic accordion first
+    this._buildDynamicAccordion();
     await this._initSvgController();
     bootstrap.Modal.getOrCreateInstance('#quickTestModal').show();
   }
@@ -165,9 +416,14 @@ export class QuickTestModal {
    * Initialize SVG controller for the quick test modal
    */
   async _initSvgController() {
+    // Only initialize SVG if buttons test is not skipped
+    if (this.state.skippedTests.includes('buttons')) {
+      return;
+    }
+
     const svgContainer = document.getElementById('quick-test-controller-svg-placeholder');
     if (!svgContainer) {
-      console.warn('Quick test SVG container not found');
+      console.warn('Quick test SVG container not found - buttons test may be skipped');
       return;
     }
 
@@ -590,6 +846,88 @@ export class QuickTestModal {
   }
 
   /**
+   * Skip a test and remove it from the accordion
+   */
+  skipTest(testType) {
+    // Add to skipped tests if not already there
+    if (!this.state.skippedTests.includes(testType)) {
+      this.state.skippedTests.push(testType);
+    }
+
+    // Save to localStorage
+    this._saveSkippedTestsToStorage();
+
+    // Stop any ongoing test activities
+    this._stopIconAnimation(testType);
+    if (testType === 'adaptive') {
+      this._stopAdaptiveTest();
+    } else if (testType === 'microphone') {
+      this._stopMicrophoneTest();
+    } else if (testType === 'buttons') {
+      this._stopButtonsTest();
+    }
+
+    // Rebuild the accordion without the skipped test
+    this._buildDynamicAccordion();
+
+    this._updateSkippedTestsDropdown();
+    this._updateTestSummary();
+    this._expandNextTest(testType);
+    this._updateInstructions();
+  }
+
+  /**
+   * Add a test back from the skipped list
+   */
+  addTestBack(testType) {
+    // Remove from skipped tests
+    const index = this.state.skippedTests.indexOf(testType);
+    if (index > -1) {
+      this.state.skippedTests.splice(index, 1);
+    }
+
+    this._saveSkippedTestsToStorage();
+
+    // Reset test status in state
+    this.state[testType] = null;
+
+    // Rebuild the accordion with the restored test
+    this._buildDynamicAccordion();
+
+    this._updateSkippedTestsDropdown();
+    this._updateTestSummary();
+    this._updateInstructions();
+  }
+
+  /**
+   * Update the skipped tests dropdown
+   */
+  _updateSkippedTestsDropdown() {
+    const $dropdown = $('#skipped-tests-dropdown');
+    const $list = $('#skipped-tests-list');
+
+    if (this.state.skippedTests.length === 0) {
+      $dropdown.hide();
+      return;
+    }
+
+    $dropdown.show();
+    $list.empty();
+
+    this.state.skippedTests.forEach(testType => {
+      const testName = this.l(TEST_NAMES[testType]);
+      const $item = $(`
+        <li>
+          <a class="dropdown-item" href="#" onclick="addTestBack('${testType}'); return false;">
+            <i class="fas fa-plus me-2"></i>${testName}
+          </a>
+        </li>
+      `);
+      $list.append($item);
+    });
+  }
+
+  /**
    * Update test summary display
    */
   _updateTestSummary() {
@@ -597,6 +935,7 @@ export class QuickTestModal {
 
     let completed = 0;
     let passed = 0;
+    let skipped = this.state.skippedTests.length;
 
     TEST_SEQUENCE.forEach(test => {
       if (this.state[test] !== null) {
@@ -606,12 +945,18 @@ export class QuickTestModal {
     });
 
     const numTests = TEST_SEQUENCE.length;
-    if (completed === 0) {
+    const totalProcessed = completed + skipped;
+
+    if (totalProcessed === 0) {
       $summary.text(this.l('No tests completed yet.'));
       $summary.attr('class', 'text-muted ds-i18n');
     } else {
-      $summary.text(this.l(`${completed}/${numTests} tests completed. ${passed} passed, ${completed - passed} failed.`));
-      $summary.attr('class', completed === numTests ? 'text-success' : 'text-info');
+      let summaryText = this.l(`${completed}/${numTests} tests completed. ${passed} passed, ${completed - passed} failed.`);
+      if (skipped > 0) {
+        summaryText += this.l(` ${skipped} skipped.`);
+      }
+      $summary.text(summaryText);
+      $summary.attr('class', totalProcessed === numTests ? 'text-success' : 'text-info');
     }
   }
 
@@ -625,10 +970,10 @@ export class QuickTestModal {
     const $currentCollapse = $(`#${currentTest}-test-collapse`);
     bootstrap.Collapse.getInstance($currentCollapse[0])?.hide();
 
-    // Find next untested item
+    // Find next untested item (not skipped and not completed)
     for (let i = currentIndex + 1; i < TEST_SEQUENCE.length; i++) {
       const nextTest = TEST_SEQUENCE[i];
-      if (this.state[nextTest] === null) {
+      if (this.state[nextTest] === null && !this.state.skippedTests.includes(nextTest)) {
         const $nextCollapse = $(`#${nextTest}-test-collapse`);
 
         // Expand next
@@ -646,6 +991,10 @@ export class QuickTestModal {
    */
   _getCurrentActiveTest() {
     for (const test of TEST_SEQUENCE) {
+      // Skip tests that are in the skipped list
+      if (this.state.skippedTests.includes(test)) {
+        continue;
+      }
       const $collapse = $(`#${test}-test-collapse`);
       if ($collapse.hasClass('show')) {
         return test;
@@ -820,11 +1169,15 @@ export class QuickTestModal {
     // First, reset all tests to ensure clean state
     this.resetAllTests();
 
-    // After a short delay, start with the first test
+    // After a short delay, start with the first non-skipped test
     setTimeout(() => {
-      const [firstTest] = TEST_SEQUENCE;
-      const $firstCollapse = $(`#${firstTest}-test-collapse`);
-      bootstrap.Collapse.getOrCreateInstance($firstCollapse[0]).show();
+      // Find the first test that is not skipped
+      const firstAvailableTest = TEST_SEQUENCE.find(test => !this.state.skippedTests.includes(test));
+
+      if (firstAvailableTest) {
+        const $firstCollapse = $(`#${firstAvailableTest}-test-collapse`);
+        bootstrap.Collapse.getOrCreateInstance($firstCollapse[0]).show();
+      }
     }, 300);
   }
 
@@ -860,6 +1213,9 @@ export class QuickTestModal {
     // Reset state
     this._initializeState();
 
+    // Load saved skipped tests from localStorage
+    this._loadSkippedTestsFromStorage();
+
     // Clear any active long-press timers before resetting state
     this._clearAllLongPressTimers();
 
@@ -884,11 +1240,17 @@ export class QuickTestModal {
       $accordionItem.removeClass('border-success border-danger');
       $accordionButton.css('backgroundColor', ''); // Clear background color
 
+      // Show all test items initially
+      $accordionItem.show();
+
       if (test === 'microphone') {
         const $levelContainer = $('#mic-level-container');
         $levelContainer.hide();
       }
     });
+
+    // Apply skipped tests to UI (hide skipped items)
+    this._applySkippedTestsToUI();
 
     this._updateTestSummary();
 
@@ -956,7 +1318,6 @@ export async function show_quick_test_modal(controller, { l } = {}) {
   await currentQuickTestInstance.open();
 }
 
-// Legacy function exports for backward compatibility (used by HTML onclick handlers)
 function markTestResult(testType, passed) {
   if (currentQuickTestInstance) {
     currentQuickTestInstance.markTestResult(testType, passed);
@@ -975,7 +1336,21 @@ function resetButtonsTest() {
   }
 }
 
+function skipTest(testType) {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance.skipTest(testType);
+  }
+}
+
+function addTestBack(testType) {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance.addTestBack(testType);
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
 window.resetButtonsTest = resetButtonsTest;
+window.skipTest = skipTest;
+window.addTestBack = addTestBack;

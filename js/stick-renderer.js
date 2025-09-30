@@ -158,11 +158,8 @@ export function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_
 
     // Draw filled circle at stick position
     ctx.beginPath();
-    ctx.arc(center_x+display_x*sz, center_y+display_y*sz, 3, 0, 2*Math.PI);
-
-    if (typeof highlight === 'boolean') {
-        ctx.fillStyle = highlight ? '#2989f7ff' : '#030b84ff';
-    }
+    ctx.arc(center_x+display_x*sz, center_y+display_y*sz, highlight ? 4 : 3, 0, 2*Math.PI);
+    ctx.fillStyle = highlight ? '#2989f7ff' : '#030b84ff';
     ctx.fill();
 }
 

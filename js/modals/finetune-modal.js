@@ -89,6 +89,12 @@ export class Finetune {
       left: false,
       right: false
     };
+
+    // Track previous axis values for stopping continuous adjustment
+    this._previousAxisValues = {
+      left: { x: 0, y: 0 },
+      right: { x: 0, y: 0 }
+    };
   }
 
   get mode() {
@@ -882,6 +888,13 @@ export class Finetune {
     const element = $(`#finetune${inputSuffix}`);
     if (!element.length) return;
 
+    // Initialize previous axis values for the active stick
+    if (this.active_stick && this.controller.button_states.sticks) {
+      const currentStick = this.controller.button_states.sticks[this.active_stick];
+      this._previousAxisValues[this.active_stick].x = currentStick.x;
+      this._previousAxisValues[this.active_stick].y = currentStick.y;
+    }
+
     // Perform initial adjustment immediately...
     this._performDpadAdjustment(element, adjustment);
     this.clearCircularity();
@@ -916,6 +929,34 @@ export class Finetune {
 
     // Trigger the change event to update the finetune data
     await this._onFinetuneChange();
+
+    // Check if axis values have dropped from 1.00 to below 1.00 and stop adjustment if so
+    this._checkAxisValuesForStopCondition();
+  }
+
+  /**
+   * Check if axis values have dropped from 1.00 to below 1.00 and stop adjustment
+   */
+  _checkAxisValuesForStopCondition() {
+    if (!this.active_stick || !this.continuous_adjustment.repeat_delay) {
+      return; // No continuous adjustment active
+    }
+
+    const currentStick = this.controller.button_states.sticks[this.active_stick];
+    const previousStick = this._previousAxisValues[this.active_stick];
+
+    // Check if X axis dropped from 1.00+ to below 1.00
+    const xDropped = Math.abs(previousStick.x) >= 1.00 && Math.abs(currentStick.x) < 1.00;
+    // Check if Y axis dropped from 1.00+ to below 1.00
+    const yDropped = Math.abs(previousStick.y) >= 1.00 && Math.abs(currentStick.y) < 1.00;
+
+    if (xDropped || yDropped) {
+      console.log(`Stopping continuous adjustment: ${this.active_stick} axis dropped below 1.00`);
+      this.stopContinuousDpadAdjustment();
+    }
+
+    // Update previous values for next check
+    this._previousAxisValues[this.active_stick] = currentStick;
   }
 
   /**

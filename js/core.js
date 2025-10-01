@@ -10,7 +10,6 @@ import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } fro
 import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
 import { calibrate_range } from './modals/calib-range-modal.js';
 import { 
-  updateQuickTestButtonVisibility, 
   show_quick_test_modal,
   isQuickTestVisible,
   quicktest_handle_controller_input
@@ -254,8 +253,6 @@ async function continue_connection({data, device}) {
     $("#mainmenu").show();
     $("#resetBtn").show();
 
-    updateQuickTestButtonVisibility(controller);
-
     $("#d-nvstatus").text = l("Unknown");
     $("#d-bdaddr").text = l("Unknown");
 
@@ -322,8 +319,6 @@ async function disconnect() {
   $("#offlinebar").show();
   $("#onlinebar").hide();
   $("#mainmenu").hide();
-
-  updateQuickTestButtonVisibility(controller);
 }
 
 // Wrapper function for HTML onclick handlers

@@ -144,8 +144,45 @@ class BaseController {
     throw new Error('parseBatteryStatus() must be implemented by subclass');
   }
   
-  setAdaptiveTrigger(left, right) {
-    throw new Error('setAdaptiveTriggerSingleMode() must be implemented by subclass');
+  async setAdaptiveTrigger(left, right) {
+    // Default no-op implementation for controllers that don't support adaptive triggers
+    return { success: true, message: "This controller does not support adaptive triggers" };
+  }
+
+  async setVibration(heavyLeft = 0, lightRight = 0) {
+    // Default no-op implementation for controllers that don't support vibration
+    return { success: true, message: "This controller does not support vibration" };
+  }
+
+  async setAdaptiveTriggerPreset(config) {
+    // Default no-op implementation for controllers that don't support adaptive trigger presets
+    return { success: true, message: "This controller does not support adaptive trigger presets" };
+  }
+
+  async setSpeakerTone(output = 'speaker') {
+    // Default no-op implementation for controllers that don't support speaker audio
+    if (callback) callback({ success: true, message: "This controller does not support speaker audio" });
+    return { success: true, message: "This controller does not support speaker audio" };
+  }
+
+  async resetLights() {
+    // Default no-op implementation for controllers that don't support controllable lights
+    return { success: true, message: "This controller does not support controllable lights" };
+  }
+
+  async setMuteLed(mode) {
+    // Default no-op implementation for controllers that don't support mute LED
+    return { success: true, message: "This controller does not support mute LED" };
+  }
+
+  async setLightbarColor(r, g, b) {
+    // Default no-op implementation for controllers that don't support lightbar colors
+    return { success: true, message: "This controller does not support lightbar colors" };
+  }
+
+  async setPlayerIndicator(pattern) {
+    // Default no-op implementation for controllers that don't support player indicators
+    return { success: true, message: "This controller does not support player indicators" };
   }
 }
 

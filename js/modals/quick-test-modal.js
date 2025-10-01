@@ -1,6 +1,6 @@
 'use strict';
 
-const TEST_SEQUENCE = ['usb', 'buttons', 'haptic', 'adaptive', 'lights', 'speaker', 'headphone', 'microphone'];
+const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
   'usb': 'USB Connector',
   'buttons': 'Buttons',
@@ -51,7 +51,12 @@ export class QuickTestModal {
     this._boundAccordionShown = (event) => this._handleAccordionShown(event);
     this._boundAccordionHidden = (event) => this._handleAccordionHidden(event);
     this._boundModalHidden = () => {
-      this.resetAllTests();
+    // Clean up any active tests BEFORE resetting state
+      this._stopButtonsTest();
+      this._stopAdaptiveTest();
+      this._stopLightsTest();
+      this._stopMicrophoneTest();
+
       destroyCurrentInstance();
     };
 
@@ -127,7 +132,13 @@ export class QuickTestModal {
     $accordion.empty();
 
     // Get non-skipped tests in order
-    const activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+    let activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+
+    // Filter out unsupported tests for DS4 controllers
+    if (this.controller.getModel() === 'DS4') {
+      const ds4UnsupportedTests = ['adaptive', 'speaker', 'microphone'];
+      activeTests = activeTests.filter(testType => !ds4UnsupportedTests.includes(testType));
+    }
 
     activeTests.forEach(testType => {
       const accordionItem = this._createAccordionItem(testType);
@@ -718,7 +729,9 @@ export class QuickTestModal {
    */
   async _startHapticTest() {
     this._startIconAnimation('haptic');
-    await this.controller.setVibration({ heavyLeft: 255, lightRight: 255, duration: 1000 });
+    await this.controller.setVibration({ heavyLeft: 255, lightRight: 0, duration: 500 }, async () => {
+      await this.controller.setVibration({ heavyLeft: 0, lightRight: 255, duration: 500 });
+    });
     setTimeout(() => { this._stopIconAnimation('haptic'); }, 1000); }
 
   /**
@@ -813,7 +826,7 @@ export class QuickTestModal {
       this.state.lightsAnimationInterval = null;
     }
 
-    await this.controller.currentController.resetLights();
+    await this.controller.currentController?.resetLights();
   }
 
   /**
@@ -1086,14 +1099,23 @@ export class QuickTestModal {
     let passed = 0;
     let skipped = this.state.skippedTests.length;
 
-    TEST_SEQUENCE.forEach(test => {
+    // Get active tests for this controller model
+    let activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+
+    // Filter out unsupported tests for DS4 controllers
+    if (this.controller.getModel() === 'DS4') {
+      const ds4UnsupportedTests = ['adaptive', 'speaker', 'microphone'];
+      activeTests = activeTests.filter(testType => !ds4UnsupportedTests.includes(testType));
+    }
+
+    activeTests.forEach(test => {
       if (this.state[test] !== null) {
         completed++;
         if (this.state[test]) passed++;
       }
     });
 
-    const numTests = TEST_SEQUENCE.length - skipped;
+    const numTests = activeTests.length;
     const totalProcessed = completed + skipped;
 
     if (totalProcessed === 0) {
@@ -1124,6 +1146,11 @@ export class QuickTestModal {
       const nextTest = TEST_SEQUENCE[i];
       if (this.state[nextTest] === null && !this.state.skippedTests.includes(nextTest)) {
         const $nextCollapse = $(`#${nextTest}-test-collapse`);
+
+        // Check if the element exists in the DOM before trying to create a Collapse instance
+        if ($nextCollapse.length === 0 || !$nextCollapse[0]) {
+          continue;
+        }
 
         // Expand next
         setTimeout(() => {
@@ -1364,12 +1391,6 @@ export class QuickTestModal {
     // Clear any active long-press timers before resetting state
     this._clearAllLongPressTimers();
 
-    // Clean up any active tests BEFORE resetting state
-    this._stopButtonsTest();
-    this._stopAdaptiveTest();
-    this._stopLightsTest();
-    this._stopMicrophoneTest();
-
     // Reset state
     this._initializeState();
 
@@ -1429,16 +1450,6 @@ function destroyCurrentInstance() {
     currentQuickTestInstance.removeEventListeners();
     currentQuickTestInstance = null;
   }
-}
-
-/**
- * Update quick test button visibility based on controller type
- */
-export function updateQuickTestButtonVisibility(controller) {
-  const $button = $('#quick-test-btn');
-  const model = controller?.getModel();
-  const supported = (controller?.isConnected() && (model === "DS5" /* || model === "DS5_Edge" */));
-  $button.toggleClass('disabled', !supported);
 }
 
 /**

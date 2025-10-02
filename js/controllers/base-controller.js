@@ -4,13 +4,10 @@
 * Base Controller class that provides common functionality for all controller types
 */
 class BaseController {
-  constructor(device, uiDependencies = {}) {
+  constructor(device) {
     this.device = device;
     this.model = "undefined"; // to be set by subclasses
     this.finetuneMaxValue; // to be set by subclasses
-
-    // UI dependencies injected from core
-    this.l = uiDependencies.l;
   }
 
   getModel() {
@@ -183,6 +180,15 @@ class BaseController {
   async setPlayerIndicator(pattern) {
     // Default no-op implementation for controllers that don't support player indicators
     return { success: true, message: "This controller does not support player indicators" };
+  }
+
+  /**
+   * Get the list of supported quick tests for this controller
+   * @returns {Array<string>} Array of supported test types
+   */
+  getSupportedQuickTests() {
+    // Default implementation - supports all tests
+    return ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
   }
 }
 

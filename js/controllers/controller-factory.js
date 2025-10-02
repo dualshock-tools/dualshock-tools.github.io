@@ -21,20 +21,19 @@ class ControllerFactory {
   /**
   * Create a controller instance based on the HID device product ID
   * @param {HIDDevice} device The HID device
-  * @param {Object} uiDependencies Optional UI dependencies (l function, etc.)
   * @returns {BaseController} The appropriate controller instance
   */
-  static createControllerInstance(device, uiDependencies = {}) {
+  static createControllerInstance(device) {
     switch (device.productId) {
       case 0x05c4: // DS4 v1
       case 0x09cc: // DS4 v2
-        return new DS4Controller(device, uiDependencies);
+        return new DS4Controller(device);
 
       case 0x0ce6: // DS5
-        return new DS5Controller(device, uiDependencies);
+        return new DS5Controller(device);
 
       case 0x0df2: // DS5 Edge
-        return new DS5EdgeController(device, uiDependencies);
+        return new DS5EdgeController(device);
 
       default:
         throw new Error(`Unsupported device: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`);

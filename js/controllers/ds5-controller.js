@@ -12,6 +12,7 @@ import {
   la,
   lf
 } from '../utils.js';
+import { l } from '../translations.js';
 
 // DS5 Button mapping configuration
 const DS5_BUTTON_MAP = [
@@ -225,8 +226,8 @@ function ds5_color(x) {
 * DualSense (DS5) Controller implementation
 */
 class DS5Controller extends BaseController {
-  constructor(device, uiDependencies = {}) {
-    super(device, uiDependencies);
+  constructor(device) {
+    super(device);
     this.model = "DS5";
     this.finetuneMaxValue = 65535; // 16-bit max value for DS5
 
@@ -271,7 +272,6 @@ class DS5Controller extends BaseController {
   }
 
   async _getInfo(is_edge) {
-    const { l } = this;
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
       console.log("Fetching DS5 info...");
@@ -352,9 +352,9 @@ class DS5Controller extends BaseController {
       const lockRes = await this.nvsLock();
       if(!lockRes.ok) throw (lockRes.error || new Error("NVS lock failed"));
 
-      return { success: true, message: this.l("Changes saved successfully") };
+      return { success: true, message: l("Changes saved successfully") };
     } catch(error) {
-      throw new Error(this.l("Error while saving changes"), { cause: error });
+      throw new Error(l("Error while saving changes"), { cause: error });
     }
   }
 
@@ -384,7 +384,7 @@ class DS5Controller extends BaseController {
       const data = await this.receiveFeatureReport(0x81);
     } catch(error) {
       await sleep(500);
-      throw new Error(this.l("NVS Unlock failed"), { cause: error });
+      throw new Error(l("NVS Unlock failed"), { cause: error });
     }
   }
 
@@ -398,7 +398,7 @@ class DS5Controller extends BaseController {
     await this.sendFeatureReport(128, [base,num])
     const pcba_id = lf("ds5_pcba_id", await this.receiveFeatureReport(129));
     if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
-      return this.l("error");
+      return l("error");
     }
     if(decode)
       return new TextDecoder().decode(pcba_id.buffer.slice(4, 4+length));
@@ -539,7 +539,7 @@ class DS5Controller extends BaseController {
     if(a == 0x05) return "BDM-030";
     if(a == 0x06) return "BDM-040";
     if(a == 0x07 || a == 0x08) return "BDM-050";
-    return this.l("Unknown");
+    return l("Unknown");
   }
 
   async getInMemoryModuleData() {

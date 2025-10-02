@@ -83,6 +83,16 @@ dl.row dd {
   animation: pulse 1s ease-in-out infinite !important;
 }
 
+/* Quick Test accordion button height reduction */
+#quickTestAccordion .accordion-button {
+  padding: 0.5rem 1rem;
+}
+
+/* Quick Test accordion body tint */
+#quickTestAccordion .accordion-collapse .accordion-body {
+  background-color: rgba(13, 125, 253, 0.05);
+}
+
 /* Skip button hover behavior */
 .skip-btn {
   opacity: 0;
@@ -102,3 +112,8 @@ dl.row dd {
 .blink-text {
   animation: blink 1s infinite;
 }
+
+/* Set text color to red for internationalized elements */
+/* .ds-i18n {
+  color: red;
+} */

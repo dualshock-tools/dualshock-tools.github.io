@@ -39,7 +39,8 @@ def process_file(filename):
             x[i] = ""
             modified = True
 
-    del x[""]
+    if "" in x:
+        del x[""]
     empties = []
     for i in x:
         if len(x[i].strip()) == 0:

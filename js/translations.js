@@ -137,7 +137,7 @@ export function l(text) {
   const [out] = translationState.lang_cur[text] || [];
   if(out) return out;
   
-  console.log("Missing translation for: '" + text + "'");
+  console.log(`Missing translation for "${text}"`);
   return text;
 }
 
@@ -167,7 +167,7 @@ function lang_translate(target_file, target_lang, target_direction) {
           if (translatedText) {
             $(item).html(translatedText);
           } else {
-            console.log("Cannot find mapping for " + originalText);
+            console.log(`Cannot find mapping for "${originalText}"`);
             $(item).html(originalText);
           }
         }

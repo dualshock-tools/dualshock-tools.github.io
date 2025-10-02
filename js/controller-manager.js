@@ -1,6 +1,7 @@
 'use strict';
 
 import { sleep, la } from './utils.js';
+import { l } from './translations.js'
 
 /**
 * Controller Manager - Manages the current controller instance and provides unified interface
@@ -8,7 +9,6 @@ import { sleep, la } from './utils.js';
 class ControllerManager {
   constructor(uiDependencies = {}) {
     this.currentController = null;
-    this.l = uiDependencies.l;
     this.handleNvStatusUpdate = uiDependencies.handleNvStatusUpdate;
     this.has_changes_to_write = null; 
     this.inputHandler = null; // Callback function for input processing
@@ -110,6 +110,17 @@ class ControllerManager {
   }
 
   /**
+   * Get the list of supported quick tests for the current controller
+   * @returns {Array<string>} Array of supported test types
+   */
+  getSupportedQuickTests() {
+    if (!this.currentController) {
+      return [];
+    }
+    return this.currentController.getSupportedQuickTests();
+  }
+
+  /**
   * Check if a controller is connected
   * @returns {boolean} True if controller is connected
   */
@@ -183,7 +194,7 @@ class ControllerManager {
   async nvsLock() {
     const res = await this.currentController.nvsLock();
     if (!res.ok) {
-      throw new Error(this.l("NVS Lock failed"), { cause: res.error });
+      throw new Error(l("NVS Lock failed"), { cause: res.error });
     }
 
     await this.queryNvStatus(); // Refresh NVS status
@@ -196,7 +207,7 @@ class ControllerManager {
   async calibrateSticksBegin() {
     const res = await this.currentController.calibrateSticksBegin();
     if (!res.ok) {
-      throw new Error(`${this.l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
     }
   }
 
@@ -207,7 +218,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateSticksSample();
     if (!res.ok) {
       await sleep(500);
-      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
+      throw new Error(l("Stick calibration failed"), { cause: res.error });
     }
   }
 
@@ -218,7 +229,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateSticksEnd();
     if (!res.ok) {
       await sleep(500);
-      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
+      throw new Error(l("Stick calibration failed"), { cause: res.error });
     }
 
     this.setHasChangesToWrite(true);
@@ -230,7 +241,7 @@ class ControllerManager {
   async calibrateRangeBegin() {
     const res = await this.currentController.calibrateRangeBegin();
     if (!res.ok) {
-      throw new Error(`${this.l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
     }
   }
 
@@ -241,7 +252,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateRangeEnd();
     if(res?.ok) {
       this.setHasChangesToWrite(true);
-      return { success: true, message: this.l("Range calibration completed") };
+      return { success: true, message: l("Range calibration completed") };
     } else {
       // Check if the error is code 3 (DS4/DS5) or codes 4/5 (DS5 Edge), which typically means 
       // the calibration was already ended or the controller is not in range calibration mode
@@ -249,12 +260,12 @@ class ControllerManager {
         console.log("Range calibration end returned expected error code", res.code, "- treating as successful completion");
         // This is likely not an error - the calibration may have already been completed
         // or the user closed the window without starting calibration
-        return { success: true, message: this.l("Range calibration window closed") };
+        return { success: true };
       }
 
       console.log("Range calibration end failed with unexpected error:", res);
       await sleep(500);
-      const msg = res?.code ? (this.l("Range calibration failed") + this.l("Error ") + String(res.code)) : (this.l("Range calibration failed") + String(res?.error || ""));
+      const msg = res?.code ? (`${l("Range calibration failed")}. ${l("Error")} ${res.code}`) : (`${l("Range calibration failed")}. ${res?.error || ""}`);
       return { success: false, message: msg, error: res?.error };
     }
   }
@@ -286,10 +297,130 @@ class ControllerManager {
       await this.calibrateSticksEnd();
       progressCallback(100);
 
-      return { success: true, message: this.l("Stick calibration completed") };
+      return { success: true, message: l("Stick calibration completed") };
     } catch (e) {
       la("multi_calibrate_sticks_failed", {"r": e});
       throw e;
+    }
+  }
+
+  /**
+   * Disable left adaptive trigger effects (DS5 only)
+   * @returns {Promise<Object>} Result object with success status and message
+   */
+  async disableLeftAdaptiveTrigger() {
+    if (!this.currentController) {
+      throw new Error(l("No controller connected"));
+    }
+
+    // Check if the controller supports adaptive triggers (DS5 only)
+    if (this.getModel() !== "DS5") {
+      throw new Error(l("Adaptive triggers are only supported on DualSense controllers"));
+    }
+
+    // Check if the controller has the disableLeftAdaptiveTrigger method
+    if (typeof this.currentController.disableLeftAdaptiveTrigger !== 'function') {
+      throw new Error(l("Controller does not support adaptive trigger control"));
+    }
+
+    try {
+      const result = await this.currentController.disableLeftAdaptiveTrigger();
+      return result;
+    } catch (error) {
+      throw new Error(l("Failed to disable adaptive trigger"), { cause: error });
+    }
+  }
+
+  /**
+   * Set left adaptive trigger with preset configurations (DS5 only)
+   * @param {string} preset - Preset name: 'light', 'medium', 'heavy', 'custom'
+   * @param {Object} customParams - Custom parameters for 'custom' preset {start, end, force}
+   * @returns {Promise<Object>} Result object with success status and message
+   */
+  async setAdaptiveTriggerPreset({left, right}/* , customParams = {} */) {
+    const presets = {
+      'off': { start: 0, end: 0, force: 0, mode: 'off' },
+      'light': { start: 10, end: 80, force: 150, mode: 'single'},
+      'medium': { start: 15, end: 100, force: 200, mode: 'single' },
+      'heavy': { start: 20, end: 120, force: 255, mode: 'single' },
+      // 'custom': customParams
+    };
+
+    if (!presets[left] || !presets[right]) {
+      throw new Error(`Invalid preset. Available presets: light, medium, heavy, custom. Got "${left}" and "${right}".`);
+    }
+
+    const leftPreset = presets[left];
+    const rightPreset = presets[right];
+
+    // if (preset === 'custom') {
+    //   // Validate custom parameters
+    //   if (typeof start !== 'number' || typeof end !== 'number' || typeof force !== 'number') {
+    //     throw new Error(l("Custom preset requires start, end, and force parameters"));
+    //   }
+    // }
+
+    return await this.currentController?.setAdaptiveTrigger(leftPreset, rightPreset);
+  }
+
+  /**
+   * Set vibration motors for haptic feedback (DS5 only)
+   * @param {Object} options - Vibration options
+   * @param {number} options.heavyLeft - Left motor intensity (0-255)
+   * @param {number} options.lightRight - Right motor intensity (0-255)
+   * @param {number} options.duration - Duration in milliseconds (optional)
+   * @param {Function} doneCb - Callback function called when vibration ends (optional)
+   */
+  async setVibration({heavyLeft, lightRight, duration = 0}, doneCb = ({success}) => {}) {
+    try {
+      await this.currentController.setVibration(heavyLeft, lightRight);
+
+      // If duration is specified, automatically turn off vibration after the duration
+      if (duration > 0) {
+        setTimeout(async () => {
+          if(!this.currentController) return doneCb({success: true});
+          await this.currentController.setVibration(0, 0); // Turn off vibration
+          doneCb({success: true});
+        }, duration);
+      }
+    } catch (error) {
+      if(duration) doneCb({ success: false});
+      throw new Error(l("Failed to set vibration"), { cause: error });
+    }
+  }
+
+  /**
+   * Test speaker tone (DS5 only)
+   * @param {number} duration - Duration in milliseconds (optional)
+   * @param {Function} doneCb - Callback function called when tone ends (optional)
+   * @param {string} output - Audio output destination: "speaker" (default) or "headphones" (optional)
+   */
+  async setSpeakerTone(duration = 1000, doneCb = ({success}) => {}, output = "speaker") {
+    try {
+      if (!this.currentController.setSpeakerTone) {
+        throw new Error(l("Speaker tone not supported on this controller"));
+      }
+
+      await this.currentController.setSpeakerTone(output);
+
+      // If duration is specified, automatically reset speaker after the duration
+      if (duration > 0) {
+        setTimeout(async () => {
+          if(!this.currentController) return doneCb({success: true});
+          // Reset speaker settings to default by calling setSpeakerTone with reset parameters
+          try {
+            if (this.currentController.resetSpeakerSettings) {
+              await this.currentController.resetSpeakerSettings();
+            }
+          } catch (resetError) {
+            console.warn("Failed to reset speaker settings:", resetError);
+          }
+          doneCb({success: true});
+        }, duration);
+      }
+    } catch (error) {
+      if(duration) doneCb({ success: false});
+      throw new Error(l("Failed to set speaker tone"), { cause: error });
     }
   }
 
@@ -444,7 +575,7 @@ class ControllerManager {
   */
   _batteryPercentToText({bat_capacity, is_charging, is_error}) {
     if (is_error) {
-      return '<font color="red">' + this.l("error") + '</font>';
+      return '<font color="red">' + l("error") + '</font>';
     }
 
     const batteryIcons = [

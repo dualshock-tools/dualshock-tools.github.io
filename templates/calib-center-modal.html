@@ -23,9 +23,9 @@
                 <div class="container" id="list-1">
                     <h4 class="ds-i18n">Welcome to the stick center-calibration wizard!</h4>
 
-                    <p class="ds-i18n">This tool will guide you in re-centering the analog sticks of your controller. It consists in four steps: you will be asked to move both sticks in a direction and release them.</p>
+                    <p class="ds-i18n">This tool will guide you in re-centering the analog sticks of your controller. It consists of four steps: you will be asked to move both sticks in a direction and release them.</p>
 
-                    <p class="ds-i18n">Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.</p>
+                    <p class="ds-i18n">Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until it is completed.</p>
 
                     <p class="ds-i18n">Press <b>Start</b> to begin calibration.</p>
                 </div>
@@ -55,6 +55,9 @@
 
       </div>
       <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" id="quickCalibBtn" onclick="quick_calibrate_instead()">
+          <i class="fas fa-bolt"></i>&nbsp;<span class="ds-i18n">Quick calibrate</span>
+        </button>
         <button type="button" class="btn btn-primary" id="calibNext" onclick="calib_next()">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="btnSpinner" style="display: none;"></span>
         <span id="calibNextText" class="ds-i18n">Next</span>

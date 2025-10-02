@@ -2,20 +2,19 @@
 
 import DS5Controller from './ds5-controller.js';
 import { sleep, dec2hex32, la, lf } from '../utils.js';
+import { l } from "../translations.js";
 
 /**
 * DualSense Edge (DS5 Edge) Controller implementation
 */
 class DS5EdgeController extends DS5Controller {
-  constructor(device, uiDependencies = {}) {
-    super(device, uiDependencies);
+  constructor(device) {
+    super(device);
     this.model = "DS5_Edge";
     this.finetuneMaxValue = 4095; // 12-bit max value for DS5 Edge
   }
 
   async getInfo() {
-    const { l } = this;
-
     // DS5 Edge uses the same info structure as DS5 but with is_edge=true
     const result = await this._getInfo(true);
 
@@ -41,12 +40,12 @@ class DS5EdgeController extends DS5Controller {
       if(ret) {
         return { 
           success: true, 
-          message: "<b>" + this.l("Changes saved successfully") + "</b>.<br><br>" + this.l("If the calibration is not stored permanently, please double-check the wirings of the hardware mod."),
+          message: "<b>" + l("Changes saved successfully") + "</b>.<br><br>" + l("If the calibration is not stored permanently, please double-check the wirings of the hardware mod."),
           isHtml: true
         };
       }
     } catch(error) {
-      throw new Error(this.l("Error while saving changes"), { cause: error });
+      throw new Error(l("Error while saving changes"), { cause: error });
     }
   }
 
@@ -68,7 +67,7 @@ class DS5EdgeController extends DS5Controller {
     await sleep(200);
     const ret = await this.waitUntilWritten([21, 6, 2]);
     if(!ret) {
-      throw new Error(this.l("Cannot unlock") + " " + this.l(m_name));
+      throw new Error(l("Cannot unlock") + " " + l(m_name));
     }
   }
 
@@ -79,7 +78,7 @@ class DS5EdgeController extends DS5Controller {
     await sleep(200);
     const ret = await this.waitUntilWritten([21, 4, 2]);
     if(!ret) {
-      throw new Error(this.l("Cannot lock") + " " + this.l(m_name));
+      throw new Error(l("Cannot lock") + " " + l(m_name));
     }
   }
 
@@ -90,7 +89,7 @@ class DS5EdgeController extends DS5Controller {
     await sleep(200);
     const ret = await this.waitUntilWritten([21, 3, 2]);
     if(!ret) {
-      throw new Error(this.l("Cannot store data into") + " " + this.l(m_name));
+      throw new Error(l("Cannot store data into") + " " + l(m_name));
     }
   }
 

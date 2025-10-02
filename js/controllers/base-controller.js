@@ -4,13 +4,10 @@
 * Base Controller class that provides common functionality for all controller types
 */
 class BaseController {
-  constructor(device, uiDependencies = {}) {
+  constructor(device) {
     this.device = device;
     this.model = "undefined"; // to be set by subclasses
     this.finetuneMaxValue; // to be set by subclasses
-
-    // UI dependencies injected from core
-    this.l = uiDependencies.l;
   }
 
   getModel() {
@@ -142,6 +139,56 @@ class BaseController {
 
   parseBatteryStatus(data) {
     throw new Error('parseBatteryStatus() must be implemented by subclass');
+  }
+  
+  async setAdaptiveTrigger(left, right) {
+    // Default no-op implementation for controllers that don't support adaptive triggers
+    return { success: true, message: "This controller does not support adaptive triggers" };
+  }
+
+  async setVibration(heavyLeft = 0, lightRight = 0) {
+    // Default no-op implementation for controllers that don't support vibration
+    return { success: true, message: "This controller does not support vibration" };
+  }
+
+  async setAdaptiveTriggerPreset(config) {
+    // Default no-op implementation for controllers that don't support adaptive trigger presets
+    return { success: true, message: "This controller does not support adaptive trigger presets" };
+  }
+
+  async setSpeakerTone(output = 'speaker') {
+    // Default no-op implementation for controllers that don't support speaker audio
+    if (callback) callback({ success: true, message: "This controller does not support speaker audio" });
+    return { success: true, message: "This controller does not support speaker audio" };
+  }
+
+  async resetLights() {
+    // Default no-op implementation for controllers that don't support controllable lights
+    return { success: true, message: "This controller does not support controllable lights" };
+  }
+
+  async setMuteLed(mode) {
+    // Default no-op implementation for controllers that don't support mute LED
+    return { success: true, message: "This controller does not support mute LED" };
+  }
+
+  async setLightbarColor(r, g, b) {
+    // Default no-op implementation for controllers that don't support lightbar colors
+    return { success: true, message: "This controller does not support lightbar colors" };
+  }
+
+  async setPlayerIndicator(pattern) {
+    // Default no-op implementation for controllers that don't support player indicators
+    return { success: true, message: "This controller does not support player indicators" };
+  }
+
+  /**
+   * Get the list of supported quick tests for this controller
+   * @returns {Array<string>} Array of supported test types
+   */
+  getSupportedQuickTests() {
+    // Default implementation - supports all tests
+    return ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
   }
 }
 

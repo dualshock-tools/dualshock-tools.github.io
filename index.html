@@ -137,19 +137,33 @@
               </div>
               <br>
 
-              <div class="my-3 text-center mx-3" id="controller-svg-container">
+              <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-outline-primary ds-btn mb-3" onclick="show_quick_test_modal()" id="quick-test-btn">
+                  <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
+                  <span id="quick-test-text" class="ds-i18n">Quick Test</span>
+                </button>
+              </div>
+
+              <div class="text-center mx-3" id="controller-svg-container">
                 <!-- DualSense 5 Controller SVG loaded from template -->
                 <div id="controller-svg-placeholder"></div>
               </div>
-              <br>
             </div>
 
             <div class="col-md-6 col-sm-12" style="min-width: 330px;">
               <div class="vstack gap-2 p-2">
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calibrate_stick_centers()">Calibrate stick center</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calibrate_range()">Calibrate stick range</button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
-                <button id="btnmcs" type="button" class="btn btn-outline-secondary ds-btn ds-i18n" onclick="auto_calibrate_stick_centers()">Fast calibrate stick center (OLD)</button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_stick_centers()" id="four-step-center-calib" style="display: none;">
+                  1. <span class="ds-i18n">Calibrate stick center</span>
+                </button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="auto_calibrate_stick_centers()" id="quick-center-calib" style="display: none;">
+                  1. <span class="ds-i18n">Calibrate stick center</span>
+                </button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_range()">
+                  2. <span class="ds-i18n">Calibrate stick range</span>
+                </button>
+                <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
+                  3. <span class="ds-i18n">Finetune stick calibration</span>
+                </button>
                 <hr>
                 <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()" id="resetBtn">Save changes permanently</button>
                 <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>
@@ -237,7 +251,7 @@
             <div class="row">
               <div class="col-lg-12 col-xl-6 py-3">
                 <div class="card">
-                  <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;Software</h5>
+                  <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;<span class="ds-i18n">Software</span></h5>
                   <div class="card-body">
                     <dl class="row" id="fwinfoextra-fw"></dl>
                   </div>
@@ -245,7 +259,7 @@
               </div>
               <div class="col-lg-12 col-xl-6 py-3">
                 <div class="card">
-                  <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;Hardware</h5>
+                  <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;<span class="ds-i18n">Hardware</span></h5>
                   <div class="card-body">
                     <dl class="row" id="fwinfoextra-hw"></dl>
                   </div>
@@ -304,7 +318,7 @@
   <footer class="fixed-bottom bg-body-tertiary border-top">
     <div class="container">
       <div class="d-flex flex-column flex-sm-row justify-content-between py-3" id="footbody">
-        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.17</a> (2025-09-28) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.18 beta 2</a> (2025-10-03) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
         <ul class="list-unstyled d-flex mb-0">
           <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

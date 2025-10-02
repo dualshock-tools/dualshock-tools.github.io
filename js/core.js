@@ -9,12 +9,19 @@ import { draw_stick_position, CIRCULARITY_DATA_SIZE } from './stick-renderer.js'
 import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } from './modals/finetune-modal.js';
 import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
 import { calibrate_range } from './modals/calib-range-modal.js';
+import { 
+  show_quick_test_modal,
+  isQuickTestVisible,
+  quicktest_handle_controller_input
+} from './modals/quick-test-modal.js';
 
 // Application State - manages app-wide state and UI
 const app = {
   // Button disable state management
   disable_btn: 0,
   last_disable_btn: 0,
+
+  shownRangeCalibrationWarning: false,
 
   // Language and UI state
   lang_orig_text: {},
@@ -103,6 +110,11 @@ function gboot() {
     show_welcome_modal();
 
     $("input[name='displayMode']").on('change', on_stick_mode_change);
+
+    // Setup edge modal "Don't show again" checkbox
+    $('#edgeModalDontShowAgain').on('change', function() {
+      localStorage.setItem('edgeModalDontShowAgain', this.checked.toString());
+    });
   }
 
   // Since modules are deferred, DOM might already be loaded
@@ -129,7 +141,7 @@ async function connect() {
   initAnalyticsApi(app); // init with gu and jg
 
   // Initialize controller manager with translation function
-  controller = initControllerManager({ l, handleNvStatusUpdate });
+  controller = initControllerManager({ handleNvStatusUpdate });
   controller.setInputHandler(handleControllerInput);
 
   la("begin");
@@ -198,10 +210,12 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showMute, showInfoTab }) {
+    function applyDeviceUI({ showInfo, showFinetune, showMute, showInfoTab, showFourStepCalib, showQuickCalib }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
+      $("#four-step-center-calib").toggle(!!showFourStepCalib);
+      $("#quick-center-calib").toggle(!!showQuickCalib);
       set_mute_visibility(!!showMute);
     }
 
@@ -210,13 +224,18 @@ async function continue_connection({data, device}) {
 
     try {
       // Create controller instance using factory
-      controllerInstance = ControllerFactory.createControllerInstance(device, { l });
+      controllerInstance = ControllerFactory.createControllerInstance(device);
       controller.setControllerInstance(controllerInstance);
 
       info = await controllerInstance.getInfo();
+
+      // Initialize output state for DS5 controllers
+      if (controllerInstance.initializeCurrentOutputState) {
+        await controllerInstance.initializeCurrentOutputState();
+      }
     } catch (error) {
       const contextMessage = device 
-        ? l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId)
+        ? `${l("Connected invalid device")}: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`
         : l("Failed to connect to device");
         throw new Error(contextMessage, { cause: error });
     }
@@ -224,7 +243,7 @@ async function continue_connection({data, device}) {
     if(!info?.ok) {
       // Not connected/failed to fetch info
       if(info) console.error(JSON.stringify(info, null, 2));
-      throw new Error(l("Connected invalid device: ") + l("Error 1"), { cause: info?.error });
+      throw new Error(`${l("Connected invalid device")}: ${l("Error")}  1`, { cause: info?.error });
     }
 
     // Get UI configuration and device name
@@ -381,7 +400,7 @@ async function init_svg_controller() {
   const svgContainer = document.getElementById('controller-svg-placeholder');
 
   let svgContent;
-  
+
   // Check if we have bundled assets (production mode)
   if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg['dualshock-controller.svg']) {
     svgContent = window.BUNDLED_ASSETS.svg['dualshock-controller.svg'];
@@ -393,7 +412,7 @@ async function init_svg_controller() {
     }
     svgContent = await response.text();
   }
-  
+
   svgContainer.innerHTML = svgContent;
 
   const lightBlue = '#7ecbff';
@@ -519,6 +538,17 @@ function resetStickDiagrams() {
   refresh_stick_pos();
 }
 
+// Helper functions to switch display modes
+function switchTo10xZoomMode() {
+  $("#centerZoomMode").prop('checked', true);
+  resetStickDiagrams();
+}
+
+function switchToRangeMode() {
+  $("#checkCircularityMode").prop('checked', true);
+  resetStickDiagrams();
+}
+
 const on_stick_mode_change = () => resetStickDiagrams();
 
 const throttled_refresh_sticks = (() => {
@@ -558,6 +588,15 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
       const svg = trigger.toUpperCase() + '_infill';
       const infill = document.getElementById(svg);
       set_svg_group_color(infill, color);
+
+      // Update percentage text
+      const percentage = Math.round((val / 255) * 100);
+      const percentageText = document.getElementById(trigger.toUpperCase() + '_percentage');
+      if (percentageText) {
+        percentageText.textContent = `${percentage} %`;
+        percentageText.setAttribute('opacity', percentage > 0 ? '1' : '0');
+        percentageText.setAttribute('fill', percentage < 35 ? pressedColor : 'white');
+      }
     }
   }
 
@@ -646,9 +685,28 @@ function get_current_test_tab() {
   return activeBtn?.id || 'haptic-test-tab';
 }
 
+function detectFailedRangeCalibration(changes) {
+  if (!changes.sticks || app.shownRangeCalibrationWarning) return;
+
+  const { left, right } = changes.sticks;
+  const failedCalibration = [left, right].some(({x, y}) => Math.abs(x) + Math.abs(y) == 2);
+  const hasOpenModals = document.querySelectorAll('.modal.show').length > 0;
+
+  if (failedCalibration && !app.shownRangeCalibrationWarning && !hasOpenModals) {
+    app.shownRangeCalibrationWarning = true;
+    show_popup(l("Range calibration appears to have failed. Please try again and make sure you rotate the sticks."));
+  }
+}
+
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
+
+  // Handle Quick Test Modal input (can be open from any tab)
+  if (isQuickTestVisible()) {
+    quicktest_handle_controller_input(changes);
+    return;
+  }
 
   const current_active_tab = get_current_main_tab();
   switch (current_active_tab) {
@@ -660,6 +718,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
         update_stick_graphics(changes);
         update_ds_button_svg(changes, buttonMap);
         update_touchpad_circles(touchPoints);
+        detectFailedRangeCalibration(changes);
       }
       break;
 
@@ -681,7 +740,7 @@ function handle_test_input(/* changes */) {
       const l2 = controller.button_states.l2_analog || 0;
       const r2 = controller.button_states.r2_analog || 0;
       if (l2 || r2) {
-        trigger_haptic_motors(l2, r2);
+        // trigger_haptic_motors(l2, r2);
       }
       break;
 
@@ -710,8 +769,6 @@ function update_disable_btn() {
     show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
   } else if(disable_btn & 2 && !(last_disable_btn & 2)) {
     show_popup(l("This DualSense controller has outdated firmware.") + "<br>" + l("Please update the firmware and try again."), true);
-  } else if(disable_btn & 4 && !(last_disable_btn & 4)) {
-    show_popup(l("Please charge controller battery over 30% to use this tool."));
   }
   app.last_disable_btn = disable_btn;
 }
@@ -760,10 +817,6 @@ async function nvslock() {
 
 function close_all_modals() {
   $('.modal.show').modal('hide'); // Close any open modals
-}
-
-function set_progress(i) {
-  $(".progress-bar").css('width', '' + i + '%')
 }
 
 function render_info_to_dom(infoItems) {
@@ -839,6 +892,12 @@ function show_donate_modal() {
 }
 
 function show_edge_modal() {
+  // Check if user has chosen not to show the modal again
+  const dontShowAgain = localStorage.getItem('edgeModalDontShowAgain');
+  if (dontShowAgain === 'true') {
+    return;
+  }
+
   la("edge_modal");
   bootstrap.Modal.getOrCreateInstance('#edgeModal').show();
 }
@@ -867,59 +926,6 @@ function board_model_info() {
   show_popup(l3 + "<br><br>" + l1 + " " + l2, true);
 }
 
-
-const trigger_haptic_motors = (() => {
-  let haptic_timeout = undefined;
-  let haptic_last_trigger = 0;
-
-  return async function(strong_motor /*left*/, weak_motor /*right*/) {
-    // The DS4 contoller has a strong (left) and a weak (right) motor.
-    // The DS5 emulates the same behavior, but the left and right motors are the same.
-
-    const now = Date.now();
-    if (now - haptic_last_trigger < 200) {
-      return; // Rate limited - ignore calls within 200ms
-    }
-
-    haptic_last_trigger = now;
-
-    try {
-      if (!controller.isConnected()) return;
-
-      const model = controller.getModel();
-      const device = controller.getDevice();
-      if (model == "DS4") {
-        const data = new Uint8Array([0x05, 0x00, 0, weak_motor, strong_motor]);
-        await device.sendReport(0x05, data);
-      } else if (model.startsWith("DS5")) {
-        const data = new Uint8Array([0x02, 0x00, weak_motor, strong_motor]);
-        await device.sendReport(0x02, data);
-      }
-
-      // Stop rumble after duration
-      clearTimeout(haptic_timeout);
-      haptic_timeout = setTimeout(stop_haptic_motors, 250);
-    } catch(error) {
-      throw new Error(l("Error triggering rumble"), { cause: error });
-    }
-  };
-})();
-
-async function stop_haptic_motors() {
-  if (!controller.isConnected()) return;
-
-  const model = controller.getModel();
-  const device = controller.getDevice();
-  if (model == "DS4") {
-    const data = new Uint8Array([0x05, 0x00, 0, 0, 0]);
-    await device.sendReport(0x05, data);
-  } else if (model.startsWith("DS5")) {
-    const data = new Uint8Array([0x02, 0x00, 0, 0]);
-    await device.sendReport(0x02, data);
-  }
-}
-
-
 // Alert Management Functions
 let alertCounter = 0;
 
@@ -932,67 +938,71 @@ let alertCounter = 0;
  * @returns {string} - The ID of the created alert element
  */
 function pushAlert(message, type = 'info', duration = 0, dismissible = true) {
-    const alertContainer = document.getElementById('alert-container');
-    if (!alertContainer) {
-        console.error('Alert container not found');
-        return null;
-    }
+  const alertContainer = document.getElementById('alert-container');
+  if (!alertContainer) {
+  console.error('Alert container not found');
+  return null;
+  }
 
-    const alertId = `alert-${++alertCounter}`;
-    const alertDiv = document.createElement('div');
-    alertDiv.id = alertId;
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.setAttribute('role', 'alert');
-    alertDiv.innerHTML = `
-        ${message}
-        ${dismissible ? '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
-    `;
+  const alertId = `alert-${++alertCounter}`;
+  const alertDiv = document.createElement('div');
+  alertDiv.id = alertId;
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+  alertDiv.setAttribute('role', 'alert');
+  alertDiv.innerHTML = `
+    ${message}
+    ${dismissible ? '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' : ''}
+  `;
 
-    alertContainer.appendChild(alertDiv);
+  alertContainer.appendChild(alertDiv);
 
-    if (duration > 0) {
-        setTimeout(() => {
-            dismissAlert(alertId);
-        }, duration);
-    }
+  if (duration > 0) {
+    setTimeout(() => {
+      dismissAlert(alertId);
+    }, duration);
+  }
 
-    return alertId;
+  return alertId;
 }
 
 function dismissAlert(alertId) {
-    const alertElement = document.getElementById(alertId);
-    if (alertElement) {
-        const bsAlert = new bootstrap.Alert(alertElement);
-        bsAlert.close();
-    }
+  const alertElement = document.getElementById(alertId);
+  if (alertElement) {
+    const bsAlert = new bootstrap.Alert(alertElement);
+    bsAlert.close();
+  }
 }
 
 function clearAllAlerts() {
-    const alertContainer = document.getElementById('alert-container');
-    if (alertContainer) {
-        const alerts = alertContainer.querySelectorAll('.alert');
-        alerts.forEach(alert => {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        });
-    }
+  const alertContainer = document.getElementById('alert-container');
+  if (alertContainer) {
+    const alerts = alertContainer.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      const bsAlert = new bootstrap.Alert(alert);
+      bsAlert.close();
+    });
+  }
 }
 
 function successAlert(message, duration = 1_500) {
-    return pushAlert(message, 'success', duration, false);
+  return pushAlert(message, 'success', duration, false);
 }
 
 function errorAlert(message, duration = 15_000) {
-    return pushAlert(message, 'danger', /* duration */);
+  return pushAlert(message, 'danger', /* duration */);
 }
 
 function warningAlert(message, duration = 8_000) {
-    return pushAlert(message, 'warning', duration);
+  return pushAlert(message, 'warning', duration);
 }
 
 function infoAlert(message, duration = 5_000) {
-    return pushAlert(message, 'info', duration, false);
+  return pushAlert(message, 'info', duration, false);
 }
+
+
+
+
 
 
 // Export functions to global scope for HTML onclick handlers
@@ -1001,10 +1011,43 @@ window.connect = connect;
 window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
-window.calibrate_range = () => calibrate_range(controller, { resetStickDiagrams, successAlert });
-window.calibrate_stick_centers = () => calibrate_stick_centers(controller, { resetStickDiagrams, show_popup, set_progress });
-window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(controller, { resetStickDiagrams, successAlert, set_progress });
-window.ds5_finetune = () => ds5_finetune(controller, { ll_data, rr_data, clear_circularity });
+window.calibrate_range = () => calibrate_range(
+  controller,
+  { ll_data, rr_data },
+  (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      successAlert(message);
+      switchToRangeMode();
+      app.shownRangeCalibrationWarning = false
+    }
+  }
+);
+window.calibrate_stick_centers = () => calibrate_stick_centers(
+  controller,
+  (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      successAlert(message);
+      switchTo10xZoomMode();
+    }
+  }
+);
+window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(
+  controller,
+  (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      successAlert(message);
+      switchTo10xZoomMode();
+    }
+  }
+);
+window.ds5_finetune = () => ds5_finetune(
+  controller,
+  { ll_data, rr_data, clear_circularity },
+  (success) => success && switchToRangeMode()
+);
 window.flash_all_changes = flash_all_changes;
 window.reboot_controller = reboot_controller;
 window.refresh_nvstatus = refresh_nvstatus;
@@ -1014,6 +1057,11 @@ window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
 window.board_model_info = board_model_info;
 window.edge_color_info = edge_color_info;
+window.show_quick_test_modal = () => {
+  show_quick_test_modal(controller).catch(error => {
+    throw new Error("Failed to show quick test modal", { cause: error });
+  });
+};
 
 // Auto-initialize the application when the module loads
 gboot();

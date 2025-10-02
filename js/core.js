@@ -141,7 +141,7 @@ async function connect() {
   initAnalyticsApi(app); // init with gu and jg
 
   // Initialize controller manager with translation function
-  controller = initControllerManager({ l, handleNvStatusUpdate });
+  controller = initControllerManager({ handleNvStatusUpdate });
   controller.setInputHandler(handleControllerInput);
 
   la("begin");
@@ -224,7 +224,7 @@ async function continue_connection({data, device}) {
 
     try {
       // Create controller instance using factory
-      controllerInstance = ControllerFactory.createControllerInstance(device, { l });
+      controllerInstance = ControllerFactory.createControllerInstance(device);
       controller.setControllerInstance(controllerInstance);
 
       info = await controllerInstance.getInfo();
@@ -1058,7 +1058,7 @@ window.show_donate_modal = show_donate_modal;
 window.board_model_info = board_model_info;
 window.edge_color_info = edge_color_info;
 window.show_quick_test_modal = () => {
-  show_quick_test_modal(controller, { l }).catch(error => {
+  show_quick_test_modal(controller).catch(error => {
     throw new Error("Failed to show quick test modal", { cause: error });
   });
 };

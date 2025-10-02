@@ -1,5 +1,7 @@
 'use strict';
 
+import { l } from '../translations.js';
+
 const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
   'usb': 'USB Connector',
@@ -39,9 +41,8 @@ const BUTTON_INFILL_MAPPING = {
  * Handles controller feature testing including haptic feedback, adaptive triggers, speaker, and microphone functionality
  */
 export class QuickTestModal {
-  constructor(controllerInstance, { l }) {
+  constructor(controllerInstance) {
     this.controller = controllerInstance;
-    this.l = l;
 
     this.resetAllTests();
 
@@ -119,8 +120,9 @@ export class QuickTestModal {
   /**
    * Apply skipped tests to the UI (rebuild accordion with non-skipped tests)
    */
-  _applySkippedTestsToUI() {
+  async _applySkippedTestsToUI() {
     this._buildDynamicAccordion();
+    await this._initSvgController();
     this._updateSkippedTestsDropdown();
   }
 
@@ -131,14 +133,13 @@ export class QuickTestModal {
     const $accordion = $('#quickTestAccordion');
     $accordion.empty();
 
-    // Get non-skipped tests in order
-    let activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+    // Get supported tests from the controller
+    const supportedTests = this.controller.getSupportedQuickTests();
 
-    // Filter out unsupported tests for DS4 controllers
-    if (this.controller.getModel() === 'DS4') {
-      const ds4UnsupportedTests = ['adaptive', 'speaker', 'microphone'];
-      activeTests = activeTests.filter(testType => !ds4UnsupportedTests.includes(testType));
-    }
+    // Get non-skipped tests in order, filtered by what the controller supports
+    let activeTests = TEST_SEQUENCE.filter(testType =>
+      !this.state.skippedTests.includes(testType) && supportedTests.includes(testType)
+    );
 
     activeTests.forEach(testType => {
       const accordionItem = this._createAccordionItem(testType);
@@ -223,7 +224,7 @@ export class QuickTestModal {
           </div>
           <div class="alert alert-info mb-3">
             <i class="fas fa-info-circle me-2"></i>
-            <span class="ds-i18n">The test will automatically pass when all buttons have turned green.</span>
+            <span class="ds-i18n">Long-press <kbd>Circle</kbd> to skip ahead.</span>
           </div>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="buttons-pass-btn" onclick="markTestResult('buttons', true)">
@@ -239,7 +240,7 @@ export class QuickTestModal {
         `;
       case 'haptic':
         return `
-          <p class="ds-i18n">This test will activate the controller's vibration motors for 3 seconds.</p>
+          <p class="ds-i18n">This test will activate the controller's vibration motors, first the heavy one, and then the light one.</p>
           <p class="ds-i18n"><strong>Instructions:</strong> Feel for vibration in the controller.</p>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="haptic-pass-btn" onclick="markTestResult('haptic', true)">
@@ -267,10 +268,6 @@ export class QuickTestModal {
         return `
           <p class="ds-i18n">This test will cycle through red, green, and blue colors on the controller lightbar, animate the player indicator lights, and flash the mute button.</p>
           <p class="ds-i18n"><strong>Instructions:</strong> Watch the controller lights change colors, the player lights animate, and the mute button flash.</p>
-          <div class="alert alert-info mb-3">
-            <i class="fas fa-info-circle me-2"></i>
-            <span class="ds-i18n">The lights will automatically cycle through colors and patterns until you mark the test as passed or failed.</span>
-          </div>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="lights-pass-btn" onclick="markTestResult('lights', true)">
               <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
@@ -375,13 +372,13 @@ export class QuickTestModal {
     const allTestsCompleted = this._areAllTestsCompleted();
 
     if (activeTest === 'buttons') {
-      $instructionsText.html(this.l('Test all buttons, or long-press <kbd>Square</kbd> to Pass and <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
+      $instructionsText.html(l('Test all buttons, or long-press <kbd>Square</kbd> to Pass and <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
     } else if (activeTest) {
-      $instructionsText.html(this.l('Press <kbd>Square</kbd> to Pass, <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
+      $instructionsText.html(l('Press <kbd>Square</kbd> to Pass, <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
     } else if (allTestsCompleted) {
-      $instructionsText.html(this.l('Press <kbd>Circle</kbd> to close, or <kbd>Square</kbd> to start over'));
+      $instructionsText.html(l('Press <kbd>Circle</kbd> to close, or <kbd>Square</kbd> to start over'));
     } else {
-      $instructionsText.html(this.l('Press <kbd>Square</kbd> to begin or <kbd>Circle</kbd> to close'));
+      $instructionsText.html(l('Press <kbd>Square</kbd> to begin or <kbd>Circle</kbd> to close'));
     }
   }
 
@@ -417,6 +414,8 @@ export class QuickTestModal {
     $modal.on('hidden.bs.modal', this._boundModalHidden);
     $modal.on('shown.bs.modal', () => {
       this._updateInstructions();
+      // Automatically start the test sequence when modal opens
+      this._startTestSequence();
     });
   }
 
@@ -518,6 +517,10 @@ export class QuickTestModal {
     });
 
     this._resetButtonColors();
+
+    // Hide mute button for DS4 controllers
+    const model = this.controller.getModel();
+    this._setMuteVisibility(model !== 'DS4');
   }
 
   /**
@@ -528,6 +531,28 @@ export class QuickTestModal {
       return null;
     }
     return this.svgContainer.querySelector(`#${id}`);
+  }
+
+  /**
+   * Get the list of buttons to test based on controller model
+   * DS4 controllers don't have a mute button
+   */
+  _getAvailableButtons() {
+    const model = this.controller.getModel();
+    if (model === 'DS4') {
+      return BUTTONS.filter(button => button !== 'mute');
+    }
+    return BUTTONS;
+  }
+
+  /**
+   * Set mute button visibility in the quick test SVG
+   */
+  _setMuteVisibility(show) {
+    const muteOutline = this._getQuickTestElement('qt-Mute_outline');
+    const muteInfill = this._getQuickTestElement('qt-Mute_infill');
+    if (muteOutline) muteOutline.style.display = show ? '' : 'none';
+    if (muteInfill) muteInfill.style.display = show ? '' : 'none';
   }
 
   /**
@@ -633,14 +658,14 @@ export class QuickTestModal {
     // Initialize button press counts only if not already initialized
     if (!this.state.buttonPressCount || Object.keys(this.state.buttonPressCount).length === 0) {
       this.state.buttonPressCount = {};
-      BUTTONS.forEach(button => {
+      this._getAvailableButtons().forEach(button => {
         this.state.buttonPressCount[button] = 0;
       });
     }
 
     // Check for any buttons that are already stuck pressed when the test starts
     // and draw them as pressed
-    BUTTONS.forEach(button => {
+    this._getAvailableButtons().forEach(button => {
       if (this.controller.button_states[button] === true) {
         this._setButtonPressed(button, true);
       }
@@ -686,7 +711,7 @@ export class QuickTestModal {
    * Check if all buttons have been pressed the required number of times
    */
   _checkButtonsTestComplete() {
-    const allPressed = BUTTONS.every(button => {
+    const allPressed = this._getAvailableButtons().every(button => {
       const count = this.state.buttonPressCount[button] || 0;
       // Special buttons (create, options, mute, ps) only need 1 press
       const checkOnce = ['create', 'touchpad', 'options', 'l3', 'ps', 'mute', 'r3'].includes(button);
@@ -706,7 +731,7 @@ export class QuickTestModal {
   resetButtonsTest() {
     // Reset button press counts
     this.state.buttonPressCount = {};
-    BUTTONS.forEach(button => {
+    this._getAvailableButtons().forEach(button => {
       this.state.buttonPressCount[button] = 0;
     });
 
@@ -717,7 +742,7 @@ export class QuickTestModal {
     this._resetButtonColors();
 
     // Check for any buttons that are already stuck pressed and draw them as pressed
-    BUTTONS.forEach(button => {
+    this._getAvailableButtons().forEach(button => {
       if (this.controller.button_states[button] === true) {
         this._setButtonPressed(button, true);
       }
@@ -730,9 +755,11 @@ export class QuickTestModal {
   async _startHapticTest() {
     this._startIconAnimation('haptic');
     await this.controller.setVibration({ heavyLeft: 255, lightRight: 0, duration: 500 }, async () => {
-      await this.controller.setVibration({ heavyLeft: 0, lightRight: 255, duration: 500 });
+      await setTimeout(async () => {
+        await this.controller.setVibration({ heavyLeft: 0, lightRight: 255, duration: 500 });
+      }, 500);
     });
-    setTimeout(() => { this._stopIconAnimation('haptic'); }, 1000); }
+    setTimeout(() => { this._stopIconAnimation('haptic'); }, 1500); }
 
   /**
    * Start adaptive trigger test
@@ -984,12 +1011,12 @@ export class QuickTestModal {
 
     if (passed) {
       $statusBadge.attr('class', 'badge bg-success me-2');
-      $statusBadge.text(this.l('Passed'));
+      $statusBadge.text(l('Passed'));
       $accordionItem.addClass('border-success');
       $accordionButton.css('backgroundColor', 'rgba(25, 135, 84, 0.1)'); // Light green background
     } else {
       $statusBadge.attr('class', 'badge bg-danger me-2');
-      $statusBadge.text(this.l('Failed'));
+      $statusBadge.text(l('Failed'));
       $accordionItem.addClass('border-danger');
       $accordionButton.css('backgroundColor', 'rgba(220, 53, 69, 0.1)'); // Light red background
     }
@@ -1010,7 +1037,7 @@ export class QuickTestModal {
   /**
    * Skip a test and remove it from the accordion
    */
-  skipTest(testType) {
+  async skipTest(testType) {
     // Add to skipped tests if not already there
     if (!this.state.skippedTests.includes(testType)) {
       this.state.skippedTests.push(testType);
@@ -1031,6 +1058,7 @@ export class QuickTestModal {
 
     // Rebuild the accordion without the skipped test
     this._buildDynamicAccordion();
+    await this._initSvgController();
 
     this._updateSkippedTestsDropdown();
     this._updateTestSummary();
@@ -1041,7 +1069,7 @@ export class QuickTestModal {
   /**
    * Add a test back from the skipped list
    */
-  addTestBack(testType) {
+  async addTestBack(testType) {
     // Remove from skipped tests
     const index = this.state.skippedTests.indexOf(testType);
     if (index > -1) {
@@ -1055,6 +1083,7 @@ export class QuickTestModal {
 
     // Rebuild the accordion with the restored test
     this._buildDynamicAccordion();
+    await this._initSvgController();
 
     this._updateSkippedTestsDropdown();
     this._updateTestSummary();
@@ -1077,7 +1106,7 @@ export class QuickTestModal {
     $list.empty();
 
     this.state.skippedTests.forEach(testType => {
-      const testName = this.l(TEST_NAMES[testType]);
+      const testName = l(TEST_NAMES[testType]);
       const $item = $(`
         <li>
           <a class="dropdown-item" href="#" onclick="addTestBack('${testType}'); return false;">
@@ -1099,14 +1128,13 @@ export class QuickTestModal {
     let passed = 0;
     let skipped = this.state.skippedTests.length;
 
-    // Get active tests for this controller model
-    let activeTests = TEST_SEQUENCE.filter(testType => !this.state.skippedTests.includes(testType));
+    // Get supported tests from the controller
+    const supportedTests = this.controller.getSupportedQuickTests();
 
-    // Filter out unsupported tests for DS4 controllers
-    if (this.controller.getModel() === 'DS4') {
-      const ds4UnsupportedTests = ['adaptive', 'speaker', 'microphone'];
-      activeTests = activeTests.filter(testType => !ds4UnsupportedTests.includes(testType));
-    }
+    // Get active tests for this controller model (non-skipped and supported)
+    let activeTests = TEST_SEQUENCE.filter(testType =>
+      !this.state.skippedTests.includes(testType) && supportedTests.includes(testType)
+    );
 
     activeTests.forEach(test => {
       if (this.state[test] !== null) {
@@ -1119,12 +1147,12 @@ export class QuickTestModal {
     const totalProcessed = completed + skipped;
 
     if (totalProcessed === 0) {
-      $summary.text(this.l('No tests completed yet.'));
+      $summary.text(l('No tests completed yet.'));
       $summary.attr('class', 'text-muted ds-i18n');
     } else {
-      let summaryText = this.l(`${completed}/${numTests} tests completed. ${passed} passed, ${completed - passed} failed.`);
+      let summaryText = `${completed}/${numTests} ${l("tests completed")}. ${passed} ${"passed"}, ${completed - passed} ${"failed"}.`;
       if (skipped > 0) {
-        summaryText += this.l(` ${skipped} skipped.`);
+        summaryText += ` ${skipped} l({"skipped"}).`;
       }
       $summary.text(summaryText);
       $summary.attr('class', totalProcessed === numTests ? 'text-success' : 'text-info');
@@ -1239,7 +1267,7 @@ export class QuickTestModal {
    * Track button presses for the buttons test
    */
   _trackButtonPresses(changes) {
-    BUTTONS.forEach(button => {
+    this._getAvailableButtons().forEach(button => {
       const handleLongpress = ['cross', 'square', 'triangle', 'circle'].includes(button);
       if (changes[button] === true) {
         // Button pressed - increment count and show dark blue infill
@@ -1343,9 +1371,9 @@ export class QuickTestModal {
   /**
    * Start the test sequence from the beginning
    */
-  _startTestSequence() {
+  async _startTestSequence() {
     // First, reset all tests to ensure clean state
-    this.resetAllTests();
+    await this.resetAllTests();
 
     // After a short delay, start with the first non-skipped test
     setTimeout(() => {
@@ -1354,7 +1382,10 @@ export class QuickTestModal {
 
       if (firstAvailableTest) {
         const $firstCollapse = $(`#${firstAvailableTest}-test-collapse`);
-        bootstrap.Collapse.getOrCreateInstance($firstCollapse[0]).show();
+        // Check if the element exists in the DOM before trying to create a Collapse instance
+        if ($firstCollapse.length > 0 && $firstCollapse[0]) {
+          bootstrap.Collapse.getOrCreateInstance($firstCollapse[0]).show();
+        }
       }
     }, 300);
   }
@@ -1367,8 +1398,18 @@ export class QuickTestModal {
     if (!activeTest) return;
 
     const currentIndex = TEST_SEQUENCE.indexOf(activeTest);
-    const previousIndex = currentIndex > 0 ? currentIndex - 1 : 0;
-    if(previousIndex == currentIndex) return;
+
+    // Find the previous non-skipped test
+    let previousIndex = -1;
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      if (!this.state.skippedTests.includes(TEST_SEQUENCE[i])) {
+        previousIndex = i;
+        break;
+      }
+    }
+
+    // If no previous test found, stay on current
+    if (previousIndex === -1) return;
 
     const previousTest = TEST_SEQUENCE[previousIndex];
 
@@ -1380,14 +1421,17 @@ export class QuickTestModal {
     // Expand previous test after a short delay
     setTimeout(() => {
       const $previousCollapse = $(`#${previousTest}-test-collapse`);
-      bootstrap.Collapse.getOrCreateInstance($previousCollapse[0]).show();
+      // Check if the element exists in the DOM before trying to create a Collapse instance
+      if ($previousCollapse.length > 0 && $previousCollapse[0]) {
+        bootstrap.Collapse.getOrCreateInstance($previousCollapse[0]).show();
+      }
     }, 300);
   }
 
   /**
    * Reset all tests to initial state
    */
-  resetAllTests() {
+  async resetAllTests() {
     // Clear any active long-press timers before resetting state
     this._clearAllLongPressTimers();
 
@@ -1409,7 +1453,7 @@ export class QuickTestModal {
       const $accordionButton = $accordionItem.find('.accordion-button');
 
       $statusBadge.attr('class', 'badge bg-secondary me-2');
-      $statusBadge.text(this.l('Not tested'));
+      $statusBadge.text(l('Not tested'));
       $accordionItem.removeClass('border-success border-danger');
       $accordionButton.css('backgroundColor', ''); // Clear background color
 
@@ -1423,7 +1467,7 @@ export class QuickTestModal {
     });
 
     // Apply skipped tests to UI (hide skipped items)
-    this._applySkippedTestsToUI();
+    await this._applySkippedTestsToUI();
 
     this._updateTestSummary();
 
@@ -1472,12 +1516,12 @@ export function quicktest_handle_controller_input(changes) {
 /**
  * Show the Quick Test modal (legacy function for backward compatibility)
  */
-export async function show_quick_test_modal(controller, { l } = {}) {
+export async function show_quick_test_modal(controller) {
   // Destroy any existing instance
   destroyCurrentInstance();
 
   // Create new instance
-  currentQuickTestInstance = new QuickTestModal(controller, { l });
+  currentQuickTestInstance = new QuickTestModal(controller);
   await currentQuickTestInstance.open();
 }
 

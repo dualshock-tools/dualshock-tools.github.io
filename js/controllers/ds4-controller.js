@@ -10,6 +10,7 @@ import {
   lf,
   la
 } from '../utils.js';
+import { l } from '../translations.js';
 
 const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
 
@@ -111,8 +112,8 @@ class DS4OutputStruct {
 * DualShock 4 Controller implementation
 */
 class DS4Controller extends BaseController {
-  constructor(device, uiDependencies = {}) {
-    super(device, uiDependencies);
+  constructor(device) {
+    super(device);
     this.model = "DS4";
 
     // Initialize current output state to track controller settings
@@ -134,8 +135,6 @@ class DS4Controller extends BaseController {
   }
 
   async getInfo() {
-    const { l } = this;
-
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
       let deviceTypeText = l("unknown");
@@ -204,9 +203,9 @@ class DS4Controller extends BaseController {
       const lockRes = await this.nvsLock();
       if(!lockRes.ok) throw (lockRes.error || new Error("NVS lock failed"));
 
-      return { success: true, message: this.l("Changes saved successfully") };
+      return { success: true, message: l("Changes saved successfully") };
     } catch(error) {
-      throw new Error(this.l("Error while saving changes"), { cause: error });
+      throw new Error(l("Error while saving changes"), { cause: error });
     }
   }
 
@@ -258,7 +257,7 @@ class DS4Controller extends BaseController {
         la("ds4_calibrate_range_begin_failed", {"d1": d1, "d2": d2});
         return {
           ok: false,
-          error: new Error(this.l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          error: new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
           code: 1, d1, d2
         };
       }
@@ -306,7 +305,7 @@ class DS4Controller extends BaseController {
         la("ds4_calibrate_sticks_begin_failed", {"d1": d1, "d2": d2});
         return {
           ok: false,
-          error: new Error(this.l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          error: new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
           code: 1, d1, d2,
         };
       }
@@ -401,7 +400,7 @@ class DS4Controller extends BaseController {
     } else {
       if(this.isRare(hw_ver))
         return "WOW!";
-      return this.l("Unknown");
+      return l("Unknown");
     }
   }
 
@@ -688,6 +687,15 @@ class DS4Controller extends BaseController {
     } else {
       throw new Error('WebRTC getUserMedia API or mediaDevices enumeration not available.');
     }
+  }
+
+  /**
+   * Get the list of supported quick tests for DS4 controller
+   * DS4 does not support adaptive triggers, speaker, or microphone
+   * @returns {Array<string>} Array of supported test types
+   */
+  getSupportedQuickTests() {
+    return ['usb', 'buttons', 'haptic', 'lights', 'headphone'];
   }
 }
 

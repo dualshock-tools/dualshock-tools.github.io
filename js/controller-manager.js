@@ -1,6 +1,7 @@
 'use strict';
 
 import { sleep, la } from './utils.js';
+import { l } from './translations.js'
 
 /**
 * Controller Manager - Manages the current controller instance and provides unified interface
@@ -8,7 +9,6 @@ import { sleep, la } from './utils.js';
 class ControllerManager {
   constructor(uiDependencies = {}) {
     this.currentController = null;
-    this.l = uiDependencies.l;
     this.handleNvStatusUpdate = uiDependencies.handleNvStatusUpdate;
     this.has_changes_to_write = null; 
     this.inputHandler = null; // Callback function for input processing
@@ -110,6 +110,17 @@ class ControllerManager {
   }
 
   /**
+   * Get the list of supported quick tests for the current controller
+   * @returns {Array<string>} Array of supported test types
+   */
+  getSupportedQuickTests() {
+    if (!this.currentController) {
+      return [];
+    }
+    return this.currentController.getSupportedQuickTests();
+  }
+
+  /**
   * Check if a controller is connected
   * @returns {boolean} True if controller is connected
   */
@@ -183,7 +194,7 @@ class ControllerManager {
   async nvsLock() {
     const res = await this.currentController.nvsLock();
     if (!res.ok) {
-      throw new Error(this.l("NVS Lock failed"), { cause: res.error });
+      throw new Error(l("NVS Lock failed"), { cause: res.error });
     }
 
     await this.queryNvStatus(); // Refresh NVS status
@@ -196,7 +207,7 @@ class ControllerManager {
   async calibrateSticksBegin() {
     const res = await this.currentController.calibrateSticksBegin();
     if (!res.ok) {
-      throw new Error(`${this.l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
     }
   }
 
@@ -207,7 +218,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateSticksSample();
     if (!res.ok) {
       await sleep(500);
-      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
+      throw new Error(l("Stick calibration failed"), { cause: res.error });
     }
   }
 
@@ -218,7 +229,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateSticksEnd();
     if (!res.ok) {
       await sleep(500);
-      throw new Error(this.l("Stick calibration failed"), { cause: res.error });
+      throw new Error(l("Stick calibration failed"), { cause: res.error });
     }
 
     this.setHasChangesToWrite(true);
@@ -230,7 +241,7 @@ class ControllerManager {
   async calibrateRangeBegin() {
     const res = await this.currentController.calibrateRangeBegin();
     if (!res.ok) {
-      throw new Error(`${this.l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
     }
   }
 
@@ -241,7 +252,7 @@ class ControllerManager {
     const res = await this.currentController.calibrateRangeEnd();
     if(res?.ok) {
       this.setHasChangesToWrite(true);
-      return { success: true, message: this.l("Range calibration completed") };
+      return { success: true, message: l("Range calibration completed") };
     } else {
       // Check if the error is code 3 (DS4/DS5) or codes 4/5 (DS5 Edge), which typically means 
       // the calibration was already ended or the controller is not in range calibration mode
@@ -254,7 +265,7 @@ class ControllerManager {
 
       console.log("Range calibration end failed with unexpected error:", res);
       await sleep(500);
-      const msg = res?.code ? (`${this.l("Range calibration failed")}. ${this.l("Error")} ${res.code}`) : (`${this.l("Range calibration failed")}. ${res?.error || ""}`);
+      const msg = res?.code ? (`${l("Range calibration failed")}. ${l("Error")} ${res.code}`) : (`${l("Range calibration failed")}. ${res?.error || ""}`);
       return { success: false, message: msg, error: res?.error };
     }
   }
@@ -286,7 +297,7 @@ class ControllerManager {
       await this.calibrateSticksEnd();
       progressCallback(100);
 
-      return { success: true, message: this.l("Stick calibration completed") };
+      return { success: true, message: l("Stick calibration completed") };
     } catch (e) {
       la("multi_calibrate_sticks_failed", {"r": e});
       throw e;
@@ -299,24 +310,24 @@ class ControllerManager {
    */
   async disableLeftAdaptiveTrigger() {
     if (!this.currentController) {
-      throw new Error(this.l("No controller connected"));
+      throw new Error(l("No controller connected"));
     }
 
     // Check if the controller supports adaptive triggers (DS5 only)
     if (this.getModel() !== "DS5") {
-      throw new Error(this.l("Adaptive triggers are only supported on DualSense controllers"));
+      throw new Error(l("Adaptive triggers are only supported on DualSense controllers"));
     }
 
     // Check if the controller has the disableLeftAdaptiveTrigger method
     if (typeof this.currentController.disableLeftAdaptiveTrigger !== 'function') {
-      throw new Error(this.l("Controller does not support adaptive trigger control"));
+      throw new Error(l("Controller does not support adaptive trigger control"));
     }
 
     try {
       const result = await this.currentController.disableLeftAdaptiveTrigger();
       return result;
     } catch (error) {
-      throw new Error(this.l("Failed to disable adaptive trigger"), { cause: error });
+      throw new Error(l("Failed to disable adaptive trigger"), { cause: error });
     }
   }
 
@@ -345,7 +356,7 @@ class ControllerManager {
     // if (preset === 'custom') {
     //   // Validate custom parameters
     //   if (typeof start !== 'number' || typeof end !== 'number' || typeof force !== 'number') {
-    //     throw new Error(this.l("Custom preset requires start, end, and force parameters"));
+    //     throw new Error(l("Custom preset requires start, end, and force parameters"));
     //   }
     // }
 
@@ -374,7 +385,7 @@ class ControllerManager {
       }
     } catch (error) {
       if(duration) doneCb({ success: false});
-      throw new Error(this.l("Failed to set vibration"), { cause: error });
+      throw new Error(l("Failed to set vibration"), { cause: error });
     }
   }
 
@@ -387,7 +398,7 @@ class ControllerManager {
   async setSpeakerTone(duration = 1000, doneCb = ({success}) => {}, output = "speaker") {
     try {
       if (!this.currentController.setSpeakerTone) {
-        throw new Error(this.l("Speaker tone not supported on this controller"));
+        throw new Error(l("Speaker tone not supported on this controller"));
       }
 
       await this.currentController.setSpeakerTone(output);
@@ -409,7 +420,7 @@ class ControllerManager {
       }
     } catch (error) {
       if(duration) doneCb({ success: false});
-      throw new Error(this.l("Failed to set speaker tone"), { cause: error });
+      throw new Error(l("Failed to set speaker tone"), { cause: error });
     }
   }
 
@@ -564,7 +575,7 @@ class ControllerManager {
   */
   _batteryPercentToText({bat_capacity, is_charging, is_error}) {
     if (is_error) {
-      return '<font color="red">' + this.l("error") + '</font>';
+      return '<font color="red">' + l("error") + '</font>';
     }
 
     const batteryIcons = [

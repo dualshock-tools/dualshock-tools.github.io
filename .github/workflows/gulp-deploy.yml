@@ -3,9 +3,7 @@ name: Build and Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main
-      - build-dist-with-gulp
-      - release-2-16
+      - "**"
   workflow_dispatch:
     inputs:
       deploy:

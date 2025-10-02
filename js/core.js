@@ -234,8 +234,8 @@ async function continue_connection({data, device}) {
         await controllerInstance.initializeCurrentOutputState();
       }
     } catch (error) {
-      const contextMessage = device
-        ? l("Connected invalid device: ") + dec2hex(device.vendorId) + ":" + dec2hex(device.productId)
+      const contextMessage = device 
+        ? `${l("Connected invalid device")}: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`
         : l("Failed to connect to device");
         throw new Error(contextMessage, { cause: error });
     }
@@ -243,7 +243,7 @@ async function continue_connection({data, device}) {
     if(!info?.ok) {
       // Not connected/failed to fetch info
       if(info) console.error(JSON.stringify(info, null, 2));
-      throw new Error(l("Connected invalid device: ") + l("Error 1"), { cause: info?.error });
+      throw new Error(`${l("Connected invalid device")}: ${l("Error")}  1`, { cause: info?.error });
     }
 
     // Get UI configuration and device name
@@ -769,8 +769,6 @@ function update_disable_btn() {
     show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
   } else if(disable_btn & 2 && !(last_disable_btn & 2)) {
     show_popup(l("This DualSense controller has outdated firmware.") + "<br>" + l("Please update the firmware and try again."), true);
-  } else if(disable_btn & 4 && !(last_disable_btn & 4)) {
-    show_popup(l("Please charge controller battery over 30% to use this tool."));
   }
   app.last_disable_btn = disable_btn;
 }

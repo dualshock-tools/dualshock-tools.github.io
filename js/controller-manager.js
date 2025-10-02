@@ -249,12 +249,12 @@ class ControllerManager {
         console.log("Range calibration end returned expected error code", res.code, "- treating as successful completion");
         // This is likely not an error - the calibration may have already been completed
         // or the user closed the window without starting calibration
-        return { success: true, message: this.l("Range calibration window closed") };
+        return { success: true };
       }
 
       console.log("Range calibration end failed with unexpected error:", res);
       await sleep(500);
-      const msg = res?.code ? (this.l("Range calibration failed") + this.l("Error ") + String(res.code)) : (this.l("Range calibration failed") + String(res?.error || ""));
+      const msg = res?.code ? (`${this.l("Range calibration failed")}. ${this.l("Error")} ${res.code}`) : (`${this.l("Range calibration failed")}. ${res?.error || ""}`);
       return { success: false, message: msg, error: res?.error };
     }
   }

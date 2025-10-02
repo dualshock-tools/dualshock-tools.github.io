@@ -88,6 +88,15 @@ WHITELIST_UNUSED = {
     "left module",
     "right module",
     "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.",
+
+    "Adaptive Trigger",
+    "Buttons",
+    "Haptic Vibration",
+    "Headphone Jack",
+    "Lights",
+    "Microphone",
+    "Speaker",
+    "USB Connector",
 }
 
 

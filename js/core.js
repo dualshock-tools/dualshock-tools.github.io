@@ -1013,6 +1013,7 @@ window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
 window.calibrate_range = () => calibrate_range(
   controller,
+  { ll_data, rr_data },
   (success, message) => {
     if (success) {
       resetStickDiagrams();

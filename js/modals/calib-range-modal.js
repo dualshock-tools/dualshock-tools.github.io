@@ -11,11 +11,9 @@ const SECONDS_UNTIL_UNLOCK = 15;
  * Handles stick range calibration
  */
 export class CalibRangeModal {
-  constructor(controllerInstance, { resetStickDiagrams, successAlert, ll_data, rr_data }, doneCallback = null) {
+  constructor(controllerInstance, { ll_data, rr_data }, doneCallback = null) {
     // Dependencies
     this.controller = controllerInstance;
-    this.resetStickDiagrams = resetStickDiagrams;
-    this.successAlert = successAlert;
     this.ll_data = ll_data;
     this.rr_data = rr_data;
 
@@ -51,7 +49,9 @@ export class CalibRangeModal {
       .toggleClass('btn-primary', false)
       .toggleClass('btn-outline-primary', true);
     bootstrap.Modal.getOrCreateInstance('#rangeModal').show();
-    this.resetStickDiagrams();
+
+    this.ll_data.fill(0);
+    this.rr_data.fill(0);
 
     this.updateProgress();  // reset progress bar
     this.startProgressMonitoring();
@@ -66,7 +66,6 @@ export class CalibRangeModal {
   async onClose() {
     this.stopProgressMonitoring();
     this.stopCountdown();
-    this.resetStickDiagrams();
 
     bootstrap.Modal.getOrCreateInstance('#rangeModal').hide();
 

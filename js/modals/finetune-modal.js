@@ -1333,8 +1333,8 @@ async function finetune_quick_calibrate_range() {
   // Hide the finetune modal
   currentFinetuneInstance.setQuickCalibrating(true);
 
-  const { controller } = currentFinetuneInstance;
-  await calibrate_range(controller, (success, message) => {
+  const { controller, ll_data, rr_data } = currentFinetuneInstance;
+  await calibrate_range(controller, { ll_data, rr_data }, (success, message) => {
     currentFinetuneInstance.setQuickCalibrating(false);
   });
 }

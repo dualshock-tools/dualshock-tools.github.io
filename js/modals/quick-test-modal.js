@@ -36,6 +36,15 @@ const BUTTON_INFILL_MAPPING = {
   'ps': 'qt-PS_infill',
   'mute': 'qt-Mute_infill'
 };
+
+function addIcons(string) {
+  return string
+    .replace('[triangle]', '<svg width="20" height="20" style="vertical-align: -4px;"><use xlink:href="#ps-triangle"/></svg>')
+    .replace('[square]', '<svg width="20" height="20" style="vertical-align: -4px;"><use xlink:href="#ps-square"/></svg>')
+    .replace('[circle]', '<svg width="20" height="20" style="vertical-align: -4px;"><use xlink:href="#ps-circle"/></svg>')
+    .replace('[cross]', '<svg width="20" height="20" style="vertical-align: -4px;"><use xlink:href="#ps-cross"/></svg>')
+}
+
 /**
  * Quick Test Modal Class
  * Handles controller feature testing including haptic feedback, adaptive triggers, speaker, and microphone functionality
@@ -168,17 +177,19 @@ export class QuickTestModal {
 
     const testContent = this._getTestContent(testType);
 
+    const notTested = l('Not tested');
+    const hide = l('hide');
     return $(`
       <div class="accordion-item" id="${testType}-test-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${testType}-test-collapse" aria-expanded="false" aria-controls="${testType}-test-collapse">
             <div class="d-flex align-items-center w-100">
               <i class="${testIcons[testType]} me-3 test-icon-${testType}"></i>
-              <span class="flex-grow-1 ds-i18n">${testName}</span>
+              <span class="flex-grow-1">${testName}</span>
               <a href="#" class="btn btn-link text-decoration-none skip-btn" id="${testType}-skip-btn" onclick="skipTest('${testType}'); return false;">
-                <span class="ds-i18n">skip</span>
+                <span>${hide}</span>
               </a>
-              <span class="badge bg-secondary me-2" id="${testType}-test-status">Not tested</span>
+              <span class="badge bg-secondary me-2" id="${testType}-test-status">${notTested}</span>
             </div>
           </button>
         </h2>
@@ -195,28 +206,38 @@ export class QuickTestModal {
    * Get the content for a specific test type
    */
   _getTestContent(testType) {
+    const instructions = l('Instructions');
+    const pass = l('Pass');
+    const fail = l('Fail');
     switch (testType) {
       case 'usb':
+        const usbTestDesc = l('This test checks the reliability of the USB port.');
+        const wiggleTheCable = l('Wiggle the USB cable to see if the controller disconnects.');
+        const beGentle = l('Be gentle to avoid damage.');
         return `
-          <p class="ds-i18n">This test checks the reliability of the USB port.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Wiggle the USB cable to see if the controller disconnects.</p>
+          <p>${usbTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${wiggleTheCable}</p>
           <div class="alert alert-warning mb-3">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            <span class="ds-i18n">Be gentle to avoid damage.</span>
+            <span>${beGentle}</span>
           </div>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="usb-pass-btn" onclick="markTestResult('usb', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="usb-fail-btn" onclick="markTestResult('usb', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
       case 'buttons':
-        return `
-          <p class="ds-i18n">This test checks all controller buttons by requiring you to press each button up to three times.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Press each button until they turn green.</p>
+        const buttonsTestDesc = l('This test checks all controller buttons by requiring you to press each button up to three times.');
+        const buttonsInstructions = l('Press each button until they turn green.');
+        const buttonsLongPress = l('Long-press [circle] to skip ahead.');
+        const restart = l('Restart');
+        return addIcons(`
+          <p>${buttonsTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${buttonsInstructions}</p>
           <div class="d-flex justify-content-center mb-3">
             <div style="width: 80%; max-width: 400px;" id="quick-test-controller-svg-placeholder">
               <!-- SVG will be loaded dynamically -->
@@ -224,108 +245,123 @@ export class QuickTestModal {
           </div>
           <div class="alert alert-info mb-3">
             <i class="fas fa-info-circle me-2"></i>
-            <span class="ds-i18n">Long-press <kbd>Circle</kbd> to skip ahead.</span>
+            <span>${buttonsLongPress}</span>
           </div>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="buttons-pass-btn" onclick="markTestResult('buttons', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="buttons-fail-btn" onclick="markTestResult('buttons', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
             <button type="button" class="btn btn-outline-primary" id="buttons-reset-btn" onclick="resetButtonsTest()">
-              <i class="fas fa-redo me-1"></i><span class="ds-i18n">Restart</span>
+              <i class="fas fa-redo me-1"></i><span>${restart}</span>
             </button>
           </div>
-        `;
+        `);
       case 'haptic':
+        const hapticTestDesc = l('This test will activate the controller\'s vibration motors, first the heavy one, and then the light one.');
+        const hapticInstructions = l('Feel for vibration in the controller.');
         return `
-          <p class="ds-i18n">This test will activate the controller's vibration motors, first the heavy one, and then the light one.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Feel for vibration in the controller.</p>
+          <p>${hapticTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${hapticInstructions}</p>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="haptic-pass-btn" onclick="markTestResult('haptic', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="haptic-fail-btn" onclick="markTestResult('haptic', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
       case 'adaptive':
+        const adaptiveTestDesc = l('This test will enable heavy resistance on both L2 and R2 triggers.');
+        const adaptiveInstructions = l('Press L2 and R2 triggers to feel the trigger resistance.');
         return `
-          <p class="ds-i18n">This test will enable heavy resistance on both L2 and R2 triggers.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Press L2 and R2 triggers to feel the trigger resistance.</p>
+          <p>${adaptiveTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${adaptiveInstructions}</p>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="adaptive-pass-btn" onclick="markTestResult('adaptive', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="adaptive-fail-btn" onclick="markTestResult('adaptive', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
       case 'lights':
+        const lightsTestDesc = l('This test will cycle through red, green, and blue colors on the controller lightbar, animate the player indicator lights, and flash the mute button.');
+        const lightsInstructions = l('Watch the controller lights change colors, the player lights animate, and the mute button flash.');
         return `
-          <p class="ds-i18n">This test will cycle through red, green, and blue colors on the controller lightbar, animate the player indicator lights, and flash the mute button.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Watch the controller lights change colors, the player lights animate, and the mute button flash.</p>
+          <p>${lightsTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${lightsInstructions}</p>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="lights-pass-btn" onclick="markTestResult('lights', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="lights-fail-btn" onclick="markTestResult('lights', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
       case 'speaker':
+        const speakerTestDesc = l('This test will play a tone through the controller\'s built-in speaker.');
+        const speakerInstructions = l('Listen for a tone from the controller speaker.');
         return `
-          <p class="ds-i18n">This test will play a tone through the controller's built-in speaker.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Listen for a tone from the controller speaker.</p>
+          <p>${speakerTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${speakerInstructions}</p>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="speaker-pass-btn" onclick="markTestResult('speaker', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="speaker-fail-btn" onclick="markTestResult('speaker', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
       case 'microphone':
+        const microphoneTestDesc = l('This test will monitor the controller\'s microphone input levels.');
+        const microphoneInstructions = l('Blow gently into the controller\'s microphone. You should see the audio level indicator respond.');
+        const microphoneLevel = l('Microphone Level:');
         return `
-          <p class="ds-i18n">This test will monitor the controller's microphone input levels.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong> Blow gently into the controller's microphone. You should see the audio level indicator respond.</p>
+          <p>${microphoneTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${microphoneInstructions}</p>
           <div class="mb-3" id="mic-level-container" style="display: none;">
-            <label class="form-label ds-i18n">Microphone Level:</label>
+            <label class="form-label">${microphoneLevel}</label>
             <div class="progress">
               <div class="progress-bar bg-info" role="progressbar" id="mic-level-bar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="microphone-pass-btn" onclick="markTestResult('microphone', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="microphone-fail-btn" onclick="markTestResult('microphone', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
       case 'headphone':
+        const headphoneTestDesc = l('This test checks the headphone jack functionality.');
+        const headphoneStep1 = l('Plug in headphones to the 3.5mm jack');
+        const headphoneStep2 = l('Click "Test Speaker" to listen for the tone through the headphones');
+        const testSpeaker = l('Test Speaker');
         return `
-          <p class="ds-i18n">This test checks the headphone jack functionality.</p>
-          <p class="ds-i18n"><strong>Instructions:</strong></p>
-          <ol class="ds-i18n">
-            <li>Plug in headphones to the 3.5mm jack</li>
-            <li>Click "Test Speaker" to listen for the tone through the headphones</li>
+          <p>${headphoneTestDesc}</p>
+          <p><strong>${instructions}:</strong></p>
+          <ol>
+            <li>${headphoneStep1}</li>
+            <li>${headphoneStep2}</li>
           </ol>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-primary" id="headphone-test-btn" onclick="testHeadphoneAudio()">
-              <i class="fas fa-volume-up me-1"></i><span class="ds-i18n">Test Speaker</span>
+              <i class="fas fa-volume-up me-1"></i><span>${testSpeaker}</span>
             </button>
             <button type="button" class="btn btn-success" id="headphone-pass-btn" onclick="markTestResult('headphone', true)">
-              <i class="fas fa-check me-1"></i><span class="ds-i18n">Pass</span>
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
             </button>
             <button type="button" class="btn btn-danger" id="headphone-fail-btn" onclick="markTestResult('headphone', false)">
-              <i class="fas fa-times me-1"></i><span class="ds-i18n">Fail</span>
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
             </button>
           </div>
         `;
@@ -371,15 +407,23 @@ export class QuickTestModal {
     const activeTest = this._getCurrentActiveTest();
     const allTestsCompleted = this._areAllTestsCompleted();
 
+    let instruction;
     if (activeTest === 'buttons') {
-      $instructionsText.html(l('Test all buttons, or long-press <kbd>Square</kbd> to Pass and <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
+      instruction = l('Test all buttons, or long-press [square] to Pass and [cross] to Fail, or [circle] to skip.');
     } else if (activeTest) {
-      $instructionsText.html(l('Press <kbd>Square</kbd> to Pass, <kbd>Cross</kbd> to Fail, or <kbd>Circle</kbd> to skip.'));
+      instruction = l('Press [square] to Pass, [cross] to Fail, or [circle] to skip.');
     } else if (allTestsCompleted) {
-      $instructionsText.html(l('Press <kbd>Circle</kbd> to close, or <kbd>Square</kbd> to start over'));
+      instruction = l('Press [circle] to close, or [square] to start over');
     } else {
-      $instructionsText.html(l('Press <kbd>Square</kbd> to begin or <kbd>Circle</kbd> to close'));
+      instruction = l('Press [square] to begin or [circle] to close');
     }
+
+    // Append back instruction if test is active and not the first one
+    if (activeTest && !this._isFirstTest(activeTest)) {
+      instruction += ' ' + l('Press [triangle] to go back.');
+    }
+
+    $instructionsText.html(addIcons(instruction));
   }
 
   /**
@@ -520,7 +564,7 @@ export class QuickTestModal {
 
     // Hide mute button for DS4 controllers
     const model = this.controller.getModel();
-    this._setMuteVisibility(model !== 'DS4');
+    this._setMuteVisibility(model && model !== 'DS4');
   }
 
   /**
@@ -539,6 +583,9 @@ export class QuickTestModal {
    */
   _getAvailableButtons() {
     const model = this.controller.getModel();
+    if (!model) {
+      return BUTTONS;
+    }
     if (model === 'DS4') {
       return BUTTONS.filter(button => button !== 'mute');
     }
@@ -1148,11 +1195,11 @@ export class QuickTestModal {
 
     if (totalProcessed === 0) {
       $summary.text(l('No tests completed yet.'));
-      $summary.attr('class', 'text-muted ds-i18n');
+      $summary.attr('class', 'text-muted');
     } else {
-      let summaryText = `${completed}/${numTests} ${l("tests completed")}. ${passed} ${"passed"}, ${completed - passed} ${"failed"}.`;
+      let summaryText = `${completed}/${numTests} ${l("tests completed")}. ${passed} ${l("passed")}, ${completed - passed} ${l("failed")}.`;
       if (skipped > 0) {
-        summaryText += ` ${skipped} l({"skipped"}).`;
+        summaryText += ` ${skipped} ${l("skipped")}.`;
       }
       $summary.text(summaryText);
       $summary.attr('class', totalProcessed === numTests ? 'text-success' : 'text-info');
@@ -1205,6 +1252,15 @@ export class QuickTestModal {
       }
     }
     return null;
+  }
+
+  /**
+   * Check if the given test is the first test in the sequence (excluding skipped tests)
+   */
+  _isFirstTest(testType) {
+    // Get the first non-skipped test
+    const firstTest = TEST_SEQUENCE.find(test => !this.state.skippedTests.includes(test));
+    return testType === firstTest;
   }
 
   /**

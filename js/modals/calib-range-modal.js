@@ -180,9 +180,9 @@ export class CalibRangeModal {
    */
   updateProgress() {
     // Calculate progress based on full cycles completed
-    // Each stick needs to complete 6 full cycles to contribute 50% to total progress
-    const leftCycleProgress = Math.min(this.leftFullCycles / this.requiredFullCycles, 1) * 50;
-    const rightCycleProgress = Math.min(this.rightFullCycles / this.requiredFullCycles, 1) * 50;
+    // Each stick needs to complete 4 full cycles to contribute 50% to total progress
+    const leftCycleProgress = Math.min(1, this.leftFullCycles / this.requiredFullCycles) * 50;
+    const rightCycleProgress = Math.min(1, this.rightFullCycles / this.requiredFullCycles) * 50;
     this.leftCycleProgress = leftCycleProgress;
     this.rightCycleProgress = rightCycleProgress;
 
@@ -190,8 +190,10 @@ export class CalibRangeModal {
     const leftCurrentProgress = (this.leftNonZeroCount / CIRCULARITY_DATA_SIZE) * (50 / this.requiredFullCycles);
     const rightCurrentProgress = (this.rightNonZeroCount / CIRCULARITY_DATA_SIZE) * (50 / this.requiredFullCycles);
 
-    const totalProgress = Math.round(leftCycleProgress + rightCycleProgress + leftCurrentProgress + rightCurrentProgress);
-    // this.totalProgress = totalProgress;
+    const totalProgress = Math.round(
+      Math.min(50, leftCycleProgress + leftCurrentProgress) +
+      Math.min(50, rightCycleProgress  + rightCurrentProgress)
+    );
 
     const $progressBar = $('#range-progress-bar');
     const $progressText = $('#range-progress-text');
@@ -208,12 +210,12 @@ export class CalibRangeModal {
 
     const alertIsVisible = $('#range-calibration-alert').is(":visible")
     const progressBelowThreshold = this.leftCycleProgress < 10 || this.rightCycleProgress < 10;
-    if (secondsElapsed > 5 && progressBelowThreshold && !alertIsVisible) {
+    if (secondsElapsed >= 5 && progressBelowThreshold && !alertIsVisible) {
       $('#range-calibration-alert').show();
     }
 
     const isBlinking = $('#keep-rotating-alert').hasClass('blink-text');
-    if (secondsElapsed > 10 && progressBelowThreshold && !isBlinking) {
+    if (secondsElapsed >= 7 && progressBelowThreshold && !isBlinking) {
       $('#keep-rotating-alert').addClass('blink-text');
     }
   }

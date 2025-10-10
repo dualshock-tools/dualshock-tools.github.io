@@ -566,6 +566,9 @@ class DS5Controller extends BaseController {
    * @param {ArrayBuffer} data - The output report data
    */
   async sendOutputReport(data, reason = "") {
+    if (!this.device?.opened) {
+      throw new Error('Device is not opened');
+    }
     try {
       console.log(`Sending output report${ reason ? ` to ${reason}` : '' }:`, DS5_OUTPUT_REPORT.USB_REPORT_ID, buf2hex(data));
       await this.device.sendReport(DS5_OUTPUT_REPORT.USB_REPORT_ID, new Uint8Array(data));
@@ -857,6 +860,12 @@ class DS5Controller extends BaseController {
       case 2:
         // Fully charged
         bat_capacity = 100;
+        cable_connected = true;
+        break;
+      case 15:
+        // Battery is flat
+        bat_capacity = 0;
+        is_charging = true;
         cable_connected = true;
         break;
       default:

@@ -64,10 +64,12 @@ class ControllerManager {
   }
 
   async getDeviceInfo() {
+    if (!this.currentController) return null;
     return await this.currentController.getInfo();
   }
 
   getFinetuneMaxValue() {
+    if (!this.currentController) return null;
     return this.currentController.getFinetuneMaxValue();
   }
 
@@ -76,6 +78,7 @@ class ControllerManager {
   * @param {Function|null} handler Input report handler function or null to clear
   */
   setInputReportHandler(handler) {
+    if (!this.currentController) return;
     this.currentController.device.oninputreport = handler;
   }
 
@@ -106,6 +109,7 @@ class ControllerManager {
   }
 
   getModel() {
+    if (!this.currentController) return null;
     return this.currentController.getModel();
   }
 
@@ -384,6 +388,7 @@ class ControllerManager {
         }, duration);
       }
     } catch (error) {
+      if(!this.currentController) return; // the controller was unplugged
       if(duration) doneCb({ success: false});
       throw new Error(l("Failed to set vibration"), { cause: error });
     }
@@ -397,10 +402,6 @@ class ControllerManager {
    */
   async setSpeakerTone(duration = 1000, doneCb = ({success}) => {}, output = "speaker") {
     try {
-      if (!this.currentController.setSpeakerTone) {
-        throw new Error(l("Speaker tone not supported on this controller"));
-      }
-
       await this.currentController.setSpeakerTone(output);
 
       // If duration is specified, automatically reset speaker after the duration
@@ -419,6 +420,7 @@ class ControllerManager {
         }, duration);
       }
     } catch (error) {
+      if(!this.currentController) return; // the controller was unplugged
       if(duration) doneCb({ success: false});
       throw new Error(l("Failed to set speaker tone"), { cause: error });
     }

@@ -451,6 +451,9 @@ class DS4Controller extends BaseController {
    * @param {ArrayBuffer} data - The output report data
    */
   async sendOutputReport(data, reason = "") {
+    if (!this.device?.opened) {
+      throw new Error('Device is not opened');
+    }
     try {
       console.log(`Sending output report${ reason ? ` to ${reason}` : '' }:`, DS4_OUTPUT_REPORT.USB_REPORT_ID, buf2hex(data));
       await this.device.sendReport(DS4_OUTPUT_REPORT.USB_REPORT_ID, new Uint8Array(data));

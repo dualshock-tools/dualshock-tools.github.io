@@ -6,7 +6,7 @@ A web-based calibration tool for PlayStation DualShock 4, DualSense, and DualSen
 
 - Controller connection via WebHID API
 - Stick calibration and range calibration
-- Input testing and visualization
+- Input testing and visualizat..ion
 - Battery status display
 - Multi-language support (20+ languages)
 - Progressive Web App capabilities

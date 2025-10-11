@@ -307,6 +307,7 @@ export class QuickTestModal {
       case 'speaker':
         const speakerTestDesc = l('This test will play a tone through the controller\'s built-in speaker.');
         const speakerInstructions = l('Listen for a tone from the controller speaker.');
+        const repeat = l('Repeat');
         return `
           <p>${speakerTestDesc}</p>
           <p><strong>${instructions}:</strong> ${speakerInstructions}</p>
@@ -316,6 +317,9 @@ export class QuickTestModal {
             </button>
             <button type="button" class="btn btn-danger" id="speaker-fail-btn" onclick="markTestResult('speaker', false)">
               <i class="fas fa-times me-1"></i><span>${fail}</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="speaker-replay-btn" onclick="replaySpeakerTest()">
+              <i class="fas fa-redo me-1"></i><span>${repeat}</span>
             </button>
           </div>
         `;
@@ -1614,6 +1618,12 @@ function testHeadphoneAudio() {
   }
 }
 
+function replaySpeakerTest() {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance._startSpeakerTest();
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
@@ -1621,3 +1631,4 @@ window.resetButtonsTest = resetButtonsTest;
 window.skipTest = skipTest;
 window.addTestBack = addTestBack;
 window.testHeadphoneAudio = testHeadphoneAudio;
+window.replaySpeakerTest = replaySpeakerTest;

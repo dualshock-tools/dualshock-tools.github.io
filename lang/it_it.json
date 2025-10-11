@@ -189,7 +189,7 @@
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "Attenzione: i moduli degli stick del DS Edge <b>non possono essere calibrati solo tramite software</b>.",
     "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "Per salvare una calibrazione personalizzata nella memoria interna dello stick, è necessaria una <b>modifica hardware</b>.",
     "Support for calibrating DualSense Edge stick modules is now available as an <b>experimental feature</b>.": "Il supporto per la calibrazione dei moduli stick del DualSense Edge è ora disponibile come <b>funzionalità sperimentale</b>.",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "Il dispositivo sembra essere un clone del DS4. Tutte le funzionalità sono disabilitate.",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "This involves temporarily disabling write protection by applying <b>+1.8V</b> to a specific test point on each module.": "Questo comporta la disattivazione temporanea della protezione scrittura applicando <b>+1.8V</b> a uno specifico punto di test su ciascun modulo.",
     "This is only for advanced users. If you're not sure what you're doing, please do not attempt it.": "Questa procedura è destinata solo a utenti esperti. Se non sei sicuro di ciò che stai facendo, ti preghiamo di non tentarla.",
     "We are not responsible for any damage caused by attempting this modification.": "Non siamo responsabili per eventuali danni causati dal tentativo di questa modifica.",

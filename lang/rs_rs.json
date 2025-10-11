@@ -66,7 +66,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "Povezan je nevažeći uređaj",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "Uređaj izgleda da je klon DS4. Sve funkcionalnosti su onemogućene.",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "Greška",
     "My handle on discord is: the_al": "Moj Discord ID je: the_al",
     "Initializing...": "Inicijalizacija...",

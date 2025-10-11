@@ -66,7 +66,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "الجهاز المتصل غير صالح،",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "يبدو أن يد التحكم هذه مقلدة. عطلت جميع الوظائف.",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "خطأ،",
     "My handle on discord is: the_al": "معرفي على ديسكورد هو، the_al",
     "Initializing...": "تتم التهيئة...",

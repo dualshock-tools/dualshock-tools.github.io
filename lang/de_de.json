@@ -66,7 +66,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "Verbundenes ungültiges Gerät",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "Das Gerät scheint ein DS4-Klon zu sein. Alle Funktionen sind deaktiviert.",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "Fehler",
     "My handle on discord is: the_al": "Mein Handle auf Discord ist: the_al",
     "Initializing...": "Initialisierung...",

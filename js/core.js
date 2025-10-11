@@ -103,7 +103,6 @@ function gboot() {
     });
 
     await loadAllTemplates();
-    await init_svg_controller();
 
     initAnalyticsApi(app); // init just with gu for now
     lang_init(app, handleLanguageChange, show_welcome_modal);
@@ -210,13 +209,12 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showMute, showInfoTab, showFourStepCalib, showQuickCalib }) {
+    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showFourStepCalib, showQuickCalib }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
       $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-center-calib").toggle(!!showQuickCalib);
-      set_mute_visibility(!!showMute);
     }
 
     let controllerInstance = null;
@@ -268,6 +266,9 @@ async function continue_connection({data, device}) {
     $('#controller-tab').tab('show');
 
     const model = controllerInstance.getModel();
+
+    // Initialize SVG controller based on model
+    await init_svg_controller(model);
 
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
@@ -396,19 +397,29 @@ function welcome_accepted() {
   $("#welcomeModal").modal("hide");
 }
 
-async function init_svg_controller() {
+async function init_svg_controller(model) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
+
+  // Determine which SVG to load based on controller model
+  let svgFileName;
+  if (model === 'DS4') {
+    svgFileName = 'dualshock-controller.svg';
+  } else if (model === 'DS5' || model === 'DS5_Edge') {
+    svgFileName = 'dualsense-controller.svg';
+  } else {
+    throw new Error(`Unknown controller model: ${model}`);
+  }
 
   let svgContent;
 
   // Check if we have bundled assets (production mode)
-  if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg['dualshock-controller.svg']) {
-    svgContent = window.BUNDLED_ASSETS.svg['dualshock-controller.svg'];
+  if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg[svgFileName]) {
+    svgContent = window.BUNDLED_ASSETS.svg[svgFileName];
   } else {
     // Fallback to fetching from server (development mode)
-    const response = await fetch('assets/dualshock-controller.svg');
+    const response = await fetch(`assets/${svgFileName}`);
     if (!response.ok) {
-      throw new Error('Failed to load controller SVG');
+      throw new Error(`Failed to load controller SVG: ${svgFileName}`);
     }
     svgContent = await response.text();
   }
@@ -420,7 +431,7 @@ async function init_svg_controller() {
   const dualshock = document.getElementById('Controller');
   set_svg_group_color(dualshock, lightBlue);
 
-  ['Button_outlines', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
+  ['Button_outlines', 'Button_outlines_behind', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
     const group = document.getElementById(id);
     set_svg_group_color(group, midBlue);
   });
@@ -429,13 +440,6 @@ async function init_svg_controller() {
     const group = document.getElementById(id);
     set_svg_group_color(group, 'white');
   });
-}
-
-function set_mute_visibility(show) {
-  const muteOutline = document.getElementById('Mute_outline');
-  const muteInfill = document.getElementById('Mute_infill');
-  if (muteOutline) muteOutline.style.display = show ? '' : 'none';
-  if (muteInfill) muteInfill.style.display = show ? '' : 'none';
 }
 
 /**
@@ -509,22 +513,47 @@ function refresh_stick_pos() {
 
   // Move L3 and R3 SVG elements according to stick position
   try {
-    // These values are tuned for the SVG's coordinate system and visual effect
-    const max_stick_offset = 25;
-    // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
-    const l3_cx = 295.63, l3_cy = 461.03;
-    // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
-    const r3_cx = 662.06, r3_cy = 419.78;
+    switch(controller.getModel()) {
+      case "DS4":
+        // These values are tuned for the SVG's coordinate system and visual effect
+        const ds4_max_stick_offset = 25;
+        // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
+        const ds4_l3_cx = 295.63, ds4_l3_cy = 461.03;
+        // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
+        const ds4_r3_cx = 662.06, ds4_r3_cy = 419.78;
 
-    const l3_x = l3_cx + plx * max_stick_offset;
-    const l3_y = l3_cy + ply * max_stick_offset;
-    const l3_group = document.querySelector('g#L3');
-    l3_group?.setAttribute('transform', `translate(${l3_x - l3_cx},${l3_y - l3_cy}) scale(0.70)`);
+        const ds4_l3_x = ds4_l3_cx + plx * ds4_max_stick_offset;
+        const ds4_l3_y = ds4_l3_cy + ply * ds4_max_stick_offset;
+        const ds4_l3_group = document.querySelector('g#L3');
+        ds4_l3_group?.setAttribute('transform', `translate(${ds4_l3_x - ds4_l3_cx},${ds4_l3_y - ds4_l3_cy})`);
 
-    const r3_x = r3_cx + prx * max_stick_offset;
-    const r3_y = r3_cy + pry * max_stick_offset;
-    const r3_group = document.querySelector('g#R3');
-    r3_group?.setAttribute('transform', `translate(${r3_x - r3_cx},${r3_y - r3_cy}) scale(0.70)`);
+        const ds4_r3_x = ds4_r3_cx + prx * ds4_max_stick_offset;
+        const ds4_r3_y = ds4_r3_cy + pry * ds4_max_stick_offset;
+        const ds4_r3_group = document.querySelector('g#R3');
+        ds4_r3_group?.setAttribute('transform', `translate(${ds4_r3_x - ds4_r3_cx},${ds4_r3_y - ds4_r3_cy})`);
+        break;
+      case "DS5":
+      case "DS5_Edge":
+        // These values are tuned for the SVG's coordinate system and visual effect
+        const ds5_max_stick_offset = 25;
+        // L3 center in SVG coordinates (from path: cx=295.63, cy=461.03)
+        const ds5_l3_cx = 295.63, ds5_l3_cy = 461.03;
+        // R3 center in SVG coordinates (from path: cx=662.06, cy=419.78)
+        const ds5_r3_cx = 662.06, ds5_r3_cy = 419.78;
+
+        const ds5_l3_x = ds5_l3_cx + plx * ds5_max_stick_offset;
+        const ds5_l3_y = ds5_l3_cy + ply * ds5_max_stick_offset;
+        const ds5_l3_group = document.querySelector('g#L3');
+        ds5_l3_group?.setAttribute('transform', `translate(${ds5_l3_x - ds5_l3_cx},${ds5_l3_y - ds5_l3_cy}) scale(0.70)`);
+
+        const ds5_r3_x = ds5_r3_cx + prx * ds5_max_stick_offset;
+        const ds5_r3_y = ds5_r3_cy + pry * ds5_max_stick_offset;
+        const ds5_r3_group = document.querySelector('g#R3');
+        ds5_r3_group?.setAttribute('transform', `translate(${ds5_r3_x - ds5_r3_cx},${ds5_r3_y - ds5_r3_cy}) scale(0.70)`);
+        break;
+      default:
+        return; // Unsupported model, skip
+    }
   } catch (e) {
     // Fail silently if SVG not present
   }

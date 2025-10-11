@@ -28,7 +28,7 @@ const DS4_BUTTON_MAP = [
   { name: 'l2', byte: 5, mask: 0x04, svg: 'L2' }, // analog handled separately
   { name: 'r1', byte: 5, mask: 0x02, svg: 'R1' },
   { name: 'r2', byte: 5, mask: 0x08, svg: 'R2' }, // analog handled separately
-  { name: 'share', byte: 5, mask: 0x10, svg: 'Create' },
+  { name: 'create', byte: 5, mask: 0x10, svg: 'Create' },
   { name: 'options', byte: 5, mask: 0x20, svg: 'Options' },
   { name: 'l3', byte: 5, mask: 0x40, svg: 'L3' },
   { name: 'r3', byte: 5, mask: 0x80, svg: 'R3' },

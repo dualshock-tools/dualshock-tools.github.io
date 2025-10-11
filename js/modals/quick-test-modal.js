@@ -520,16 +520,27 @@ export class QuickTestModal {
       return;
     }
 
+    // Determine which SVG to load based on controller model
+    const model = this.controller.getModel();
+    let svgFileName;
+    if (model === 'DS4') {
+      svgFileName = 'dualshock-controller.svg';
+    } else if (model === 'DS5' || model === 'DS5_Edge') {
+      svgFileName = 'dualsense-controller.svg';
+    } else {
+      throw new Error(`Unknown controller model: ${model}`);
+    }
+
     let svgContent;
 
     // Check if we have bundled assets (production mode)
-    if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg['dualshock-controller.svg']) {
-      svgContent = window.BUNDLED_ASSETS.svg['dualshock-controller.svg'];
+    if (window.BUNDLED_ASSETS && window.BUNDLED_ASSETS.svg && window.BUNDLED_ASSETS.svg[svgFileName]) {
+      svgContent = window.BUNDLED_ASSETS.svg[svgFileName];
     } else {
       // Fallback to fetching from server (development mode)
-      const response = await fetch('assets/dualshock-controller.svg');
+      const response = await fetch(`assets/${svgFileName}`);
       if (!response.ok) {
-        throw new Error('Failed to load controller SVG');
+        throw new Error(`Failed to load controller SVG: ${svgFileName}`);
       }
       svgContent = await response.text();
     }
@@ -555,16 +566,12 @@ export class QuickTestModal {
     const dualshock = this._getQuickTestElement('qt-Controller');
     this._setSvgGroupColor(dualshock, lightBlue);
 
-    ['qt-Button_outlines', 'qt-L3_outline', 'qt-R3_outline', 'qt-Trackpad_outline'].forEach(id => {
+    ['qt-Button_outlines','qt-Button_outlines_behind', 'qt-L3_outline', 'qt-R3_outline', 'qt-Trackpad_outline'].forEach(id => {
       const group = this._getQuickTestElement(id);
       this._setSvgGroupColor(group, midBlue);
     });
 
     this._resetButtonColors();
-
-    // Hide mute button for DS4 controllers
-    const model = this.controller.getModel();
-    this._setMuteVisibility(model && model !== 'DS4');
   }
 
   /**
@@ -590,16 +597,6 @@ export class QuickTestModal {
       return BUTTONS.filter(button => button !== 'mute');
     }
     return BUTTONS;
-  }
-
-  /**
-   * Set mute button visibility in the quick test SVG
-   */
-  _setMuteVisibility(show) {
-    const muteOutline = this._getQuickTestElement('qt-Mute_outline');
-    const muteInfill = this._getQuickTestElement('qt-Mute_infill');
-    if (muteOutline) muteOutline.style.display = show ? '' : 'none';
-    if (muteInfill) muteInfill.style.display = show ? '' : 'none';
   }
 
   /**

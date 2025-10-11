@@ -791,11 +791,12 @@ function update_disable_btn() {
     return;
   }
 
-  $(".ds-btn").prop("disabled", true);
+  // Disable all buttons except Quick Test
+  $(".ds-btn").not("#quick-test-btn").prop("disabled", true);
 
   // show only one popup
   if(disable_btn & 1 && !(last_disable_btn & 1)) {
-    show_popup(l("The device appears to be a DS4 clone. All functionalities are disabled."));
+    show_popup(l("The device appears to be a clone. All calibration functionality is disabled."));
   } else if(disable_btn & 2 && !(last_disable_btn & 2)) {
     show_popup(l("This DualSense controller has outdated firmware.") + "<br>" + l("Please update the firmware and try again."), true);
   }

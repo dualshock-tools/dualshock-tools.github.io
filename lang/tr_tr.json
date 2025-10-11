@@ -65,7 +65,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "Geçersiz bir cihaz bağlandı",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "Cihazın yan sanayi bir kol gibi görünüyor. Tüm işlevler devre dışı bırakıldı.",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "Hata",
     "My handle on discord is: the_al": "Discord'daki kullanıcı adım: the_al",
     "Initializing...": "Başlatılıyor...",

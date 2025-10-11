@@ -65,7 +65,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "連接了無效設備",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "該設備似乎是 DS4 盜版。所有功能均已停用。",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "錯誤",
     "My handle on discord is: the_al": "我的 Discord 用戶名是: the_al",
     "Initializing...": "初始化...",

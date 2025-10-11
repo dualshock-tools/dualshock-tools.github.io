@@ -66,7 +66,7 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "잘못된 기기가 연결되었습니다",
-    "The device appears to be a DS4 clone. All functionalities are disabled.": "이 기기는 DS4 복제품으로 보입니다. 모든 기능이 비활성화됩니다.",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "오류",
     "My handle on discord is: the_al": "제 Discord ID는 the_al 입니다.",
     "Initializing...": "초기화 중...",

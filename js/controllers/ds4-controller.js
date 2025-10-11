@@ -66,8 +66,8 @@ class DS4OutputStruct {
     this.view = new DataView(this.buffer);
 
     // Control flags
-    this.validFlag0 = currentState?.validFlag || 0;
-    this.validFlag1 = currentState?.validFlag || 0;
+    this.validFlag0 = currentState?.validFlag0 || 0;
+    this.validFlag1 = currentState?.validFlag1 || 0;
 
     // Vibration motors
     this.rumbleRight = currentState?.rumbleRight || 0;
@@ -514,15 +514,15 @@ class DS4Controller extends BaseController {
    */
   async setVibration(heavyLeft = 0, lightRight = 0) {
     try {
-      const { validFlag } = this.currentOutputState;
+      const { validFlag0 } = this.currentOutputState;
       const outputStruct = new DS4OutputStruct({
         ...this.currentOutputState,
         rumbleLeft: Math.max(0, Math.min(255, heavyLeft)),
         rumbleRight: Math.max(0, Math.min(255, lightRight)),
-        validFlag: validFlag | DS4_VALID_FLAG0.RUMBLE,
+        validFlag0: validFlag0 | DS4_VALID_FLAG0.RUMBLE,
       });
       await this.sendOutputReport(outputStruct.pack(), 'set vibration');
-      outputStruct.validFlag &= ~DS4_VALID_FLAG0.RUMBLE;
+      outputStruct.validFlag0 &= ~DS4_VALID_FLAG0.RUMBLE;
 
       // Update current state to reflect the changes
       this.updateCurrentOutputState(outputStruct);
@@ -541,16 +541,16 @@ class DS4Controller extends BaseController {
    */
   async setLightbarColor(red = 0, green = 0, blue = 0) {
     try {
-      const { validFlag } = this.currentOutputState;
+      const { validFlag0 } = this.currentOutputState;
       const outputStruct = new DS4OutputStruct({
         ...this.currentOutputState,
         ledRed: Math.max(0, Math.min(255, red)),
         ledGreen: Math.max(0, Math.min(255, green)),
         ledBlue: Math.max(0, Math.min(255, blue)),
-        validFlag: validFlag | DS4_VALID_FLAG0.LED,
+        validFlag0: validFlag0 | DS4_VALID_FLAG0.LED,
       });
       await this.sendOutputReport(outputStruct.pack(), 'set lightbar color');
-      outputStruct.validFlag &= ~DS4_VALID_FLAG0.LED;
+      outputStruct.validFlag0 &= ~DS4_VALID_FLAG0.LED;
 
       // Update current state to reflect the changes
       this.updateCurrentOutputState(outputStruct);
@@ -569,7 +569,7 @@ class DS4Controller extends BaseController {
    */
   async setLightbarBlink(red = 0, green = 0, blue = 0, flashOn = 0, flashOff = 0) {
     try {
-      const { validFlag } = this.currentOutputState;
+      const { validFlag0 } = this.currentOutputState;
       const outputStruct = new DS4OutputStruct({
         ...this.currentOutputState,
         ledRed: Math.max(0, Math.min(255, red)),
@@ -577,10 +577,10 @@ class DS4Controller extends BaseController {
         ledBlue: Math.max(0, Math.min(255, blue)),
         ledFlashOn: Math.max(0, Math.min(255, flashOn)),
         ledFlashOff: Math.max(0, Math.min(255, flashOff)),
-        validFlag: validFlag | DS4_VALID_FLAG0.LED | DS4_VALID_FLAG0.LED_BLINK,
+        validFlag0: validFlag0 | DS4_VALID_FLAG0.LED | DS4_VALID_FLAG0.LED_BLINK,
       });
       await this.sendOutputReport(outputStruct.pack(), 'set lightbar blink');
-      outputStruct.validFlag &= ~(DS4_VALID_FLAG0.LED | DS4_VALID_FLAG0.LED_BLINK);
+      outputStruct.validFlag0 &= ~(DS4_VALID_FLAG0.LED | DS4_VALID_FLAG0.LED_BLINK);
 
       // Update current state to reflect the changes
       this.updateCurrentOutputState(outputStruct);

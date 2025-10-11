@@ -72,7 +72,6 @@ class ControllerFactory {
         return { 
           showInfo: false, 
           showFinetune: false, 
-          showMute: false, 
           showInfoTab: false,
           showFourStepCalib: true,
           showQuickCalib: false
@@ -83,7 +82,6 @@ class ControllerFactory {
         return { 
           showInfo: true, 
           showFinetune: true, 
-          showMute: true, 
           showInfoTab: true,
           showFourStepCalib: false,
           showQuickCalib: true
@@ -93,7 +91,6 @@ class ControllerFactory {
         return { 
           showInfo: false, 
           showFinetune: false, 
-          showMute: false, 
           showInfoTab: false,
           showFourStepCalib: false,
           showQuickCalib: false

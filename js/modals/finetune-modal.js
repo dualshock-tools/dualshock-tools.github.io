@@ -1,7 +1,7 @@
 'use strict';
 
 import { draw_stick_position } from '../stick-renderer.js';
-import { dec2hex32, float_to_str } from '../utils.js';
+import { dec2hex32, float_to_str, la } from '../utils.js';
 import { auto_calibrate_stick_centers } from './calib-center-modal.js';
 import { calibrate_range } from './calib-range-modal.js';
 
@@ -124,6 +124,8 @@ export class Finetune {
   }
 
   async init(controllerInstance, { ll_data, rr_data, clear_circularity }, doneCallback = null) {
+    la("finetune_modal_open");
+
     this.controller = controllerInstance;
     this.ll_data = ll_data;
     this.rr_data = rr_data;

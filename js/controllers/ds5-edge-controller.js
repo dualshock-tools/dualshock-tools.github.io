@@ -53,7 +53,7 @@ class DS5EdgeController extends DS5Controller {
     await this.sendFeatureReport(0x80, [21,34]);
     await sleep(100);
 
-    const data = lf("ds5_edge_get_barcode", await this.receiveFeatureReport(0x81));
+    const data = await this.receiveFeatureReport(0x81);
     const td = new TextDecoder();
     const r_bc = td.decode(data.buffer.slice(21, 21+17));
     const l_bc = td.decode(data.buffer.slice(40, 40+17));

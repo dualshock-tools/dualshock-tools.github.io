@@ -10,7 +10,6 @@ import {
   format_mac_from_view, 
   reverse_str, 
   la,
-  lf
 } from '../utils.js';
 import { l } from '../translations.js';
 
@@ -275,7 +274,7 @@ class DS5Controller extends BaseController {
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
       console.log("Fetching DS5 info...");
-      const view = lf("ds5_info", await this.receiveFeatureReport(0x20));
+      const view = await this.receiveFeatureReport(0x20);
       console.log("Got DS5 info report:", buf2hex(view.buffer));
       const cmd = view.getUint8(0, true);
       if(cmd != 0x20 || view.buffer.byteLength != 64)
@@ -367,7 +366,7 @@ class DS5Controller extends BaseController {
   }
 
   async nvsLock() {
-    la("ds5_nvlock");
+    // la("ds5_nvlock");
     try {
       await this.sendFeatureReport(0x80, [3,1]);
       await this.receiveFeatureReport(0x81);
@@ -378,7 +377,7 @@ class DS5Controller extends BaseController {
   }
 
   async nvsUnlock() {
-    la("ds5_nvunlock");
+    // la("ds5_nvunlock");
     try {
       await this.sendFeatureReport(0x80, [3,2, 101, 50, 64, 12]);
       const data = await this.receiveFeatureReport(0x81);
@@ -390,13 +389,13 @@ class DS5Controller extends BaseController {
 
   async getBdAddr() {
     await this.sendFeatureReport(0x80, [9,2]);
-    const data = lf("ds5_getbdaddr", await this.receiveFeatureReport(0x81));
+    const data = await this.receiveFeatureReport(0x81);
     return format_mac_from_view(data, 4);
   }
 
   async getSystemInfo(base, num, length, decode = true) {
     await this.sendFeatureReport(128, [base,num])
-    const pcba_id = lf("ds5_pcba_id", await this.receiveFeatureReport(129));
+    const pcba_id = await this.receiveFeatureReport(129);
     if(pcba_id.getUint8(1) != base || pcba_id.getUint8(2) != num || pcba_id.getUint8(3) != 2) {
       return l("error");
     }
@@ -512,7 +511,7 @@ class DS5Controller extends BaseController {
   async queryNvStatus() {
     try {
       await this.sendFeatureReport(0x80, [3,3]);
-      const data = lf("ds5_nvstatus", await this.receiveFeatureReport(0x81));
+      const data = await this.receiveFeatureReport(0x81);
       const ret = data.getUint32(1, false);
       if (ret === 0x15010100) {
         return { device: 'ds5', status: 'pending_reboot', locked: null, code: 4, raw: ret };

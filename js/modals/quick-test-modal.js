@@ -1,6 +1,7 @@
 'use strict';
 
 import { l } from '../translations.js';
+import { la } from '../utils.js'
 
 const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
@@ -503,6 +504,8 @@ export class QuickTestModal {
    * Open the Quick Test modal
    */
   async open() {
+    la("quick_test_modal_open");
+
     // Build the dynamic accordion first
     this._buildDynamicAccordion();
     await this._initSvgController();
@@ -573,6 +576,11 @@ export class QuickTestModal {
     ['qt-Button_outlines','qt-Button_outlines_behind', 'qt-L3_outline', 'qt-R3_outline', 'qt-Trackpad_outline'].forEach(id => {
       const group = this._getQuickTestElement(id);
       this._setSvgGroupColor(group, midBlue);
+    });
+
+    ['qt-Controller_infills', 'qt-Button_infills', 'qt-L3_infill', 'qt-R3_infill', 'qt-Trackpad_infill'].forEach(id => {
+      const group = document.getElementById(id);
+      this._setSvgGroupColor(group, 'white');
     });
 
     this._resetButtonColors();

@@ -436,7 +436,7 @@ async function init_svg_controller(model) {
     set_svg_group_color(group, midBlue);
   });
 
-  ['Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
+  ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
     const group = document.getElementById(id);
     set_svg_group_color(group, 'white');
   });

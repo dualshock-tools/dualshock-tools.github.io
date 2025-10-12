@@ -7,7 +7,6 @@ import {
   dec2hex,
   dec2hex32,
   format_mac_from_view,
-  lf,
   la
 } from '../utils.js';
 import { l } from '../translations.js';
@@ -140,7 +139,7 @@ class DS4Controller extends BaseController {
       let deviceTypeText = l("unknown");
       let is_clone = false;
 
-      const view = lf("ds4_info", await this.receiveFeatureReport(0xa3));
+      const view = await this.receiveFeatureReport(0xa3);
 
       const cmd = view.getUint8(0, true);
 
@@ -218,7 +217,7 @@ class DS4Controller extends BaseController {
   }
 
   async nvsLock() {
-    la("ds4_nvlock");
+    // la("ds4_nvlock");
     try {
       await this.sendFeatureReport(0xa0, [10,1,0]);
       return { ok: true };
@@ -228,7 +227,7 @@ class DS4Controller extends BaseController {
   }
 
   async nvsUnlock() {
-    la("ds4_nvunlock");
+    // la("ds4_nvunlock");
     try {
       await this.sendFeatureReport(0xa0, [10,2,0x3e,0x71,0x7f,0x89]);
       return { ok: true };
@@ -238,7 +237,7 @@ class DS4Controller extends BaseController {
   }
 
   async getBdAddr() {
-    const view = lf("ds4_getbdaddr", await this.receiveFeatureReport(0x12));
+    const view = await this.receiveFeatureReport(0x12);
     return format_mac_from_view(view, 1);
   }
 
@@ -363,7 +362,7 @@ class DS4Controller extends BaseController {
   async queryNvStatus() {
     try {
       await this.sendFeatureReport(0x08, [0xff,0, 12]);
-      const data = lf("ds4_nvstatus", await this.receiveFeatureReport(0x11));
+      const data = await this.receiveFeatureReport(0x11);
       const ret = data.getUint8(1, false);
       const res = { device: 'ds4', code: ret }
       switch(ret) {

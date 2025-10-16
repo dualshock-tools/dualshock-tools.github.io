@@ -250,7 +250,7 @@
     "Controller does not support adaptive trigger control": "Контролер не підтримує керування адаптивними спусковими гачками",
     "Don't show again": "Більше не показувати",
     "Fail": "Не пройдено",
-    "Failed": "Не вдалося",
+    "Failed": "Невдало",
     "Failed to connect to device": "Не вдалося під’єднатися до пристрою",
     "Failed to disable adaptive trigger": "Не вдалося вимкнути адаптивний спусковий гачок",
     "Failed to set speaker tone": "Не вдалося задати тон динаміка",

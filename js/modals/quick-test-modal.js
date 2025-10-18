@@ -164,7 +164,7 @@ export class QuickTestModal {
    * Create an accordion item for a specific test type
    */
   _createAccordionItem(testType) {
-    const testName = TEST_NAMES[testType];
+    const testName = l(TEST_NAMES[testType]);
     const testIcons = {
       'usb': 'fas fa-plug',
       'buttons': 'fas fa-gamepad',

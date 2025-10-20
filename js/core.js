@@ -23,6 +23,9 @@ const app = {
 
   shownRangeCalibrationWarning: false,
 
+  // Calibration method preference
+  centerCalibrationMethod: 'four-step', // 'quick' or 'four-step'
+
   // Language and UI state
   lang_orig_text: {},
   lang_orig_text: {},
@@ -107,6 +110,7 @@ function gboot() {
     initAnalyticsApi(app); // init just with gu for now
     lang_init(app, handleLanguageChange, show_welcome_modal);
     show_welcome_modal();
+    initCalibrationMethod();
 
     $("input[name='displayMode']").on('change', on_stick_mode_change);
 
@@ -217,6 +221,7 @@ async function continue_connection({data, device}) {
       $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
       $("#quick-center-calib").toggle(!!showQuickCalib);
+      $("#quick-center-calib-group").toggle(!!showQuickCalib);
     }
 
     let controllerInstance = null;
@@ -1103,6 +1108,70 @@ window.flash_all_changes = flash_all_changes;
 window.reboot_controller = reboot_controller;
 window.refresh_nvstatus = refresh_nvstatus;
 window.nvsunlock = nvsunlock;
+
+// Calibration method selection
+window.setCenterCalibrationMethod = (method, event) => {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  app.centerCalibrationMethod = method;
+  localStorage.setItem('centerCalibrationMethod', method);
+  updateCalibrationMethodUI();
+  // Close the dropdown
+  const dropdownButton = event?.target?.closest('.dropdown-menu')?.previousElementSibling;
+  if (dropdownButton) {
+    const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+    if (dropdown) dropdown.hide();
+  }
+};
+
+window.executeSelectedCenterCalibration = () => {
+  if (app.centerCalibrationMethod === 'quick') {
+    auto_calibrate_stick_centers(
+      controller,
+      (success, message) => {
+        if (success) {
+          resetStickDiagrams();
+          successAlert(message);
+          switchTo10xZoomMode();
+        }
+      }
+    );
+  } else {
+    calibrate_stick_centers(
+      controller,
+      (success, message) => {
+        if (success) {
+          resetStickDiagrams();
+          successAlert(message);
+          switchTo10xZoomMode();
+        }
+      }
+    );
+  }
+};
+
+function updateCalibrationMethodUI() {
+  const checkQuick = document.getElementById('check-quick');
+  const checkFourStep = document.getElementById('check-four-step');
+
+  if (app.centerCalibrationMethod === 'quick') {
+    checkQuick.style.visibility = 'visible';
+    checkFourStep.style.visibility = 'hidden';
+  } else {
+    checkQuick.style.visibility = 'hidden';
+    checkFourStep.style.visibility = 'visible';
+  }
+}
+
+function initCalibrationMethod() {
+  const savedMethod = localStorage.getItem('centerCalibrationMethod');
+  if (savedMethod && (savedMethod === 'quick' || savedMethod === 'four-step')) {
+    app.centerCalibrationMethod = savedMethod;
+  }
+  updateCalibrationMethodUI();
+}
 window.nvslock = nvslock;
 window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;

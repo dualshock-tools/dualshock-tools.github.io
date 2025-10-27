@@ -38,6 +38,26 @@ export class CalibRangeModal {
     this.doneCallback = doneCallback;
 
     this.hasSingleStick = (this.controller.currentController.getNumberOfSticks() == 1);
+    this._initEventListeners();
+  }
+
+  /**
+   * Initialize event listeners for the calibration modal
+   */
+  _initEventListeners() {
+    $('#rangeModal').on('hidden.bs.modal', () => {
+      console.log("Closing range calibration modal");
+      if (currentCalibRangeInstance === this) {
+        this.onClose().catch(err => console.error("Error in onClose:", err));
+      }
+    });
+  }
+
+  /**
+   * Remove event listeners
+   */
+  removeEventListeners() {
+    $('#rangeModal').off('hidden.bs.modal');
   }
 
   async open() {
@@ -69,15 +89,16 @@ export class CalibRangeModal {
     this.stopProgressMonitoring();
     this.stopCountdown();
 
-    bootstrap.Modal.getOrCreateInstance('#rangeModal').hide();
-
     const result = await this.controller.calibrateRangeOnClose();
 
-    // Call the done callback if provided (range calibration is always successful when onClose is called)
-    if (this.doneCallback && typeof this.doneCallback === 'function') {
-      this.doneCallback(true, result?.message);
+    // Call the done callback if provided
+    if (result && this.doneCallback && typeof this.doneCallback === 'function') {
+      this.doneCallback(result.success, result.message);
     }
-    this.allDonePromiseResolve();
+    if (this.allDonePromiseResolve) {
+      this.allDonePromiseResolve();
+    }
+    destroyCurrentInstance();
   }
 
   /**
@@ -152,7 +173,7 @@ export class CalibRangeModal {
    * Check if ll_data and rr_data have received data
    */
   checkDataProgress() {
-    const JOYSTICK_EXTREME_THRESHOLD = 0.95;
+    const JOYSTICK_EXTREME_THRESHOLD = 0.80;
     const CIRCLE_FILL_THRESHOLD = 0.95;
 
     // Count the number of times the joysticks have been rotated full circle
@@ -250,7 +271,11 @@ export class CalibRangeModal {
 let currentCalibRangeInstance = null;
 
 function destroyCurrentInstance() {
-  currentCalibRangeInstance = null;
+  if (currentCalibRangeInstance) {
+    console.log("Destroying current range calibration instance");
+    currentCalibRangeInstance.removeEventListeners();
+    currentCalibRangeInstance = null;
+  }
 }
 
 export async function calibrate_range(controller, dependencies, doneCallback = null) {
@@ -265,8 +290,7 @@ export async function calibrate_range(controller, dependencies, doneCallback = n
 
 async function calibrate_range_on_close() {
   if (currentCalibRangeInstance) {
-    await currentCalibRangeInstance.onClose();
-    destroyCurrentInstance();
+    bootstrap.Modal.getOrCreateInstance('#rangeModal').hide();
   }
 }
 

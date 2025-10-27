@@ -1063,12 +1063,12 @@ window.calibrate_range = () => calibrate_range(
   controller,
   { ll_data, rr_data },
   (success, message) => {
-    if (success) {
-      resetStickDiagrams();
-      successAlert(message);
-      switchToRangeMode();
-      app.shownRangeCalibrationWarning = false
+    resetStickDiagrams();
+    if(message) {
+      success ? successAlert(message) : errorAlert(message);
     }
+    switchToRangeMode();
+    app.shownRangeCalibrationWarning = false
   }
 );
 window.calibrate_stick_centers = () => calibrate_stick_centers(

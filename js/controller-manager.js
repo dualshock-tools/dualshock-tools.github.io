@@ -253,6 +253,9 @@ class ControllerManager {
   * Handle range calibration on close
   */
   async calibrateRangeOnClose() {
+    if(!this.currentController) {
+      return { success: false };
+    }
     const res = await this.currentController.calibrateRangeEnd();
     if(res?.ok) {
       this.setHasChangesToWrite(true);

@@ -623,7 +623,7 @@ const throttled_refresh_sticks = (() => {
 
 const update_stick_graphics = (changes) => throttled_refresh_sticks(changes);
 
-function update_battery_status({/* bat_capacity, cable_connected, is_charging, is_error, */ bat_txt, changed}) {
+function update_battery_status({/* charge_level, cable_connected, is_charging, is_error, */ bat_txt, changed}) {
   if(changed) {
     $("#d-bat").html(bat_txt);
   }
@@ -760,7 +760,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
 
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {
-    quicktest_handle_controller_input(changes);
+    quicktest_handle_controller_input(changes, batteryStatus);
     return;
   }
 

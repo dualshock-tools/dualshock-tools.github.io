@@ -35,7 +35,7 @@ class ControllerManager {
     this.batteryStatus = {
       bat_txt: "",
       changed: false,
-      bat_capacity: 0,
+      charge_level: 0,
       cable_connected: false,
       is_charging: false,
       is_error: false
@@ -578,7 +578,7 @@ class ControllerManager {
   /**
   * Convert battery percentage to display text with icons
   */
-  _batteryPercentToText({bat_capacity, is_charging, is_error}) {
+  _batteryPercentToText({charge_level, is_charging, is_error}) {
     if (is_error) {
       return '<font color="red">' + l("error") + '</font>';
     }
@@ -590,10 +590,10 @@ class ControllerManager {
       { threshold: 80, icon: 'fa-battery-three-quarters' },
     ];
 
-    const icon_txt = batteryIcons.find(item => bat_capacity < item.threshold)?.icon || 'fa-battery-full';
+    const icon_txt = batteryIcons.find(item => charge_level < item.threshold)?.icon || 'fa-battery-full';
     const icon_full = `<i class="fa-solid ${icon_txt}"></i>`;
     const bolt_txt = is_charging ? '<i class="fa-solid fa-bolt"></i>' : '';
-    return [`${bat_capacity}%`, icon_full, bolt_txt].join(' ');
+    return [`${charge_level}%`, icon_full, bolt_txt].join(' ');
   }
 
   /**

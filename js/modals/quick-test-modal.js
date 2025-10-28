@@ -93,6 +93,7 @@ export class QuickTestModal {
       isTransitioning: false,
       skippedTests: [],
       lightsAnimationInterval: null,
+      batteryAlertShown: false,
     };
   }
 
@@ -1275,8 +1276,20 @@ export class QuickTestModal {
   /**
    * Handle controller input for test navigation and control
    */
-  handleControllerInput(changes) {
+  handleControllerInput(changes, batteryStatus) {
     if(this.state.isTransitioning) return;
+
+    // Check battery status and show/hide warning if charge is 5% or less
+    if (batteryStatus) {
+      // Only update visibility if alert hasn't been shown or charge level changed
+      if (!this.state.batteryAlertShown || batteryStatus.changed ) {
+        console.log("Battery status changed:", batteryStatus);
+        const { charge_level, is_error } = batteryStatus;
+        const $batteryWarning = $('#battery-warning-alert');
+        $batteryWarning.toggle(charge_level <= 5 || is_error);
+        this.state.batteryAlertShown = true;
+      }
+    }
 
     const activeTest = this._getCurrentActiveTest();
 
@@ -1572,9 +1585,9 @@ export function isQuickTestVisible() {
 /**
  * Handle controller input for the Quick Test Modal
  */
-export function quicktest_handle_controller_input(changes) {
+export function quicktest_handle_controller_input(changes, batteryStatus) {
   if (currentQuickTestInstance && isQuickTestVisible()) {
-    currentQuickTestInstance.handleControllerInput(changes);
+    currentQuickTestInstance.handleControllerInput(changes, batteryStatus);
   }
 }
 

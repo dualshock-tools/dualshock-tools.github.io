@@ -208,6 +208,7 @@ export class Finetune {
 
       this._initSliderListeners(lOrR);
       this._initButtonListeners(lOrR);
+      this._initKeyboardListeners(lOrR);
     });
   }
 
@@ -251,6 +252,24 @@ export class Finetune {
   }
 
   /**
+   * Initialize keyboard event listeners for a specific stick card
+   */
+  _initKeyboardListeners(lOrR) {
+    const stickCard = $(`#${lOrR}-stick-card`);
+
+    stickCard.on('keydown', (e) => {
+      this._onKeyboardEvent(e, true);
+    });
+
+    stickCard.on('keyup', (e) => {
+      this._onKeyboardEvent(e, false);
+    });
+
+    // Make stick cards focusable
+    stickCard.attr('tabindex', '0');
+  }
+
+  /**
    * Clean up event listeners for the finetune modal
    */
   removeEventListeners() {
@@ -274,7 +293,7 @@ export class Finetune {
   _removeStickEventListeners() {
     LEFT_AND_RIGHT.forEach(lOrR => {
       // Remove stick card listeners
-      $(`#${lOrR}-stick-card`).off('click');
+      $(`#${lOrR}-stick-card`).off('click keydown keyup');
 
       // Remove slider listeners
       const sliderId = `#${lOrR}CircularitySlider`;
@@ -340,6 +359,42 @@ export class Finetune {
       this._handleCenterModeAdjustment(changes);
     } else {
       this._handleCircularityModeAdjustment(changes);
+    }
+  }
+
+  /**
+   * Handle keyboard events for arrow key adjustments
+   * Arrow keys work like D-pad buttons for fine-tuning
+   */
+  _onKeyboardEvent(event, isKeyDown) {
+    const key = event.key;
+
+    // Map arrow keys to button names (D-pad)
+    const keyToButtonMap = {
+      'ArrowLeft': 'left',
+      'ArrowRight': 'right',
+      'ArrowUp': 'up',
+      'ArrowDown': 'down'
+    };
+
+    const button = keyToButtonMap[key];
+    if (!button) return;
+
+    event.preventDefault();
+
+    // Arrow keys work as D-pad buttons for adjustments
+    if (!this.active_stick) return;
+
+    const changes = {};
+
+    if (isKeyDown) {
+      // Simulate button press by creating a change object
+      changes[button] = true;
+      this.handleDpadAdjustment(changes);
+    } else {
+      // Simulate button release
+      changes[button] = false;
+      this.handleDpadAdjustment(changes);
     }
   }
 

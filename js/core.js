@@ -487,9 +487,9 @@ function collectCircularityData(stickStates, leftData, rightData) {
   }
 }
 
-function clear_circularity() {
-  ll_data.fill(0);
-  rr_data.fill(0);
+function clear_circularity(leftOrRight = 'both') {
+  if(['left', 'both'].includes(leftOrRight)) ll_data.fill(0);
+  if(['right', 'both'].includes(leftOrRight)) rr_data.fill(0);
 }
 
 function reset_circularity_mode() {

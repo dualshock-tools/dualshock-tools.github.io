@@ -15,6 +15,7 @@ dl.row dd {
 #left-stick-card,
 #right-stick-card {
   cursor: pointer;
+  outline: none !important;
 }
 
 .stick-card-active {

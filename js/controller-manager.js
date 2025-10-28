@@ -3,6 +3,8 @@
 import { sleep, la } from './utils.js';
 import { l } from './translations.js'
 
+const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
+
 /**
 * Controller Manager - Manages the current controller instance and provides unified interface
 */
@@ -211,7 +213,7 @@ class ControllerManager {
   async calibrateSticksBegin() {
     const res = await this.currentController.calibrateSticksBegin();
     if (!res.ok) {
-      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG), { cause: res.error });
     }
   }
 
@@ -245,7 +247,7 @@ class ControllerManager {
   async calibrateRangeBegin() {
     const res = await this.currentController.calibrateRangeBegin();
     if (!res.ok) {
-      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG), { cause: res.error });
     }
   }
 

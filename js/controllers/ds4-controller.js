@@ -11,8 +11,6 @@ import {
 } from '../utils.js';
 import { l } from '../translations.js';
 
-const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
-
 // DS4 Button mapping configuration
 const DS4_BUTTON_MAP = [
   { name: 'up', byte: 4, mask: 0x0 }, // Dpad handled separately
@@ -256,7 +254,7 @@ class DS4Controller extends BaseController {
         la("ds4_calibrate_range_begin_failed", {"d1": d1, "d2": d2});
         return {
           ok: false,
-          error: new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          error: new Error(`Stick range calibration begin failed: ${d1}, ${d2}`),
           code: 1, d1, d2
         };
       }
@@ -304,7 +302,7 @@ class DS4Controller extends BaseController {
         la("ds4_calibrate_sticks_begin_failed", {"d1": d1, "d2": d2});
         return {
           ok: false,
-          error: new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          error: new Error(`Stick center calibration begin failed: ${d1}, ${d2}`),
           code: 1, d1, d2,
         };
       }

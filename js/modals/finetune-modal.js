@@ -997,14 +997,6 @@ export class Finetune {
   }
 
   /**
-   * Reset circularity sliders to zero position
-   */
-  _resetCircularitySliders() {
-    $(`#leftCircularitySlider`).val(0);
-    $(`#rightCircularitySlider`).val(0);
-  }
-
-  /**
    * Handle the start of circularity slider adjustment
    * Store base values and reset previous slider value
    */
@@ -1112,7 +1104,7 @@ export class Finetune {
     circData.fill(0);
 
     // Call the clearCircularity function to update the display
-    this.clearCircularity();
+    this.clearCircularity(lOrR);
 
     // Trigger the change event to update the finetune data once when slider is released
     this._onFinetuneChange();
@@ -1170,7 +1162,7 @@ export class Finetune {
     this._showErrorSlackButton(lOrR);
 
     // Clear the circularity data display
-    this.clearCircularity();
+    this.clearCircularity(lOrR);
 
     // Trigger the change event to update the finetune data
     this._onFinetuneChange();

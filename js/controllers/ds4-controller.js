@@ -420,29 +420,29 @@ class DS4Controller extends BaseController {
     const bat_status = (bat >> 4) & 1;
     const cable_connected = bat_status === 1;
 
-    let bat_capacity = 0;
+    let charge_level = 0;
     let is_charging = false;
     let is_error = false;
 
     if (cable_connected) {
       if (bat_data < 10) {
-        bat_capacity = Math.min(bat_data * 10 + 5, 100);
+        charge_level = Math.min(bat_data * 10 + 5, 100);
         is_charging = true;
       } else if (bat_data === 10) {
-        bat_capacity = 100;
+        charge_level = 100;
         is_charging = true;
       } else if (bat_data === 11) {
-        bat_capacity = 100; // Fully charged
+        charge_level = 100; // Fully charged
       } else {
-        bat_capacity = 0;
+        charge_level = 0;
         is_error = true;
       }
     } else {
       // On battery power
-      bat_capacity = bat_data < 10 ? bat_data * 10 + 5 : 100;
+      charge_level = bat_data < 10 ? bat_data * 10 + 5 : 100;
     }
 
-    return { bat_capacity, cable_connected, is_charging, is_error };
+    return { charge_level, cable_connected, is_charging, is_error };
   }
 
   /**

@@ -309,5 +309,8 @@
     "skipped": "pominięto",
     "tests completed": "testy zakończone",
     "to increase the non-circularity.": "by zwiększyć nie-okrężność",
+    "Cannot copy text to the clipboard:": "",
+    "The item has been copied to the clipboard.": "",
+    "Battery level is low. Tests may fail due to the controller being in power saving mode.": "",
     "": ""
 }

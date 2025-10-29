@@ -16,7 +16,7 @@ export const CIRCULARITY_DATA_SIZE = 48; // Number of angular positions to sampl
  * @param {boolean} opts.enable_zoom_center - Whether to apply center zoom transformation
  * @param {boolean} opts.highlight - Whether to highlight the stick position
  */
-export function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
+export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
     const { circularity_data = null, enable_zoom_center = false, highlight } = opts;
 
     // Draw base circle

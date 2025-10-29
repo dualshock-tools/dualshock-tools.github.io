@@ -1,7 +1,6 @@
 {
     ".authorMsg": "Tłumaczenie na język polski wykonał <a href='https://github.com/Marekk2k'>Marekk</a>, oraz <a href='https://github.com/GoomisPL'>GoomisPL</a>",
     "DualShock Calibration GUI": "DualShock Calibration GUI",
-    "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "Nie wspierana przeglądarka! Proszę użyć przeglądarki internetowej wpierającą WebHID (np. Chrome).",
     "Connect": "Połącz",
     "Connected to:": "Połączono z:",
     "Disconnect": "Rozłącz kontroler",
@@ -201,6 +200,7 @@
     "Midnight Black": "Midnight Black",
     "More details and images": "Więcej szczegółów i zdjęć",
     "Nova Pink": "Nova Pink",
+    "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "Podłącz kontroler Dualshock 4, Dualsense, lub Dualsense Edge do komputera, i naciśnij opcję Połącz",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "Uwaga: moduły drążków w DS Edge <b>nie mogą być kalibrowane wyłącznie za pomocą oprogramowania!</b>.",
     "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "Aby zapisać niestandardową kalibrację w wewnętrznej pamięci drążka, wymagana jest ręczna <b>modyfikacja sprzętowa</b>.",
     "Right Module Barcode": "Barcode prawego modułu",
@@ -311,6 +311,14 @@
     "to increase the non-circularity.": "by zwiększyć nie-okrężność",
     "Cannot copy text to the clipboard:": "",
     "The item has been copied to the clipboard.": "",
+    "After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.": "",
     "Battery level is low. Tests may fail due to the controller being in power saving mode.": "",
+    "Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.": "",
+    "Firefox is supported with the WebHID extension installed.": "",
+    "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "",
+    "This utility cannot fix stick drift.": "",
+    "This utility cannot fix stick drift.Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.": "",
+    "Unsupported browser.": "",
+    "Using this utility on a phone or tablet is not supported.": "",
     "": ""
 }

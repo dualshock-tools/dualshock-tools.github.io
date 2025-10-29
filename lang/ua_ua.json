@@ -1,7 +1,6 @@
 {
     ".authorMsg": "- Переклав солов'їною: sladk0y",
     "DualShock Calibration GUI": "Майстер калібрування DualКонтролерів",
-    "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "Цей браузер не підтримується. Будь ласка, використовуйте веб-браузер із підтримкою WebHID (наприклад, Chrome).",
     "Connect": "Підключити",
     "Connected to:": "Підключено до:",
     "Disconnect": "Від'їднати",
@@ -312,6 +311,14 @@
     "The device appears to be a clone. All calibration functionality is disabled.": "Схоже, цей пристрій є підробкою. Усі функції калібрування вимкнено.",
     "Cannot copy text to the clipboard:": "Не вдалося скопіювати",
     "The item has been copied to the clipboard.": "Скопійовано до буфера обміну",
+    "After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.": "",
     "Battery level is low. Tests may fail due to the controller being in power saving mode.": "",
+    "Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.": "",
+    "Firefox is supported with the WebHID extension installed.": "",
+    "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "",
+    "This utility cannot fix stick drift.": "",
+    "This utility cannot fix stick drift.Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.": "",
+    "Unsupported browser.": "",
+    "Using this utility on a phone or tablet is not supported.": "",
     "": ""
 }

@@ -132,6 +132,7 @@ function gboot() {
   }
 
   $("#offlinebar").show();
+  $("#aboutdrift").show();
   navigator.hid.addEventListener("disconnect", handleDisconnectedDevice);
 }
 
@@ -260,6 +261,7 @@ async function continue_connection({data, device}) {
     $("#onlinebar").show();
     $("#mainmenu").show();
     $("#resetBtn").show();
+    $("#aboutdrift").hide();
 
     $("#d-nvstatus").text = l("Unknown");
     $("#d-bdaddr").text = l("Unknown");
@@ -345,6 +347,7 @@ async function disconnect() {
   $("#offlinebar").show();
   $("#onlinebar").hide();
   $("#mainmenu").hide();
+  $("#aboutdrift").show();
 }
 
 // Wrapper function for HTML onclick handlers

@@ -1,7 +1,6 @@
 {
     ".authorMsg": "- Çeviri: <a href='https://www.youtube.com/channel/UC8pzDCIt_CUj8sa7cYgPzHQ'>Tamir-Teknik</a> ve <a href='https://share.google/hCBJV5fFMbd5gJxxZ'>CzR PlayStation&Bilgisayar Teknik Servis</a> tarafından yapılmıştır.",
     "DualShock Calibration GUI": "DualShock Kalibrasyon Arayüzü",
-    "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "Desteklenmeyen tarayıcı. Lütfen WebHID desteği olan bir web tarayıcısı kullanın (örneğin, Chrome).",
     "Connect": "Bağlan",
     "Connected to:": "Bağlanılan Cihaz:",
     "Disconnect": "Bağlantıyı Kes",
@@ -316,6 +315,14 @@
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Lütfen bir DualShock 4, DualSense, DualSense Edge veya VR2 kontrolcüsünü bilgisayarınıza bağlayın ve ‘Bağlan’ butonuna basın.",
     "Cannot copy text to the clipboard:": "Metin panoya kopyalanamıyor:",
     "The item has been copied to the clipboard.": "Öğe panoya kopyalandı.",
+    "After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.": "",
     "Battery level is low. Tests may fail due to the controller being in power saving mode.": "",
+    "Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.": "",
+    "Firefox is supported with the WebHID extension installed.": "",
+    "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "",
+    "This utility cannot fix stick drift.": "",
+    "This utility cannot fix stick drift.Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.": "",
+    "Unsupported browser.": "",
+    "Using this utility on a phone or tablet is not supported.": "",
     "": ""
 }

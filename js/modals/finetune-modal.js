@@ -1,6 +1,6 @@
 'use strict';
 
-import { draw_stick_position } from '../stick-renderer.js';
+import { draw_stick_dial } from '../stick-renderer.js';
 import { dec2hex32, float_to_str, la } from '../utils.js';
 import { auto_calibrate_stick_centers } from './calib-center-modal.js';
 import { calibrate_range } from './calib-range-modal.js';
@@ -698,13 +698,13 @@ export class Finetune {
     if (this._mode === 'circularity') {
       // Draw stick position with circle
       const circularityData = lOrR === 'left' ? this.ll_data : this.rr_data;
-      draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+      draw_stick_dial(ctx, hb, yb, sz, plx, ply, {
         circularity_data: circularityData,
         highlight
       });
     } else {
       // Draw stick position with crosshair
-      draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+      draw_stick_dial(ctx, hb, yb, sz, plx, ply, {
         enable_zoom_center: true,
         highlight
       });

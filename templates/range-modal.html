@@ -6,9 +6,19 @@
         <h1 class="modal-title fs-5 ds-i18n" id="staticBackdropLabel">Range calibration</h1>
       </div>
       <div class="modal-body">
-        <p class="ds-i18n"><b>The controller is now sampling data!</b></p>
+        <p class="ds-i18n"><b class="pulsing-text">The controller is now sampling data!</b></p>
         <p class="ds-i18n">Rotate the sticks slowly at least 2 times in one direction and 2 times in the other direction to cover the whole range.</p>
-        <div class="progress mt-3" id="range-progress-container" role="progressbar" aria-label="Range calibration progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+
+        <div style="display: flex; justify-content: center; gap: 0px;">
+          <div style="text-align: center; margin-right: 0px;">
+            <canvas id="range-left-stick-canvas" width="150" height="150"></canvas>
+          </div>
+          <div style="text-align: center; margin-left: 0px;">
+            <canvas id="range-right-stick-canvas" width="150" height="150"></canvas>
+          </div>
+        </div>
+
+        <div class="progress mt-2" id="range-progress-container" role="progressbar" aria-label="Range calibration progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
           <div id="range-progress-bar" class="progress-bar" style="width:0%"></div>
         </div>
         <div class="mt-2" id="range-progress-text-container">

@@ -74,8 +74,23 @@
 
   <div class="container p-2">
 
-    <div id="missinghid" style="display: none;">
-      <p class="ds-i18n">Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).</p>
+    <!-- Unsupported Browser Warning -->
+    <div id="missinghid" style="bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
+      <div class="container">
+        <div style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+          <p class="mb-1">
+            <i class="fas fa-hand"></i>&nbsp;&nbsp;
+            <span class="ds-i18n">Unsupported browser.</span>
+          </p>
+          <p class="mb-1">
+            <span class="ds-i18n">Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.</span>
+            <span class="ds-i18n">Firefox is supported with the WebHID extension installed.</span>
+          </p>
+          <p class="mb-0">
+            <span class="ds-i18n">Using this utility on a phone or tablet is not supported.</span>
+          </p>
+        </div>
+      </div>
     </div>
 
     <div id="offlinebar" class="vstack p-2" style="display: none;">
@@ -310,6 +325,25 @@
     <div class="container">
       <div id="alert-container" class="mb-3" style="pointer-events: auto;">
         <!-- Alert messages will be dynamically inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- About drift and this utility -->
+  <div id="aboutdrift" style="position: fixed; bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
+    <div class="container">
+      <div style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+        <p class="mb-2">
+          <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">This utility cannot fix stick drift.</span>
+        </p>
+        <p class="mb-2">
+          <span class="ds-i18n">Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.</span>
+          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span></p>
+        <p class="mb-0">
+          <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.</span>
+        </p>
       </div>
     </div>
   </div>

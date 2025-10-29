@@ -5,10 +5,10 @@ import { initControllerManager } from './controller-manager.js';
 import ControllerFactory from './controllers/controller-factory.js';
 import { lang_init, l } from './translations.js';
 import { loadAllTemplates } from './template-loader.js';
-import { draw_stick_position, CIRCULARITY_DATA_SIZE } from './stick-renderer.js';
+import { draw_stick_dial, CIRCULARITY_DATA_SIZE } from './stick-renderer.js';
 import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } from './modals/finetune-modal.js';
 import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
-import { calibrate_range } from './modals/calib-range-modal.js';
+import { calibrate_range, rangeCalibHandleControllerInput } from './modals/calib-range-modal.js';
 import { 
   show_quick_test_modal,
   isQuickTestVisible,
@@ -526,14 +526,14 @@ function refresh_stick_pos() {
   const enable_circ_test = circ_checked();
 
   // Draw left stick
-  draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+  draw_stick_dial(ctx, hb, yb, sz, plx, ply, {
     circularity_data: enable_circ_test ? ll_data : null,
     enable_zoom_center,
   });
 
   if(!hasSingleStick) {
     // Draw right stick
-    draw_stick_position(ctx, w-hb, yb, sz, prx, pry, {
+    draw_stick_dial(ctx, w-hb, yb, sz, prx, pry, {
       circularity_data: enable_circ_test ? rr_data : null,
       enable_zoom_center,
     });
@@ -763,9 +763,22 @@ function detectFailedRangeCalibration(changes) {
   }
 }
 
+function isRangeCalibrationVisible() {
+  const modal = document.getElementById('rangeModal');
+  if (!modal) return false;
+  return modal.classList.contains('show');
+}
+
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
+
+  // Update range calibration modal stick visualization if visible
+  if (isRangeCalibrationVisible() && changes.sticks) {
+    collectCircularityData(changes.sticks, ll_data, rr_data);
+    rangeCalibHandleControllerInput(changes);
+    return;
+  }
 
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {

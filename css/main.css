@@ -114,6 +114,16 @@ dl.row dd {
   animation: blink 1s infinite;
 }
 
+/* Pulsing animation for text */
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.pulsing-text {
+  animation: pulse-text 0.75s ease-in-out infinite;
+}
+
 /* Set text color to red for internationalized elements */
 /* .ds-i18n {
   color: red;

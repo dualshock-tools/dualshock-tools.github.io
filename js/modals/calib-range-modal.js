@@ -2,10 +2,9 @@
 
 import { sleep } from '../utils.js';
 import { l } from '../translations.js';
-import { CIRCULARITY_DATA_SIZE } from '../stick-renderer.js';
+import { CIRCULARITY_DATA_SIZE, draw_stick_dial } from '../stick-renderer.js';
 
 const SECONDS_UNTIL_UNLOCK = 15;
-const EXPERT_MODE_STORAGE_KEY = 'rangeCalibExpertMode';
 
 /**
  * Calibrate Stick Range Modal Class
@@ -41,6 +40,16 @@ export class CalibRangeModal {
     this.doneCallback = doneCallback;
 
     this.hasSingleStick = (this.controller.currentController.getNumberOfSticks() == 1);
+
+    // Stick rendering
+    this.leftCanvasCtx = null;
+    this.rightCanvasCtx = null;
+    this.stickRenderInterval = null;
+    this.currentStickPositions = {
+      left: { x: 0, y: 0 },
+      right: { x: 0, y: 0 }
+    };
+
     this._initEventListeners();
   }
 
@@ -78,6 +87,8 @@ export class CalibRangeModal {
     this.ll_data.fill(0);
     this.rr_data.fill(0);
 
+    this._initializeCanvases();
+
     this._updateUIVisibility();
     if (!this.expertMode) {
       this.updateProgress();  // reset progress bar
@@ -92,6 +103,7 @@ export class CalibRangeModal {
   }
 
   async onClose() {
+    this.stopStickRendering();
     this.stopProgressMonitoring();
     this.stopCountdown();
 
@@ -292,6 +304,89 @@ export class CalibRangeModal {
       $('#range-progress-text-container').show();
     }
   }
+
+  /**
+   * Initialize canvas elements for stick rendering
+   */
+  _initializeCanvases() {
+    const leftCanvas = document.getElementById('range-left-stick-canvas');
+    const rightCanvas = document.getElementById('range-right-stick-canvas');
+
+    this.leftCanvasCtx = leftCanvas.getContext('2d');
+    this.rightCanvasCtx = rightCanvas.getContext('2d');
+
+    // Clear initial canvases
+    this._clearCanvas(this.leftCanvasCtx, leftCanvas);
+    this._clearCanvas(this.rightCanvasCtx, rightCanvas);
+
+    // Start rendering loop
+    this.startStickRendering();
+  }
+
+  /**
+   * Clear a canvas with white background
+   */
+  _clearCanvas(ctx, canvas) {
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
+   * Update current stick positions for rendering
+   */
+  handleControllerInput({sticks}) {
+    if (sticks?.left) {
+      this.currentStickPositions.left = { ...sticks.left };
+    }
+    if (sticks?.right) {
+      this.currentStickPositions.right = { ...sticks.right };
+    }
+  }
+
+  /**
+   * Start stick rendering loop
+   */
+  startStickRendering() {
+    if (this.stickRenderInterval) return;
+
+    this.stickRenderInterval = setInterval(() => {
+      this._renderSticks();
+    }, 16); // ~60 FPS
+  }
+
+  /**
+   * Stop stick rendering loop
+   */
+  stopStickRendering() {
+    if (this.stickRenderInterval) {
+      clearInterval(this.stickRenderInterval);
+      this.stickRenderInterval = null;
+    }
+  }
+
+  /**
+   * Render both stick dials
+   */
+  _renderSticks() {
+    if (!this.leftCanvasCtx || !this.rightCanvasCtx) return;
+
+    const leftCanvas = this.leftCanvasCtx.canvas;
+    const rightCanvas = this.rightCanvasCtx.canvas;
+
+    // Clear canvases
+    this._clearCanvas(this.leftCanvasCtx, leftCanvas);
+    this._clearCanvas(this.rightCanvasCtx, rightCanvas);
+
+    // Draw stick dials in normal mode (no circularity data, no zoom)
+    const size = 60;
+    const centerX = leftCanvas.width / 2;
+    const centerY = leftCanvas.height / 2;
+    const {left, right} = this.currentStickPositions;
+
+    draw_stick_dial(this.leftCanvasCtx, centerX, centerY, size, left.x, left.y);
+    draw_stick_dial(this.rightCanvasCtx, centerX, centerY, size, right.x, right.y);
+  }
 }
 
 // Global reference to the current range calibration instance
@@ -318,6 +413,12 @@ export async function calibrate_range(controller, dependencies, doneCallback = n
 async function calibrate_range_on_close() {
   if (currentCalibRangeInstance) {
     bootstrap.Modal.getOrCreateInstance('#rangeModal').hide();
+  }
+}
+
+export function rangeCalibHandleControllerInput(changes) {
+  if (currentCalibRangeInstance) {
+    currentCalibRangeInstance.handleControllerInput(changes);
   }
 }
 

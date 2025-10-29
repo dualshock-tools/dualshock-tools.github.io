@@ -25,6 +25,7 @@ const app = {
 
   // Calibration method preference
   centerCalibrationMethod: 'four-step', // 'quick' or 'four-step'
+  rangeCalibrationMethod: 'normal', // 'normal' or 'expert'
 
   // Language and UI state
   lang_orig_text: {},
@@ -1152,24 +1153,54 @@ window.executeSelectedCenterCalibration = () => {
   }
 };
 
-function updateCalibrationMethodUI() {
-  const checkQuick = document.getElementById('check-quick');
-  const checkFourStep = document.getElementById('check-four-step');
-
-  if (app.centerCalibrationMethod === 'quick') {
-    checkQuick.style.visibility = 'visible';
-    checkFourStep.style.visibility = 'hidden';
-  } else {
-    checkQuick.style.visibility = 'hidden';
-    checkFourStep.style.visibility = 'visible';
+window.setRangeCalibrationMethod = (method, event) => {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
   }
+  app.rangeCalibrationMethod = method;
+  localStorage.setItem('rangeCalibrationMethod', method);
+  updateCalibrationMethodUI();
+  // Close the dropdown
+  const dropdownButton = event?.target?.closest('.dropdown-menu')?.previousElementSibling;
+  if (dropdownButton) {
+    const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+    if (dropdown) dropdown.hide();
+  }
+};
+
+window.executeSelectedRangeCalibration = () => {
+  calibrate_range(
+    controller,
+    { ll_data, rr_data },
+    (success, message) => {
+      resetStickDiagrams();
+      if(message) {
+        successAlert(message);
+      }
+    },
+    app.rangeCalibrationMethod === 'expert'
+  );
+};
+
+function updateCalibrationMethodUI() {
+  $('#check-quick').toggle(app.centerCalibrationMethod === 'quick');
+  $('#check-four-step').toggle(app.centerCalibrationMethod === 'four-step');
+  $('#check-range-normal').toggle(app.rangeCalibrationMethod === 'normal');
+  $('#check-range-expert').toggle(app.rangeCalibrationMethod === 'expert');
 }
 
 function initCalibrationMethod() {
-  const savedMethod = localStorage.getItem('centerCalibrationMethod');
-  if (savedMethod && (savedMethod === 'quick' || savedMethod === 'four-step')) {
-    app.centerCalibrationMethod = savedMethod;
+  const savedCenterMethod = localStorage.getItem('centerCalibrationMethod');
+  if (savedCenterMethod && (savedCenterMethod === 'quick' || savedCenterMethod === 'four-step')) {
+    app.centerCalibrationMethod = savedCenterMethod;
   }
+
+  const savedRangeMethod = localStorage.getItem('rangeCalibrationMethod');
+  if (savedRangeMethod && (savedRangeMethod === 'normal' || savedRangeMethod === 'expert')) {
+    app.rangeCalibrationMethod = savedRangeMethod;
+  }
+
   updateCalibrationMethodUI();
 }
 window.nvslock = nvslock;

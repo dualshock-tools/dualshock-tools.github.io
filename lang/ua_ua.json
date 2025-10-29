@@ -73,7 +73,6 @@
     "Calibration in progress": "Калібрування триває",
     "Start": "Старт",
     "Continue": "Продовжити",
-    "You can check the calibration with the": "Ви можете перевірити калібрування за допомогою",
     "Have a nice day :)": "Гарного дня! :)",
     "Welcome to the Calibration GUI": "Ласкаво просимо до інтерфейсу калібрування",
     "Just few things to know before you can start:": "Кілька моментів, які слід врахувати перед початком:",
@@ -314,13 +313,13 @@
     "After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.": "",
     "Battery level is low. Tests may fail due to the controller being in power saving mode.": "",
     "Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.": "",
+    "Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.": "",
     "Firefox is supported with the WebHID extension installed.": "",
     "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "",
     "This utility cannot fix stick drift.": "",
-    "Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.": "",
     "Unsupported browser.": "",
-    "Using this utility on a phone or tablet is not supported.": "",
     "Use four-step calibration": "",
     "Use quick calibration": "",
+    "Using this utility on a phone or tablet is not supported.": "",
     "": ""
 }

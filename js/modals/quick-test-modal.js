@@ -264,6 +264,7 @@ export class QuickTestModal {
       case 'haptic':
         const hapticTestDesc = l('This test will activate the controller\'s vibration motors, first the heavy one, and then the light one.');
         const hapticInstructions = l('Feel for vibration in the controller.');
+        const hapticRepeat = l('Repeat');
         return `
           <p>${hapticTestDesc}</p>
           <p><strong>${instructions}:</strong> ${hapticInstructions}</p>
@@ -273,6 +274,9 @@ export class QuickTestModal {
             </button>
             <button type="button" class="btn btn-danger" id="haptic-fail-btn" onclick="markTestResult('haptic', false)">
               <i class="fas fa-times me-1"></i><span>${fail}</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="haptic-replay-btn" onclick="replayHapticTest()">
+              <i class="fas fa-redo me-1"></i><span>${hapticRepeat}</span>
             </button>
           </div>
         `;
@@ -1645,6 +1649,12 @@ function replaySpeakerTest() {
   }
 }
 
+function replayHapticTest() {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance._startHapticTest();
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
@@ -1653,3 +1663,4 @@ window.skipTest = skipTest;
 window.addTestBack = addTestBack;
 window.testHeadphoneAudio = testHeadphoneAudio;
 window.replaySpeakerTest = replaySpeakerTest;
+window.replayHapticTest = replayHapticTest;

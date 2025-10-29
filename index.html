@@ -187,9 +187,23 @@
                     </a></li>
                   </ul>
                 </div>
-                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_range()">
-                  2. <span class="ds-i18n">Calibrate stick range</span>
-                </button>
+                <div class="btn-group w-100" role="group" id="range-calib-group">
+                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedRangeCalibration()" id="range-calib">
+                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    2. <span class="ds-i18n">Calibrate stick range</span>
+                  </button>
+                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                    <span class="visually-hidden">Toggle dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('normal', event)">
+                      <i class="fas fa-check me-2" id="check-range-normal"></i><span class="ds-i18n">Use normal mode</span>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('expert', event)">
+                      <i class="fas fa-check me-2" id="check-range-expert" style="visibility: hidden;"></i><span class="ds-i18n">Use expert mode</span>
+                    </a></li>
+                  </ul>
+                </div>
                 <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
                   3. <span class="ds-i18n">Finetune stick calibration</span>
                 </button>

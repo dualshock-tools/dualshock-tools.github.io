@@ -5,13 +5,14 @@ import { l } from '../translations.js';
 import { CIRCULARITY_DATA_SIZE } from '../stick-renderer.js';
 
 const SECONDS_UNTIL_UNLOCK = 15;
+const EXPERT_MODE_STORAGE_KEY = 'rangeCalibExpertMode';
 
 /**
  * Calibrate Stick Range Modal Class
  * Handles stick range calibration
  */
 export class CalibRangeModal {
-  constructor(controllerInstance, { ll_data, rr_data }, doneCallback = null) {
+  constructor(controllerInstance, { ll_data, rr_data }, doneCallback = null, expertMode = false) {
     // Dependencies
     this.controller = controllerInstance;
     this.ll_data = ll_data;
@@ -33,6 +34,8 @@ export class CalibRangeModal {
     // Progress alert enhancement
     this.leftCycleProgress = 0;
     this.rightCycleProgress = 0;
+
+    this.expertMode = expertMode;
 
     this.allDonePromiseResolve = undefined;
     this.doneCallback = doneCallback;
@@ -75,11 +78,14 @@ export class CalibRangeModal {
     this.ll_data.fill(0);
     this.rr_data.fill(0);
 
-    this.updateProgress();  // reset progress bar
-    this.startProgressMonitoring();
+    this._updateUIVisibility();
+    if (!this.expertMode) {
+      this.updateProgress();  // reset progress bar
+      this.startProgressMonitoring();
 
-    this.resetAlertEnhancement();
-    this.startCountdown();
+      this.resetAlertEnhancement();
+      this.startCountdown();
+    }
 
     await sleep(1000);
     await this.controller.calibrateRangeBegin();
@@ -133,14 +139,7 @@ export class CalibRangeModal {
       // If there is only one stick, sum two times leftCycleProgress, so that it can reach 100.
       if (this.countdownSeconds <= 0 || this.leftCycleProgress + (this.hasSingleStick ? this.leftCycleProgress : this.rightCycleProgress) >= 100) {
         this.stopCountdown();
-
-        $('#range-calibration-alert').hide();
-        $('#range-done-btn')
-          .prop('disabled', false)
-          .toggleClass('btn-primary', true)
-          .toggleClass('btn-outline-primary', false);
-
-        this.updateCountdownButton();
+        this._enableDoneButton();
       } else {
         this.checkAndEnhanceAlert();
       }
@@ -167,6 +166,17 @@ export class CalibRangeModal {
     const seconds = this.countdownSeconds;
     const text = this.buttonText + (seconds > 0 ? ` (${seconds})` : "");
     $('#range-done-btn').text(text);
+  }
+
+  /**
+   * Enable the Done button and hide calibration alert
+   */
+  _enableDoneButton() {
+    $('#range-calibration-alert').hide();
+    $('#range-done-btn')
+      .prop('disabled', false)
+      .toggleClass('btn-primary', true)
+      .toggleClass('btn-outline-primary', false);
   }
 
   /**
@@ -265,6 +275,23 @@ export class CalibRangeModal {
   resetAlertEnhancement() {
     $('#keep-rotating-alert').removeClass('blink-text');
   }
+
+  /**
+   * Update UI visibility based on expert mode
+   */
+  _updateUIVisibility() {
+    if (this.expertMode) {
+      // Hide progress bar, progress text, and alert in expert mode. Enable Done button immediately.
+      $('#range-progress-container').hide();
+      $('#range-progress-text-container').hide();
+      $('#range-calibration-alert').hide();
+      this._enableDoneButton();
+    } else {
+      // Show progress bar and progress text in normal mode
+      $('#range-progress-container').show();
+      $('#range-progress-text-container').show();
+    }
+  }
 }
 
 // Global reference to the current range calibration instance
@@ -278,9 +305,9 @@ function destroyCurrentInstance() {
   }
 }
 
-export async function calibrate_range(controller, dependencies, doneCallback = null) {
+export async function calibrate_range(controller, dependencies, doneCallback = null, expertMode = false) {
   destroyCurrentInstance(); // Clean up any existing instance
-  currentCalibRangeInstance = new CalibRangeModal(controller, dependencies, doneCallback);
+  currentCalibRangeInstance = new CalibRangeModal(controller, dependencies, doneCallback, expertMode);
 
   await currentCalibRangeInstance.open();
   return new Promise((resolve) => {

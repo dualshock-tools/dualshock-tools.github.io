@@ -1,7 +1,6 @@
 {
     ".authorMsg": "- 中文翻译由 <a href='https://github.com/Yyiyun'>Eythavon</a>  <a href='https://space.bilibili.com/7173897'>坩埚钳特大号</a>  <a href='https://space.bilibili.com/185181540'>修手柄的小丁</a> 提供",
     "DualShock Calibration GUI": "手柄校准界面",
-    "Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).": "浏览器不支持。请使用支持 WebHID 的浏览器 (例如 Chrome)。",
     "Connect": "连接",
     "Connected to:": "连接至:",
     "Disconnect": "断开连接",
@@ -308,7 +307,15 @@
     "skipped": "跳过",
     "tests completed": "测试已完成",
     "to increase the non-circularity.": "增加非圆度",
+    "After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.": "",
     "Battery level is low. Tests may fail due to the controller being in power saving mode.": "",
+    "Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.": "",
+    "Firefox is supported with the WebHID extension installed.": "",
+    "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "",
     "The device appears to be a clone. All calibration functionality is disabled.": "",
+    "This utility cannot fix stick drift.": "",
+    "This utility cannot fix stick drift.Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.": "",
+    "Unsupported browser.": "",
+    "Using this utility on a phone or tablet is not supported.": "",
     "": ""
 }

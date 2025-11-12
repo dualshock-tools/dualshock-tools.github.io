@@ -14,6 +14,8 @@ import {
   isQuickTestVisible,
   quicktest_handle_controller_input
 } from './modals/quick-test-modal.js';
+import { FinetuneHistory } from './finetune-history.js';
+import { CalibrationHistoryModal } from './modals/calibration-history-modal.js';
 
 // Application State - manages app-wide state and UI
 const app = {
@@ -108,6 +110,7 @@ function gboot() {
 
     await loadAllTemplates();
 
+    CalibrationHistoryModal.init();
     initAnalyticsApi(app); // init just with gu for now
     lang_init(app, handleLanguageChange, show_welcome_modal);
     show_welcome_modal();
@@ -215,14 +218,15 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showFourStepCalib, showQuickTests, showQuickCalib }) {
+    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
-      $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
+      $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-center-calib").toggle(!!showQuickCalib);
       $("#quick-center-calib-group").toggle(!!showQuickCalib);
+      $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
     }
 
     let controllerInstance = null;
@@ -327,6 +331,17 @@ async function continue_connection({data, device}) {
 
     if(model == "VR2") {
       show_popup(l("<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>"), true)
+    }
+
+    // Save finetune parameters for DS5 and Edge controllers
+    if (model === "DS5" || model === "DS5_Edge") {
+      const finetuneData = await controllerInstance.getInMemoryModuleData();
+      // Extract serial number from info items
+      const serialNumberItem = info.infoItems?.find(item => item.key === l("Serial Number"));
+      const serialNumber = serialNumberItem?.value;
+      if (serialNumber) {
+        FinetuneHistory.save(finetuneData, serialNumber);
+      }
     }
   } catch(err) {
     await disconnect();
@@ -1118,6 +1133,36 @@ window.ds5_finetune = () => ds5_finetune(
   { ll_data, rr_data, clear_circularity },
   (success) => success && switchToRangeMode()
 );
+
+window.apply_finetune_revert = async (finetuneData) => {
+  if (!controller || !controller.isConnected()) {
+    throw new Error('Controller not connected');
+  }
+  if (!Array.isArray(finetuneData) || finetuneData.length !== 12) {
+    throw new Error('Invalid finetune data');
+  }
+  await controller.writeFinetuneData(finetuneData);
+};
+
+window.openCalibrationHistoryModal = async () => {
+  let currentFinetuneData = null;
+  let controllerSerialNumber = null;
+  try {
+    if (controller && typeof controller.getInMemoryModuleData === 'function') {
+      currentFinetuneData = await controller.getInMemoryModuleData('finetune');
+    }
+    // Get serial number from device info
+    if (controller && typeof controller.getDeviceInfo === 'function') {
+      const info = await controller.getDeviceInfo();
+      const serialNumberItem = info?.infoItems?.find(item => item.key === l("Serial Number"));
+      controllerSerialNumber = serialNumberItem?.value;
+    }
+  } catch (error) {
+    console.warn('Could not retrieve current finetune data or serial number:', error);
+  }
+  window.show_calibration_history_modal(currentFinetuneData, controllerSerialNumber);
+};
+
 window.flash_all_changes = flash_all_changes;
 window.reboot_controller = reboot_controller;
 window.refresh_nvstatus = refresh_nvstatus;

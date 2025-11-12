@@ -153,3 +153,29 @@ export function readCookie(name) {
 export function eraseCookie(name) {
   createCookie(name, "", -1);
 }
+
+/**
+* Get the appropriate locale for date formatting based on language and timezone
+* @returns {string} Locale string for use with toLocaleString()
+*/
+export function getLocaleForDateFormatting() {
+  let lang = readCookie('force_lang') || navigator.language;
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Replace en_US with en_UK if timezone does not start with "America"
+  if (lang.toLowerCase() === 'en_us' && !timezone.startsWith('America')) {
+    lang = 'en_UK';
+  }
+
+  return lang.replace('_', '-').toLowerCase();
+}
+
+/**
+* Format a timestamp as a localized date/time string
+* @param {number|string} timestamp Unix timestamp or date string
+* @returns {string} Formatted date/time string
+*/
+export function formatLocalizedDate(timestamp) {
+  const locale = getLocaleForDateFormatting();
+  return new Date(timestamp).toLocaleString(locale);
+}

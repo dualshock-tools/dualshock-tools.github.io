@@ -95,6 +95,19 @@ export class Finetune {
       left: { x: 0, y: 0 },
       right: { x: 0, y: 0 }
     };
+
+    // Binary search state for R2/L2 circularity calibration
+    this.binarySearch = {
+      active: false,
+      minValue: 0,
+      maxValue: 65535,
+      lastAdjustedValue: 0,
+      inputSuffix: null,
+      lastAxisValue: 0,
+      targetAxisMin: 0.99,
+      searchIterations: 0,
+      maxIterations: 20
+    };
   }
 
   get mode() {
@@ -887,6 +900,25 @@ export class Finetune {
 
     const quadrant = this._getStickQuadrant(currentStick.x, currentStick.y);
 
+    if (changes.r2_analog !== undefined || changes.l2_analog !== undefined) {
+      const r2Value = this.controller.button_states.r2_analog || 0;
+      const l2Value = this.controller.button_states.l2_analog || 0;
+
+      if (r2Value === 0 && l2Value === 0) {
+        this.binarySearch.inputSuffix = null;
+        this.stopContinuousDpadAdjustment();
+        return;
+      }
+
+      if (!this.binarySearch.active && !this.binarySearch.inputSuffix && !this._isDpadAdjustmentActive()) {
+        const inputSuffix = this._getFinetuneInputSuffixForQuadrant(this.active_stick, quadrant);
+        if (inputSuffix) {
+          this._startBinarySearch(inputSuffix);
+        }
+      }
+      return;
+    }
+
     // Use circularity step size for circularity mode
     const adjustmentStep = this._circularityStepSize;
 
@@ -945,14 +977,8 @@ export class Finetune {
     const element = $(`#finetune${inputSuffix}`);
     if (!element.length) return;
 
-    // Initialize previous axis values for the active stick
-    if (this.active_stick && this.controller.button_states.sticks) {
-      const currentStick = this.controller.button_states.sticks[this.active_stick];
-      this._previousAxisValues[this.active_stick].x = currentStick.x;
-      this._previousAxisValues[this.active_stick].y = currentStick.y;
-    }
+    this._savePreviousStickPosition();
 
-    // Perform initial adjustment immediately...
     this._performDpadAdjustment(element, adjustment);
     this.clearCircularity();
 
@@ -971,10 +997,115 @@ export class Finetune {
 
     clearTimeout(this.continuous_adjustment.initial_delay);
     this.continuous_adjustment.initial_delay = null;
+
+    this.binarySearch.active = false;
   }
 
   _isDpadAdjustmentActive() {
     return !!this.continuous_adjustment.initial_delay;
+  }
+
+  _savePreviousStickPosition() {
+    if (this.active_stick && this.controller.button_states.sticks) {
+      const currentStick = this.controller.button_states.sticks[this.active_stick];
+      this._previousAxisValues[this.active_stick].x = currentStick.x;
+      this._previousAxisValues[this.active_stick].y = currentStick.y;
+    }
+  }
+
+  _startBinarySearch(inputSuffix) {
+    const element = $(`#finetune${inputSuffix}`);
+    if (!element.length) return;
+
+    const currentValue = parseInt(element.val()) || 0;
+
+    this.binarySearch = {
+      active: true,
+      minValue: Math.max(0, currentValue - 500),
+      maxValue: Math.min(65535, currentValue + 500),
+      lastAdjustedValue: currentValue,
+      inputSuffix: inputSuffix,
+      lastAxisValue: 0,
+      targetAxisMin: 0.99,
+      searchIterations: 0,
+      maxIterations: 20
+    };
+
+    this._savePreviousStickPosition();
+    this._performBinarySearchStep();
+  }
+
+  async _performBinarySearchStep() {
+    if (!this.binarySearch.active || !this.binarySearch.inputSuffix) return;
+
+    const element = $(`#finetune${this.binarySearch.inputSuffix}`);
+    if (!element.length) return;
+
+    const midValue = this._calculateBinarySearchMidpoint();
+    element.val(midValue);
+    this.binarySearch.lastAdjustedValue = midValue;
+
+    await this._onFinetuneChange();
+    this.clearCircularity();
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    const absAxis = this._calculateBinarySearchAxisValue();
+    this.binarySearch.lastAxisValue = absAxis;
+    this.binarySearch.searchIterations++;
+
+    if (this._isBinarySearchConverged(absAxis)) {
+      this.binarySearch.active = false;
+      this.stopContinuousDpadAdjustment();
+      return;
+    }
+
+    this._updateBinarySearchBounds(midValue, absAxis);
+
+    this.continuous_adjustment.repeat_delay = setTimeout(
+      () => this._performBinarySearchStep(),
+      50
+    );
+  }
+
+  _calculateBinarySearchMidpoint() {
+    const { minValue, maxValue, searchIterations, lastAdjustedValue } = this.binarySearch;
+    return searchIterations === 0
+      ? lastAdjustedValue
+      : Math.floor((minValue + maxValue) / 2);
+  }
+
+  _calculateBinarySearchAxisValue() {
+    if (!this.binarySearch.inputSuffix || !this.active_stick) {
+      return 0;
+    }
+    const currentStick = this.controller.button_states.sticks[this.active_stick];
+    if (!currentStick) {
+      return 0;
+    }
+    const lastChar = this.binarySearch.inputSuffix.slice(-1);
+    const axis = (['X', 'L', 'R'].includes(lastChar)) ? currentStick.x : currentStick.y;
+    return Math.abs(axis);
+  }
+
+  _isBinarySearchConverged(absAxis) {
+    const convergenceThreshold = 0.005;
+    const diff = Math.abs(absAxis - this.binarySearch.targetAxisMin);
+    const hasConverged = diff < convergenceThreshold;
+    const maxIterationsReached = this.binarySearch.searchIterations >= this.binarySearch.maxIterations;
+    return hasConverged || maxIterationsReached;
+  }
+
+  _updateBinarySearchBounds(midValue, absAxis) {
+    if (!this.binarySearch.inputSuffix) return;
+
+    const isInvertedDirection = this.binarySearch.inputSuffix.endsWith('R') || this.binarySearch.inputSuffix.endsWith('B');
+    const isAxisTooLow = absAxis < this.binarySearch.targetAxisMin;
+
+    if (isAxisTooLow === isInvertedDirection) {
+      this.binarySearch.maxValue = midValue;
+    } else {
+      this.binarySearch.minValue = midValue;
+    }
   }
 
   async _performDpadAdjustment(element, adjustment) {

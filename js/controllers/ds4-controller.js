@@ -691,6 +691,10 @@ class DS4Controller extends BaseController {
     }
   }
 
+  getNumberOfSticks() {
+    return 2;
+  }
+
   /**
    * Get the list of supported quick tests for DS4 controller
    * DS4 does not support adaptive triggers, speaker, or microphone

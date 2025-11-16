@@ -242,6 +242,11 @@ class DS5EdgeController extends DS5Controller {
     const pkg = data.reduce((acc, val) => acc.concat([val & 0xff, val >> 8]), [12, 1]);
     await this.sendFeatureReport(0x80, pkg)
   }
+
+  getNumberOfSticks() {
+    return 2;
+  }
+
 }
 
 export default DS5EdgeController;

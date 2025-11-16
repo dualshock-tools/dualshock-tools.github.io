@@ -267,6 +267,17 @@ async function continue_connection({data, device}) {
 
     const model = controllerInstance.getModel();
 
+    const numOfSticks = controllerInstance.getNumberOfSticks();
+    if(numOfSticks == 2) {
+      $("#stick-item-rx").show();
+      $("#stick-item-ry").show();
+    } else if(numOfSticks == 1) {
+      $("#stick-item-rx").hide();
+      $("#stick-item-ry").hide();
+    } else {
+      throw new Error(`Invalid number of sticks: ${numOfSticks}`);
+    }
+
     // Initialize SVG controller based on model
     await init_svg_controller(model);
 
@@ -303,6 +314,10 @@ async function continue_connection({data, device}) {
     // Edge onboarding modal
     if(model == "DS5_Edge") {
       show_edge_modal();
+    }
+
+    if(model == "VR2") {
+      show_popup(l("<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>"), true)
     }
   } catch(err) {
     await disconnect();
@@ -406,6 +421,10 @@ async function init_svg_controller(model) {
     svgFileName = 'dualshock-controller.svg';
   } else if (model === 'DS5' || model === 'DS5_Edge') {
     svgFileName = 'dualsense-controller.svg';
+  } else if (model === 'VR2') {
+    // Disable SVG controller for VR2
+    svgContainer.innerHTML = '';
+    return;
   } else {
     throw new Error(`Unknown controller model: ${model}`);
   }
@@ -481,35 +500,42 @@ function reset_circularity_mode() {
 function refresh_stick_pos() {
   if(!controller) return;
 
+  const hasSingleStick = (controller.currentController?.getNumberOfSticks() == 1);
+
   const c = document.getElementById("stickCanvas");
   const ctx = c.getContext("2d");
   const sz = 60;
-  const hb = 20 + sz;
   const yb = 15 + sz;
   const w = c.width;
+  const hb = hasSingleStick ? w / 2 : 20 + sz;
   ctx.clearRect(0, 0, c.width, c.height);
 
   const { left: { x: plx, y: ply }, right: { x: prx, y: pry } } = controller.button_states.sticks;
 
   const enable_zoom_center = center_zoom_checked();
   const enable_circ_test = circ_checked();
+
   // Draw left stick
   draw_stick_position(ctx, hb, yb, sz, plx, ply, {
     circularity_data: enable_circ_test ? ll_data : null,
     enable_zoom_center,
   });
 
-  // Draw right stick
-  draw_stick_position(ctx, w-hb, yb, sz, prx, pry, {
-    circularity_data: enable_circ_test ? rr_data : null,
-    enable_zoom_center,
-  });
+  if(!hasSingleStick) {
+    // Draw right stick
+    draw_stick_position(ctx, w-hb, yb, sz, prx, pry, {
+      circularity_data: enable_circ_test ? rr_data : null,
+      enable_zoom_center,
+    });
+  }
 
   const precision = enable_zoom_center ? 3 : 2;
   $("#lx-lbl").text(float_to_str(plx, precision));
   $("#ly-lbl").text(float_to_str(ply, precision));
-  $("#rx-lbl").text(float_to_str(prx, precision));
-  $("#ry-lbl").text(float_to_str(pry, precision));
+  if(!hasSingleStick) {
+    $("#rx-lbl").text(float_to_str(prx, precision));
+    $("#ry-lbl").text(float_to_str(pry, precision));
+  }
 
   // Move L3 and R3 SVG elements according to stick position
   try {

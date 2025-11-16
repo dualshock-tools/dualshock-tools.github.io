@@ -3,6 +3,7 @@
 import DS4Controller from './ds4-controller.js';
 import DS5Controller from './ds5-controller.js';
 import DS5EdgeController from './ds5-edge-controller.js';
+import VR2Controller from './vr2-controller.js';
 import { dec2hex } from '../utils.js';
 
 /**
@@ -14,7 +15,9 @@ class ControllerFactory {
     const ds4v2 = { vendorId: 0x054c, productId: 0x09cc };
     const ds5 = { vendorId: 0x054c, productId: 0x0ce6 };
     const ds5edge = { vendorId: 0x054c, productId: 0x0df2 };
-    return [ds4v1, ds4v2, ds5, ds5edge];
+    const vr2_left = { vendorId: 0x054c, productId: 0x0e45 };
+    const vr2_right = { vendorId: 0x054c, productId: 0x0e46 };
+    return [ds4v1, ds4v2, ds5, ds5edge, vr2_left, vr2_right];
   }
 
 
@@ -34,6 +37,12 @@ class ControllerFactory {
 
       case 0x0df2: // DS5 Edge
         return new DS5EdgeController(device);
+
+      case 0x0e45: // VR2 Left
+        return new VR2Controller(device, true);
+
+      case 0x0e46: // VR2 Right
+        return new VR2Controller(device, false);
 
       default:
         throw new Error(`Unsupported device: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`);
@@ -55,6 +64,10 @@ class ControllerFactory {
         return "Sony DualSense";
       case 0x0df2:
         return "Sony DualSense Edge";
+      case 0x0e45:
+        return "VR2 Left Controller";
+      case 0x0e46:
+        return "VR2 Right Controller";
       default:
         return "Unknown Device";
     }
@@ -85,6 +98,16 @@ class ControllerFactory {
           showInfoTab: true,
           showFourStepCalib: false,
           showQuickCalib: true
+        };
+
+      case 0x0e45: // VR2 Left Controller
+      case 0x0e46: // VR2 Right Controller
+        return { 
+          showInfo: true, 
+          showFinetune: false, 
+          showInfoTab: true,
+          showFourStepCalib: true,
+          showQuickCalib: false
         };
 
       default:

@@ -35,6 +35,10 @@ class BaseController {
     return this.finetuneMaxValue;
   }
 
+  getNumberOfSticks() {
+    return 0;
+  }
+
   /**
   * Set input report handler
   * @param {Function} handler Input report handler function

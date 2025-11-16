@@ -36,6 +36,8 @@ export class CalibRangeModal {
 
     this.allDonePromiseResolve = undefined;
     this.doneCallback = doneCallback;
+
+    this.hasSingleStick = (this.controller.currentController.getNumberOfSticks() == 1);
   }
 
   async open() {
@@ -107,7 +109,8 @@ export class CalibRangeModal {
     // Every second, update countdown
     this.countdownInterval = setInterval(() => {
       this.countdownSeconds--;
-      if (this.countdownSeconds <= 0 || this.leftCycleProgress + this.rightCycleProgress >= 100) {
+      // If there is only one stick, sum two times leftCycleProgress, so that it can reach 100.
+      if (this.countdownSeconds <= 0 || this.leftCycleProgress + (this.hasSingleStick ? this.leftCycleProgress : this.rightCycleProgress) >= 100) {
         this.stopCountdown();
 
         $('#range-calibration-alert').hide();
@@ -160,19 +163,29 @@ export class CalibRangeModal {
       this.ll_data.fill(0);
     }
 
-    const rightNonZeroCount = this.rr_data.filter(v => v > JOYSTICK_EXTREME_THRESHOLD).length;
-    const rightFillRatio = rightNonZeroCount / CIRCULARITY_DATA_SIZE;
-    if (rightFillRatio >= CIRCLE_FILL_THRESHOLD) {
-      this.rightFullCycles++;
-      this.rr_data.fill(0);
+    if(this.hasSingleStick) {
+      // Update progress if counts changed
+      if (leftNonZeroCount !== this.leftNonZeroCount) {
+        this.leftNonZeroCount = leftNonZeroCount;
+        this.updateProgress();
+      }
+    } else {
+      const rightNonZeroCount = this.rr_data.filter(v => v > JOYSTICK_EXTREME_THRESHOLD).length;
+      const rightFillRatio = rightNonZeroCount / CIRCULARITY_DATA_SIZE;
+      if (rightFillRatio >= CIRCLE_FILL_THRESHOLD) {
+        this.rightFullCycles++;
+        this.rr_data.fill(0);
+      }
+
+      // Update progress if counts changed
+      if (leftNonZeroCount !== this.leftNonZeroCount || rightNonZeroCount !== this.rightNonZeroCount) {
+        this.leftNonZeroCount = leftNonZeroCount;
+        this.rightNonZeroCount = rightNonZeroCount;
+        this.updateProgress();
+      }
+
     }
 
-    // Update progress if counts changed
-    if (leftNonZeroCount !== this.leftNonZeroCount || rightNonZeroCount !== this.rightNonZeroCount) {
-      this.leftNonZeroCount = leftNonZeroCount;
-      this.rightNonZeroCount = rightNonZeroCount;
-      this.updateProgress();
-    }
   }
 
   /**
@@ -191,8 +204,11 @@ export class CalibRangeModal {
     const rightCurrentProgress = (this.rightNonZeroCount / CIRCULARITY_DATA_SIZE) * (50 / this.requiredFullCycles);
 
     const totalProgress = Math.round(
-      Math.min(50, leftCycleProgress + leftCurrentProgress) +
-      Math.min(50, rightCycleProgress  + rightCurrentProgress)
+      this.hasSingleStick ? 
+        Math.min(100, 2*(leftCycleProgress + leftCurrentProgress)) : (
+          Math.min(50, leftCycleProgress + leftCurrentProgress) +
+          Math.min(50, rightCycleProgress  + rightCurrentProgress)
+        )
     );
 
     const $progressBar = $('#range-progress-bar');
@@ -202,14 +218,19 @@ export class CalibRangeModal {
       .css('width', `${totalProgress}%`)
       .attr('aria-valuenow', totalProgress);
 
-    $progressText.text(`${totalProgress}% (L:${this.leftFullCycles}/${this.requiredFullCycles}, R:${this.rightFullCycles}/${this.requiredFullCycles})`);
+    if(!this.hasSingleStick) {
+      $progressText.text(`${totalProgress}% (L:${this.leftFullCycles}/${this.requiredFullCycles}, R:${this.rightFullCycles}/${this.requiredFullCycles})`);
+    } else {
+      $progressText.text(`${totalProgress}% (L:${this.leftFullCycles}/${this.requiredFullCycles})`);
+    }
   }
 
   checkAndEnhanceAlert() {
     const secondsElapsed = SECONDS_UNTIL_UNLOCK - this.countdownSeconds;
 
     const alertIsVisible = $('#range-calibration-alert').is(":visible")
-    const progressBelowThreshold = this.leftCycleProgress < 10 || this.rightCycleProgress < 10;
+    const progressBelowThreshold = this.leftCycleProgress < 10 || (this.hasSingleStick ? false : this.rightCycleProgress < 10);
+
     if (secondsElapsed >= 5 && progressBelowThreshold && !alertIsVisible) {
       $('#range-calibration-alert').show();
     }

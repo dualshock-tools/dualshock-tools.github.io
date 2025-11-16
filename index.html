@@ -79,7 +79,7 @@
     </div>
 
     <div id="offlinebar" class="vstack p-2" style="display: none;">
-      <p class="ds-i18n">Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.</p>
+      <p class="ds-i18n">Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.</p>
       <button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">
         <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
         <span class="ds-i18n">Connect</span>
@@ -187,12 +187,12 @@
                         <pre id="ly-lbl" style="min-width: 80px;"></pre>
                       </div>
 
-                      <div class="vstack" style="text-align: center;">
+                      <div id="stick-item-rx" class="vstack" style="text-align: center;">
                         <span>RX:</span>
                         <pre id="rx-lbl" style="min-width: 80px;"></pre>
                       </div>
 
-                      <div class="vstack" style="text-align: center;">
+                      <div id="stick-item-ry" class="vstack" style="text-align: center;">
                         <span>RY:</span>
                         <pre id="ry-lbl" style="min-width: 80px;"></pre>
                       </div>
@@ -318,7 +318,7 @@
   <footer class="fixed-bottom bg-body-tertiary border-top">
     <div class="container">
       <div class="d-flex flex-column flex-sm-row justify-content-between py-3" id="footbody">
-        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.19</a> (2025-10-18) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.20</a> (2025-11-16) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
         <ul class="list-unstyled d-flex mb-0">
           <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

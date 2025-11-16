@@ -201,7 +201,6 @@
     "More details and images": "Flere detaljer og billeder",
     "Nova Pink": "Nova Pink",
     "PCBA ID": "PCBA ID",
-    "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "Forbind venligst en DualShock 4-, DualSense- eller DualSense Edge-controller til din computer, og tryk på Tilslut.",
     "Right Module Barcode": "Højre Modul Stregkode",
     "SBL FW Version": "SBL FW Version",
     "Spider FW Version": "Spider FW Version",
@@ -312,5 +311,6 @@
     "skipped": "sprunget over",
     "tests completed": "tests er gennemført",
     "to increase the non-circularity.": "for at øge ikke-cirkulariteten.",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
     "": ""
 }

@@ -195,7 +195,6 @@
     "More details and images": "Daha fazla detay ve görsel",
     "Nova Pink": "Nova Pembe",
     "PCBA ID": "PCBA Kimliği",
-    "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "Lütfen bilgisayarınıza bir DualShock 4, bir DualSense veya DualSense Edge denetleyici bağlayın ve Bağlan'a basın.",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "Lütfen dikkat: DS Edge üzerindeki analog modülleri <b>yalnızca yazılım aracılığıyla kalibre edilemez</b>.",
     "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "Özelleştirilmiş bir kalibrasyonu analogun dahili belleğine kaydetmek için bir <b>donanım değişikliği</b> gereklidir.",
     "Right Module Barcode": "Sağ Modül Barkodu",
@@ -309,5 +308,6 @@
     "skipped": "Atlanmış",
     "tests completed": "Tamamlanan Testler",
     "to increase the non-circularity.": "Dairesellikten sapmayı artırmak için.",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
     "": ""
 }

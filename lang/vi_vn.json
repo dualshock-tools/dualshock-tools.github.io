@@ -186,7 +186,6 @@
     "DualSense Edge Calibration": "Hiệu chỉnh DualSense Edge",
     "For more info or help, feel free to reach out on Discord.": "Cần thêm thông tin hoặc trợ giúp, hãy liên hệ trên Discord.",
     "More details and images": "Thêm chi tiết và hình ảnh",
-    "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "Vui lòng kết nối tay cầm DualShock 4, DualSense hoặc DualSense Edge với máy tính của mày, sau đó nhấn “Kết nối”.",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "Xin lưu ý: các mô-đun analog trên DS Edge <b>không thể được hiệu chỉnh chỉ bằng phần mềm</b>.",
     "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "Để lưu hiệu chỉnh tùy chỉnh vào bộ nhớ trong của analog, cần phải có một <b>thao tác phần cứng</b>.",
     "Support for calibrating DualSense Edge stick modules is now available as an <b>experimental feature</b>.": "Hỗ trợ hiệu chỉnh các mô-đun analog của DualSense Edge hiện đã có sẵn dưới dạng <b>tính năng thử nghiệm</b>.",
@@ -309,5 +308,6 @@
     "skipped": "đã bỏ qua",
     "tests completed": "bài kiểm tra đã hoàn thành",
     "to increase the non-circularity.": "để tăng độ không tròn.",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
     "": ""
 }

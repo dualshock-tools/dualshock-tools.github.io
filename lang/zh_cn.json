@@ -66,7 +66,6 @@
     "Sony DualSense": "PS5手柄（Sony DualSense）",
     "Sony DualSense Edge": "PS5精英手柄/DSE(Sony DualSense Edge)",
     "Connected invalid device": "连接了无效设备",
-    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "错误",
     "My handle on discord is: the_al": "我的 Discord 用户名是: the_al",
     "Initializing...": "初始化...",
@@ -186,7 +185,6 @@
     "DualSense Edge Calibration": "DualSense Edge校准",
     "For more info or help, feel free to reach out on Discord.": "需要更多信息或帮助，请随时在Discord上联系。",
     "More details and images": "更多细节和图像",
-    "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "请将DualShock 4、DualSense 或 DualSense Edge 手柄连接到您的电脑，然后按下“连接”。",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "请注意：DS Edge上的摇杆模块<b>无法仅通过软件进行校准</b>。",
     "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "要在摇杆的内部存储器上存储自定义校准，需要进行<b>硬件修改</b>。",
     "Support for calibrating DualSense Edge stick modules is now available as an <b>experimental feature</b>.": "现已提供校准 DualSense Edge 摇杆模块的支持，此功能为<b>实验性功能</b>。",
@@ -309,5 +307,7 @@
     "skipped": "跳过",
     "tests completed": "测试已完成",
     "to increase the non-circularity.": "增加非圆度",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "": ""
 }

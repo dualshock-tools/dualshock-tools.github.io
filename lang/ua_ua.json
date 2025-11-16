@@ -66,7 +66,6 @@
     "Sony DualSense": "Sony DualSense",
     "Sony DualSense Edge": "Sony DualSense Edge",
     "Connected invalid device": "Підключено неприпустиме пристрій",
-    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "Error": "Помилка",
     "My handle on discord is: the_al": "Мій нік у Discord: the_al",
     "Initializing...": "Ініціалізація...",
@@ -185,7 +184,6 @@
     "For more info or help, feel free to reach out on Discord.": "Для додаткової інформації або допомоги звертайтесь у Discord.",
     "Left stick": "Лівий стік",
     "More details and images": "Більше деталей та зображень",
-    "Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.": "Будь ласка, під`єднайте контролер DualShock 4, DualSense або DualSense Edge до комп’ютера та натисніть «Підключити».",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "Зверніть увагу: модулі стіків на DS Edge <b>неможливо відкалібрувати лише програмним шляхом</b>.",
     "To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.": "Щоб зберегти власне калібрування у внутрішній памʼяті стіка, потрібна <b>апаратна модифікація</b>.",
     "Right stick": "Правий стік",
@@ -309,5 +307,7 @@
     "skipped": "пропущено",
     "tests completed": "тестів завершено",
     "to increase the non-circularity.": "щоб збільшити неокруглість.",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
+    "The device appears to be a clone. All calibration functionality is disabled.": "",
     "": ""
 }

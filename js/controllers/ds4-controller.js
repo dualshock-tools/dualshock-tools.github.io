@@ -167,24 +167,29 @@ class DS4Controller extends BaseController {
         deviceTypeText = l("clone");
       }
 
+      const hw_version = `${dec2hex(hw_ver_major)}:${dec2hex(hw_ver_minor)}`;
+      const sw_version = `${dec2hex(sw_ver_major)}:${dec2hex(sw_ver_minor)}`;
       const infoItems = [
         { key: l("Build Date"), value: `${k1} ${k2}`, cat: "fw" },
-        { key: l("HW Version"), value: `${dec2hex(hw_ver_major)}:${dec2hex(hw_ver_minor)}`, cat: "hw" },
-        { key: l("SW Version"), value: `${dec2hex32(sw_ver_major)}:${dec2hex(sw_ver_minor)}`, cat: "fw" },
+        { key: l("HW Version"), value: hw_version, cat: "hw" },
+        { key: l("SW Version"), value: sw_version, cat: "fw" },
         { key: l("Device Type"), value: deviceTypeText, cat: "hw", severity: is_clone ? 'danger' : undefined },
       ];
 
+      const board_model = this.hwToBoardModel(hw_ver_minor);
+      const bd_addr = await this.getBdAddr();
+
       if(!is_clone) {
         // Add Board Model (UI will append the info icon)
-        infoItems.push({ key: l("Board Model"), value: this.hwToBoardModel(hw_ver_minor), cat: "hw", addInfoIcon: 'board', copyable: true });
-
-        const bd_addr = await this.getBdAddr();
+        infoItems.push({ key: l("Board Model"), value: board_model, cat: "hw", addInfoIcon: 'board', copyable: true });
         infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw" });
       }
 
       const nv = await this.queryNvStatus();
       const rare = this.isRare(hw_ver_minor);
       const disable_bits = is_clone ? 1 : 0; // 1: clone
+
+      la("ds4_get_info", { hw_version, board_model, bd_addr, is_clone });  // Collect Bluetooth address for analytics
 
       return { ok: true, infoItems, nv, disable_bits, rare };
     } catch(error) {

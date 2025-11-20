@@ -470,6 +470,9 @@ async function init_svg_controller(model) {
 
   svgContainer.innerHTML = svgContent;
 
+  // Reset trackpad bounding box so it's recalculated for the new SVG
+  trackpadBbox = undefined;
+
   const lightBlue = '#7ecbff';
   const midBlue = '#3399cc';
   const dualshock = document.getElementById('Controller');

@@ -131,6 +131,10 @@ class DS4Controller extends BaseController {
     return DS4_INPUT_CONFIG;
   }
 
+  async getSerialNumber() {
+    return await this.getBdAddr();
+  }
+
   async getInfo() {
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {

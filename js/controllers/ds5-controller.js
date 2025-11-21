@@ -266,6 +266,10 @@ class DS5Controller extends BaseController {
     return DS5_INPUT_CONFIG;
   }
 
+  async getSerialNumber() {
+    return await this.getSystemInfo(1, 19, 17);
+  }
+
   async getInfo() {
     return this._getInfo(false);
   }

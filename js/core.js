@@ -333,13 +333,20 @@ async function continue_connection({data, device}) {
       show_popup(l("<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>"), true)
     }
 
+    // Check for unsaved calibration changes
+    if (controller.has_changes_to_write) {
+      show_popup(`<p>${
+        l("It appears the latest joystick calibration has not been saved.")
+      }</p><p>${
+        l("You should save your changes, or reboot the controller if you don't want to keep them.")
+      }</p>`, true);
+    }
+
     // Save finetune parameters for DS5 and Edge controllers
     if (model === "DS5" || model === "DS5_Edge") {
-      const finetuneData = await controllerInstance.getInMemoryModuleData();
-      // Extract serial number from info items
-      const serialNumberItem = info.infoItems?.find(item => item.key === l("Serial Number"));
-      const serialNumber = serialNumberItem?.value;
-      if (serialNumber) {
+      if (!controller.has_changes_to_write) {
+        const finetuneData = await controllerInstance.getInMemoryModuleData();
+        const serialNumber = await controllerInstance.getSerialNumber();
         FinetuneHistory.save(finetuneData, serialNumber);
       }
     }

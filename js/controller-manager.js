@@ -46,11 +46,96 @@ class ControllerManager {
   }
 
   /**
+  * Generate a unique storage key for the device
+  * @param {string} serialNumber The device serial number
+  * @returns {string} Storage key based on serial number
+  */
+  _getDeviceStorageKey(serialNumber) {
+    if (!serialNumber) return null;
+    return `changes_${serialNumber}`;
+  }
+
+  /**
+  * Save has_changes_to_write state to localStorage
+  */
+  async _saveHasChangesState() {
+    if (!this.currentController) return;
+    try {
+      const serialNumber = await this.currentController.getSerialNumber();
+      const key = this._getDeviceStorageKey(serialNumber);
+      if (key) {
+        localStorage.setItem(key, JSON.stringify(this.has_changes_to_write));
+      }
+    } catch (e) {
+      console.warn('Failed to save changes state:', e);
+    }
+  }
+
+  /**
+  * Restore has_changes_to_write state from localStorage
+  */
+  async _restoreHasChangesState() {
+    if (!this.currentController) return;
+    try {
+      const serialNumber = await this.currentController.getSerialNumber();
+      const key = this._getDeviceStorageKey(serialNumber);
+      if (key) {
+        const saved = localStorage.getItem(key);
+        if (saved !== null) {
+          try {
+            const restoredState = JSON.parse(saved);
+            this.has_changes_to_write = restoredState;
+            this._updateUI();
+          } catch (e) {
+            console.warn('Failed to parse changes state:', e);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to restore changes state:', e);
+    }
+  }
+
+  /**
+  * Update UI based on current has_changes_to_write state
+  */
+  _updateUI() {
+    const saveBtn = $("#savechanges");
+    saveBtn
+      .prop('disabled', !this.has_changes_to_write)
+      .toggleClass('btn-success', this.has_changes_to_write)
+      .toggleClass('btn-outline-secondary', !this.has_changes_to_write);
+  }
+
+  /**
+  * Clear controller state: remove localStorage entry and reset UI
+  * @private
+  */
+  async _clearControllerState() {
+    if (this.currentController) {
+      try {
+        const serialNumber = await this.currentController.getSerialNumber();
+        const key = this._getDeviceStorageKey(serialNumber);
+        if (key) {
+          localStorage.removeItem(key);
+        }
+      } catch (e) {
+        console.warn('Failed to clear localStorage:', e);
+      }
+    }
+    this.has_changes_to_write = false;
+    this._updateUI();
+  }
+
+  /**
   * Set the current controller instance
   * @param {BaseController} controller Controller instance
   */
   setControllerInstance(instance) {
     this.currentController = instance;
+    if (instance) {
+      this._restoreHasChangesState().catch(e => console.warn('Failed to restore changes state:', e));
+    }
   }
 
   /**
@@ -160,13 +245,9 @@ class ControllerManager {
     if (hasChanges === this.has_changes_to_write)
       return;
 
-    const saveBtn = $("#savechanges");
-    saveBtn
-      .prop('disabled', !hasChanges)
-      .toggleClass('btn-success', hasChanges)
-      .toggleClass('btn-outline-secondary', !hasChanges);
-
     this.has_changes_to_write = hasChanges;
+    this._updateUI();
+    this._saveHasChangesState().catch(e => console.warn('Failed to save changes state:', e));
   }
 
   // Unified controller operations that delegate to the current controller
@@ -175,7 +256,7 @@ class ControllerManager {
   * Flash/save changes to the controller
   */
   async flash(progressCallback = null) {
-    this.setHasChangesToWrite(false);
+    await this._clearControllerState();
     return this.currentController.flash(progressCallback);
   }
 
@@ -183,7 +264,8 @@ class ControllerManager {
   * Reset the controller
   */
   async reset() {
-    await this.currentController.reset();
+    await this._clearControllerState();
+    return this.currentController.reset();
   }
 
   /**

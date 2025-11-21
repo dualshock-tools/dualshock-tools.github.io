@@ -14,8 +14,8 @@ import {
   isQuickTestVisible,
   quicktest_handle_controller_input
 } from './modals/quick-test-modal.js';
+import { show_calibration_history_modal } from './modals/calibration-history-modal.js';
 import { FinetuneHistory } from './finetune-history.js';
-import { CalibrationHistoryModal } from './modals/calibration-history-modal.js';
 
 // Application State - manages app-wide state and UI
 const app = {
@@ -110,7 +110,6 @@ function gboot() {
 
     await loadAllTemplates();
 
-    CalibrationHistoryModal.init();
     initAnalyticsApi(app); // init just with gu for now
     lang_init(app, handleLanguageChange, show_welcome_modal);
     show_welcome_modal();
@@ -338,7 +337,7 @@ async function continue_connection({data, device}) {
       show_popup(`<p>${
         l("It appears the latest joystick calibration has not been saved.")
       }</p><p>${
-        l("You should save your changes, or reboot the controller if you don't want to keep them.")
+        l("You should save your changes, or reboot the controller to revert back to the previous state.")
       }</p>`, true);
     }
 
@@ -1144,16 +1143,6 @@ window.ds5_finetune = () => ds5_finetune(
   (success) => success && switchToRangeMode()
 );
 
-window.apply_finetune_revert = async (finetuneData) => {
-  if (!controller || !controller.isConnected()) {
-    throw new Error('Controller not connected');
-  }
-  if (!Array.isArray(finetuneData) || finetuneData.length !== 12) {
-    throw new Error('Invalid finetune data');
-  }
-  await controller.writeFinetuneData(finetuneData);
-};
-
 window.openCalibrationHistoryModal = async () => {
   let currentFinetuneData = null;
   let controllerSerialNumber = null;
@@ -1161,7 +1150,6 @@ window.openCalibrationHistoryModal = async () => {
     if (controller && typeof controller.getInMemoryModuleData === 'function') {
       currentFinetuneData = await controller.getInMemoryModuleData('finetune');
     }
-    // Get serial number from device info
     if (controller && typeof controller.getDeviceInfo === 'function') {
       const info = await controller.getDeviceInfo();
       const serialNumberItem = info?.infoItems?.find(item => item.key === l("Serial Number"));
@@ -1170,7 +1158,10 @@ window.openCalibrationHistoryModal = async () => {
   } catch (error) {
     console.warn('Could not retrieve current finetune data or serial number:', error);
   }
-  window.show_calibration_history_modal(currentFinetuneData, controllerSerialNumber);
+  await show_calibration_history_modal(controller, currentFinetuneData, controllerSerialNumber, (success, message) => {
+    if(!message) return;
+    success ? infoAlert(message) : errorAlert(message);
+  });
 };
 
 window.flash_all_changes = flash_all_changes;

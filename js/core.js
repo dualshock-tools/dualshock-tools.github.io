@@ -5,7 +5,7 @@ import { initControllerManager } from './controller-manager.js';
 import ControllerFactory from './controllers/controller-factory.js';
 import { lang_init, l } from './translations.js';
 import { loadAllTemplates } from './template-loader.js';
-import { draw_stick_dial, CIRCULARITY_DATA_SIZE } from './stick-renderer.js';
+import { draw_stick_dial, CIRCULARITY_DATA_SIZE, calculateCircularityError } from './stick-renderer.js';
 import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } from './modals/finetune-modal.js';
 import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
 import { calibrate_range, rangeCalibHandleControllerInput } from './modals/calib-range-modal.js';
@@ -617,6 +617,17 @@ function refresh_stick_pos() {
   } catch (e) {
     // Fail silently if SVG not present
   }
+
+  const circularityCheckIcon = document.getElementById('circularityCheckIcon');
+  if (!enable_circ_test) {
+    circularityCheckIcon.style.display = 'none';
+    return;
+  }
+
+  const ll_error = calculateCircularityError(ll_data);
+  const rr_error = calculateCircularityError(rr_data);
+  const isTooSmall = (ll_error && ll_error < 5 || rr_error && rr_error < 5);
+  circularityCheckIcon.style.display = isTooSmall ? 'block' : 'none';
 }
 
 const circ_checked = () => $("#checkCircularityMode").is(':checked');
@@ -1019,6 +1030,15 @@ function show_info_tab() {
   $('#info-tab').tab('show');
 }
 
+function show_circularity_warning() {
+  const message = `<p>
+  ${l("Sony controllers come from the factory calibrated to have an average circularity error of nearly 10 %, and this is now what games expect. Too perfect circularity can make movements and aim feel stiff and unresponsive in some games.")
+  }</p><p>
+  ${l("Aim for a circularity error of around 7-9 % for the best playing experience.")}`;
+  
+  show_popup(message, true);
+}
+
 // Alert Management Functions
 let alertCounter = 0;
 
@@ -1265,6 +1285,7 @@ function initCalibrationMethod() {
 window.nvslock = nvslock;
 window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
+window.show_circularity_warning = show_circularity_warning;
 window.show_quick_test_modal = () => {
   show_quick_test_modal(controller).catch(error => {
     throw new Error("Failed to show quick test modal", { cause: error });

@@ -216,7 +216,15 @@
                   <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
                   <div class="vstack px-2">
                     <center>
-                      <canvas id="stickCanvas" width="300" height="150"></canvas>
+                      <div style="position: relative; display: inline-block;">
+                        <canvas id="stickCanvas" width="300" height="150"></canvas>
+                        <svg
+                          id="circularityCheckIcon" class="bi" width="32" height="32"
+                          style="cursor: pointer; color: #ff4000cb; position: absolute; top: 25px; right: -30px; display: none;"
+                          onclick="show_circularity_warning()"
+                        >
+                          <use xlink:href="#info"/></svg>
+                      </div>
                     </center>
                   </div>
                   <div class="px-2">

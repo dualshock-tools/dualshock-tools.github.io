@@ -633,6 +633,10 @@ class VR2Controller extends BaseController {
   getNumberOfSticks() {
     return 1;
   }
+
+  getSupportedQuickTests() {
+    return [];
+  }
 }
 
 export default VR2Controller;

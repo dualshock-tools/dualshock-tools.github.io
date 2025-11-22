@@ -209,11 +209,12 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showFourStepCalib, showQuickCalib }) {
+    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showFourStepCalib, showQuickTests, showQuickCalib }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
       $("#four-step-center-calib").toggle(!!showFourStepCalib);
+      $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
       $("#quick-center-calib").toggle(!!showQuickCalib);
     }
 

@@ -87,6 +87,7 @@ class ControllerFactory {
           showFinetune: false, 
           showInfoTab: false,
           showFourStepCalib: true,
+          showQuickTests: true,
           showQuickCalib: false
         };
 
@@ -97,6 +98,7 @@ class ControllerFactory {
           showFinetune: true, 
           showInfoTab: true,
           showFourStepCalib: false,
+          showQuickTests: true,
           showQuickCalib: true
         };
 
@@ -107,6 +109,7 @@ class ControllerFactory {
           showFinetune: false, 
           showInfoTab: true,
           showFourStepCalib: true,
+          showQuickTests: false,
           showQuickCalib: false
         };
 
@@ -116,6 +119,7 @@ class ControllerFactory {
           showFinetune: false, 
           showInfoTab: false,
           showFourStepCalib: false,
+          showQuickTests: false,
           showQuickCalib: false
         };
     }

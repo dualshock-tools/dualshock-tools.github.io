@@ -1,6 +1,6 @@
 'use strict';
 
-import { sleep } from '../utils.js';
+import { sleep, float_to_str } from '../utils.js';
 import { l } from '../translations.js';
 import { CIRCULARITY_DATA_SIZE, draw_stick_dial } from '../stick-renderer.js';
 
@@ -386,6 +386,12 @@ export class CalibRangeModal {
 
     draw_stick_dial(this.leftCanvasCtx, centerX, centerY, size, left.x, left.y);
     draw_stick_dial(this.rightCanvasCtx, centerX, centerY, size, right.x, right.y);
+
+    const precision = 2;
+    $("#range-lx-lbl").text(float_to_str(left.x, precision));
+    $("#range-ly-lbl").text(float_to_str(left.y, precision));
+    $("#range-rx-lbl").text(float_to_str(right.x, precision));
+    $("#range-ry-lbl").text(float_to_str(right.y, precision));
   }
 }
 

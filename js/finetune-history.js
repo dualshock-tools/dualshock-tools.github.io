@@ -1,6 +1,7 @@
 'use strict';
 
-const STORAGE_KEY = 'finetuneHistory';
+import { Storage } from './storage.js';
+
 const MAX_HISTORY_ENTRIES_PER_CONTROLLER = 10;
 
 /**
@@ -134,13 +135,12 @@ export class FinetuneHistory {
   // ==================== PRIVATE METHODS ====================
 
   /**
-   * Get all history from localStorage (for all controllers)
+   * Get all history from storage (for all controllers)
    * @private
    */
   static _getAllHistory() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {};
+      return Storage.finetuneHistory.getAll();
     } catch (e) {
       console.error('Failed to parse finetune history:', e);
       return {};
@@ -148,12 +148,12 @@ export class FinetuneHistory {
   }
 
   /**
-   * Save all history to localStorage
+   * Save all history to storage
    * @private
    */
   static _saveAllHistory(allHistory) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allHistory));
+      Storage.finetuneHistory.setAll(allHistory);
     } catch (e) {
       console.error('Failed to save finetune history:', e);
     }

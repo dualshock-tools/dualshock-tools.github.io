@@ -1,7 +1,8 @@
 'use strict';
 
 import { l } from '../translations.js';
-import { la } from '../utils.js'
+import { la } from '../utils.js';
+import { Storage } from '../storage.js';
 
 const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
@@ -98,32 +99,28 @@ export class QuickTestModal {
   }
 
   /**
-   * Save skipped tests to localStorage
+   * Save skipped tests to storage
    */
   _saveSkippedTestsToStorage() {
     try {
-      localStorage.setItem('quickTestSkippedTests', JSON.stringify(this.state.skippedTests));
+      Storage.quickTestSkippedTests.set(this.state.skippedTests);
     } catch (error) {
-      console.warn('Failed to save skipped tests to localStorage:', error);
+      console.warn('Failed to save skipped tests to storage:', error);
     }
   }
 
   /**
-   * Load skipped tests from localStorage
+   * Load skipped tests from storage
    */
   _loadSkippedTestsFromStorage() {
     try {
-      const saved = localStorage.getItem('quickTestSkippedTests');
-      if (saved) {
-        const skippedTests = JSON.parse(saved);
-        if (Array.isArray(skippedTests)) {
-          this.state.skippedTests = skippedTests.filter(test => TEST_SEQUENCE.includes(test));
-          // Apply the skipped tests to the UI
-          this._applySkippedTestsToUI();
-        }
+      const skippedTests = Storage.quickTestSkippedTests.get();
+      if (Array.isArray(skippedTests) && skippedTests.length > 0) {
+        this.state.skippedTests = skippedTests.filter(test => TEST_SEQUENCE.includes(test));
+        this._applySkippedTestsToUI();
       }
     } catch (error) {
-      console.warn('Failed to load skipped tests from localStorage:', error);
+      console.warn('Failed to load skipped tests from storage:', error);
       this.state.skippedTests = [];
     }
   }
@@ -381,13 +378,13 @@ export class QuickTestModal {
   }
 
   /**
-   * Clear saved skipped tests from localStorage
+   * Clear saved skipped tests from storage
    */
   _clearSkippedTestsFromStorage() {
     try {
-      localStorage.removeItem('quickTestSkippedTests');
+      Storage.quickTestSkippedTests.clear();
     } catch (error) {
-      console.warn('Failed to clear skipped tests from localStorage:', error);
+      console.warn('Failed to clear skipped tests from storage:', error);
     }
   }
 
@@ -1104,7 +1101,7 @@ export class QuickTestModal {
       this.state.skippedTests.push(testType);
     }
 
-    // Save to localStorage
+    // Save to storage
     this._saveSkippedTestsToStorage();
 
     // Stop any ongoing test activities
@@ -1520,7 +1517,7 @@ export class QuickTestModal {
     // Reset state
     this._initializeState();
 
-    // Load saved skipped tests from localStorage
+    // Load saved skipped tests from storage
     this._loadSkippedTestsFromStorage();
 
     // Reset button colors to initial state

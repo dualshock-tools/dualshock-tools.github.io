@@ -1,5 +1,7 @@
 'use strict';
 
+import { Storage } from './storage.js';
+
 /**
 * Utility functions for DualShock controller operations
 */
@@ -118,48 +120,11 @@ export function lerp_color(a, b, t) {
 }
 
 /**
-* Create a cookie with specified name, value, and expiration days
-* @param {string} name Cookie name
-* @param {string} value Cookie value
-* @param {number} days Number of days until expiration
-*/
-export function createCookie(name, value, days) {
-  const expires = days ? "; expires=" + new Date(Date.now() + days * 24 * 60 * 60 * 1000).toGMTString() : "";
-  document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
-}
-
-/**
-* Read a cookie value by name
-* @param {string} name Cookie name
-* @returns {string|null} Cookie value or null if not found
-*/
-export function readCookie(name) {
-  const nameEQ = encodeURIComponent(name) + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ')
-      c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0)
-      return decodeURIComponent(c.substring(nameEQ.length, c.length));
-  }
-  return null;
-}
-
-/**
-* Delete a cookie by setting its expiration to the past
-* @param {string} name Cookie name to delete
-*/
-export function eraseCookie(name) {
-  createCookie(name, "", -1);
-}
-
-/**
 * Get the appropriate locale for date formatting based on language and timezone
 * @returns {string} Locale string for use with toLocaleString()
 */
 export function getLocaleForDateFormatting() {
-  let lang = readCookie('force_lang') || navigator.language;
+  let lang = Storage.getString('force_lang') || navigator.language;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   // Replace en_US with en_UK if timezone does not start with "America"

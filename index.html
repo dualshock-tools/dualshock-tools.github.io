@@ -367,9 +367,9 @@
   </div>
 
   <!-- About drift and this utility -->
-  <div id="aboutdrift" style="position: fixed; bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
+  <div id="aboutdrift" style="position: fixed; bottom: 70px; left: 0; right: 0; z-index: 1030; display: none;">
     <div class="container">
-      <div style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+      <div class="mb-4" style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
         <p class="mb-2">
           <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
           <span class="ds-i18n">This utility cannot fix stick drift.</span>
@@ -381,6 +381,11 @@
           <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;
           <span class="ds-i18n">Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.</span>
         </p>
+      </div>
+
+      <div id="lastConnected" class="gap-2">
+        <span class="text-muted"><i class="fas fa-history"></i>&nbsp;&nbsp;<span class="ds-i18n">Last connected</span>:</span>
+        <span id="lastConnectedInfo"></span>
       </div>
     </div>
   </div>

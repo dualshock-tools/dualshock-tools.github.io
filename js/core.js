@@ -1191,38 +1191,18 @@ window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
 window.copyValueToClipboard = copyValueToClipboard;
-window.calibrate_range = () => calibrate_range(
-  controller,
-  { ll_data, rr_data },
-  (success, message) => {
-    resetStickDiagrams();
-    if(message) {
-      success ? successAlert(message) : errorAlert(message);
-    }
-    switchToRangeMode();
-    app.shownRangeCalibrationWarning = false
-  }
-);
+
 window.calibrate_stick_centers = () => calibrate_stick_centers(
   controller,
   (success, message) => {
     if (success) {
       resetStickDiagrams();
-      successAlert(message);
+      infoAlert(message, 2_000);
       switchTo10xZoomMode();
     }
   }
 );
-window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(
-  controller,
-  (success, message) => {
-    if (success) {
-      resetStickDiagrams();
-      successAlert(message);
-      switchTo10xZoomMode();
-    }
-  }
-);
+
 window.ds5_finetune = () => ds5_finetune(
   controller,
   { ll_data, rr_data, clear_circularity },
@@ -1279,7 +1259,7 @@ window.executeSelectedCenterCalibration = () => {
       (success, message) => {
         if (success) {
           resetStickDiagrams();
-          successAlert(message);
+          infoAlert(message, 2_000);
           switchTo10xZoomMode();
         }
       }
@@ -1290,7 +1270,7 @@ window.executeSelectedCenterCalibration = () => {
       (success, message) => {
         if (success) {
           resetStickDiagrams();
-          successAlert(message);
+          infoAlert(message, 2_000);
           switchTo10xZoomMode();
         }
       }
@@ -1321,7 +1301,7 @@ window.executeSelectedRangeCalibration = () => {
     (success, message) => {
       resetStickDiagrams();
       if(message) {
-        successAlert(message);
+        infoAlert(message, 2_000);
       }
     },
     app.rangeCalibrationMethod === 'expert'

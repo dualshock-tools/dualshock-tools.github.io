@@ -42,8 +42,6 @@ export class CalibRangeModal {
     this.hasSingleStick = (this.controller.currentController.getNumberOfSticks() == 1);
 
     // Stick rendering
-    this.leftCanvasCtx = null;
-    this.rightCanvasCtx = null;
     this.stickRenderInterval = null;
     this.currentStickPositions = {
       left: { x: 0, y: 0 },
@@ -87,7 +85,8 @@ export class CalibRangeModal {
     this.ll_data.fill(0);
     this.rr_data.fill(0);
 
-    this._initializeCanvases();
+    // Start rendering loop
+    this.startStickRendering();
 
     this._updateUIVisibility();
     if (!this.expertMode) {
@@ -303,24 +302,11 @@ export class CalibRangeModal {
       $('#range-progress-container').show();
       $('#range-progress-text-container').show();
     }
-  }
 
-  /**
-   * Initialize canvas elements for stick rendering
-   */
-  _initializeCanvases() {
-    const leftCanvas = document.getElementById('range-left-stick-canvas');
-    const rightCanvas = document.getElementById('range-right-stick-canvas');
-
-    this.leftCanvasCtx = leftCanvas.getContext('2d');
-    this.rightCanvasCtx = rightCanvas.getContext('2d');
-
-    // Clear initial canvases
-    this._clearCanvas(this.leftCanvasCtx, leftCanvas);
-    this._clearCanvas(this.rightCanvasCtx, rightCanvas);
-
-    // Start rendering loop
-    this.startStickRendering();
+    // Hide right stick elements if single stick controller
+    $('#range-right-stick-canvas').toggle(!this.hasSingleStick);
+    $('#range-rx').toggle(!this.hasSingleStick);
+    $('#range-ry').toggle(!this.hasSingleStick);
   }
 
   /**
@@ -369,14 +355,8 @@ export class CalibRangeModal {
    * Render both stick dials
    */
   _renderSticks() {
-    if (!this.leftCanvasCtx || !this.rightCanvasCtx) return;
-
-    const leftCanvas = this.leftCanvasCtx.canvas;
-    const rightCanvas = this.rightCanvasCtx.canvas;
-
-    // Clear canvases
-    this._clearCanvas(this.leftCanvasCtx, leftCanvas);
-    this._clearCanvas(this.rightCanvasCtx, rightCanvas);
+    const leftCanvas = document.getElementById('range-left-stick-canvas');
+    const leftCtx = leftCanvas.getContext('2d');
 
     // Draw stick dials in normal mode (no circularity data, no zoom)
     const size = 60;
@@ -384,14 +364,24 @@ export class CalibRangeModal {
     const centerY = leftCanvas.height / 2;
     const {left, right} = this.currentStickPositions;
 
-    draw_stick_dial(this.leftCanvasCtx, centerX, centerY, size, left.x, left.y);
-    draw_stick_dial(this.rightCanvasCtx, centerX, centerY, size, right.x, right.y);
+    this._clearCanvas(leftCtx, leftCanvas);
+    draw_stick_dial(leftCtx, centerX, centerY, size, left.x, left.y);
 
     const precision = 2;
     $("#range-lx-lbl").text(float_to_str(left.x, precision));
     $("#range-ly-lbl").text(float_to_str(left.y, precision));
-    $("#range-rx-lbl").text(float_to_str(right.x, precision));
-    $("#range-ry-lbl").text(float_to_str(right.y, precision));
+
+    // Only render right stick if not a single stick controller
+    if (!this.hasSingleStick) {
+      const rightCanvas = document.getElementById('range-right-stick-canvas');
+      const rightCtx = rightCanvas.getContext('2d');
+
+      this._clearCanvas(rightCtx, rightCanvas);
+      draw_stick_dial(rightCtx, centerX, centerY, size, right.x, right.y);
+
+      $("#range-rx-lbl").text(float_to_str(right.x, precision));
+      $("#range-ry-lbl").text(float_to_str(right.y, precision));
+    }
   }
 }
 

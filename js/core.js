@@ -141,6 +141,7 @@ function gboot() {
 
   $("#offlinebar").show();
   $("#aboutdrift").show();
+  updateLastConnectedInfo();
   navigator.hid.addEventListener("disconnect", handleDisconnectedDevice);
 }
 
@@ -278,8 +279,6 @@ async function continue_connection({data, device}) {
 
     $('#controller-tab').tab('show');
 
-    const model = controllerInstance.getModel();
-
     const numOfSticks = controllerInstance.getNumberOfSticks();
     if(numOfSticks == 2) {
       $("#stick-item-rx").show();
@@ -290,6 +289,30 @@ async function continue_connection({data, device}) {
     } else {
       throw new Error(`Invalid number of sticks: ${numOfSticks}`);
     }
+
+    const model = controllerInstance.getModel();
+
+    // Save controller info to local storage
+    const lastConnectedInfo = {
+      deviceName: deviceName,
+      timestamp: new Date().toISOString()
+    };
+
+    // Extract info from infoItems
+    if (info.infoItems && Array.isArray(info.infoItems)) {
+      for (const item of info.infoItems) {
+        if (item.key === l("Serial Number")) {
+          lastConnectedInfo.serialNumber = item.value;
+        } else if (item.key === l("Board Model")) {
+          lastConnectedInfo.boardModel = item.value;
+        } else if (item.key === l("Color")) {
+          lastConnectedInfo.color = item.value;
+        }
+      }
+    }
+
+    localStorage.setItem('lastConnectedController', JSON.stringify(lastConnectedInfo));
+    updateLastConnectedInfo();
 
     // Initialize SVG controller based on model
     await init_svg_controller(model);
@@ -377,6 +400,39 @@ async function disconnect() {
   $("#onlinebar").hide();
   $("#mainmenu").hide();
   $("#aboutdrift").show();
+  updateLastConnectedInfo();
+}
+
+function updateLastConnectedInfo() {
+  const $lastConnected = $("#lastConnected");
+  const $infoDiv = $("#lastConnectedInfo");
+  const lastConnectedInfo = localStorage.getItem('lastConnectedController');
+
+  if (!lastConnectedInfo) {
+    console.log("No last connected info found.", $lastConnected);
+    $lastConnected.hide();
+    return;
+  }
+
+  try {
+    const info = JSON.parse(lastConnectedInfo);
+
+    const parts = [];
+    if (info.color) parts.push(info.color);
+    if (info.boardModel) parts.push(info.boardModel);
+    if (info.deviceName) parts.push(info.deviceName);
+
+    let text = parts.join(" ");
+    if (info.serialNumber) {
+      text += ", " + l("serial number") + " " + info.serialNumber;
+    }
+
+    $infoDiv.text(text);
+    $lastConnected.show();
+  } catch (error) {
+    console.error("Error parsing last connected info:", error);
+    $lastConnected.hide();
+  }
 }
 
 // Wrapper function for HTML onclick handlers

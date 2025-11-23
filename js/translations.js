@@ -1,6 +1,7 @@
 'use strict';
 
-import { la, createCookie, readCookie } from './utils.js';
+import { la } from './utils.js';
+import { Storage } from './storage.js';
 
 // Alphabetical order
 const available_langs = {
@@ -50,7 +51,7 @@ export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb) {
   }
   translationState.lang_orig_text[".title"] = document.title;
   
-  const force_lang = readCookie("force_lang");
+  const force_lang = Storage.getString("force_lang");
   if (force_lang != null) {
     lang_set(force_lang, true).catch(error => {
       console.error("Failed to set forced language:", error);
@@ -89,9 +90,9 @@ async function lang_set(lang, skip_modal=false) {
   }
   
   await handleLanguageChange(lang);
-  createCookie("force_lang", lang);
+  Storage.setString("force_lang", lang);
   if(!skip_modal && welcomeModal) {
-    createCookie("welcome_accepted", "0");
+    Storage.setString("welcome_accepted", "0");
     welcomeModal();
   }
 }

@@ -1,7 +1,8 @@
 'use strict';
 
 import { sleep, la } from './utils.js';
-import { l } from './translations.js'
+import { l } from './translations.js';
+import { Storage } from './storage.js';
 
 const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
 
@@ -46,50 +47,29 @@ class ControllerManager {
   }
 
   /**
-  * Generate a unique storage key for the device
-  * @param {string} serialNumber The device serial number
-  * @returns {string} Storage key based on serial number
-  */
-  _getDeviceStorageKey(serialNumber) {
-    if (!serialNumber) return null;
-    return `changes_${serialNumber}`;
-  }
-
-  /**
-  * Save has_changes_to_write state to localStorage
+  * Save has_changes_to_write state to storage
   */
   async _saveHasChangesState() {
     if (!this.currentController) return;
     try {
       const serialNumber = await this.currentController.getSerialNumber();
-      const key = this._getDeviceStorageKey(serialNumber);
-      if (key) {
-        localStorage.setItem(key, JSON.stringify(this.has_changes_to_write));
-      }
+      Storage.hasChangesState.set(serialNumber, this.has_changes_to_write);
     } catch (e) {
       console.warn('Failed to save changes state:', e);
     }
   }
 
   /**
-  * Restore has_changes_to_write state from localStorage
+  * Restore has_changes_to_write state from storage
   */
   async _restoreHasChangesState() {
     if (!this.currentController) return;
     try {
       const serialNumber = await this.currentController.getSerialNumber();
-      const key = this._getDeviceStorageKey(serialNumber);
-      if (key) {
-        const saved = localStorage.getItem(key);
-        if (saved !== null) {
-          try {
-            const restoredState = JSON.parse(saved);
-            this.has_changes_to_write = restoredState;
-            this._updateUI();
-          } catch (e) {
-            console.warn('Failed to parse changes state:', e);
-          }
-        }
+      const restoredState = Storage.hasChangesState.get(serialNumber);
+      if (restoredState !== null) {
+        this.has_changes_to_write = restoredState;
+        this._updateUI();
       }
     } catch (e) {
       console.warn('Failed to restore changes state:', e);
@@ -108,19 +88,16 @@ class ControllerManager {
   }
 
   /**
-  * Clear controller state: remove localStorage entry and reset UI
+  * Clear controller state: remove storage entry and reset UI
   * @private
   */
   async _clearControllerState() {
     if (this.currentController) {
       try {
         const serialNumber = await this.currentController.getSerialNumber();
-        const key = this._getDeviceStorageKey(serialNumber);
-        if (key) {
-          localStorage.removeItem(key);
-        }
+        Storage.hasChangesState.clear(serialNumber);
       } catch (e) {
-        console.warn('Failed to clear localStorage:', e);
+        console.warn('Failed to clear storage:', e);
       }
     }
     this.has_changes_to_write = false;

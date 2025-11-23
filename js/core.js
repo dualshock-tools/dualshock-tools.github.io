@@ -295,15 +295,14 @@ async function continue_connection({data, device}) {
     // Save controller info to local storage
     const lastConnectedInfo = {
       deviceName: deviceName,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      serialNumber: await controllerInstance.getSerialNumber(),
     };
 
     // Extract info from infoItems
     if (info.infoItems && Array.isArray(info.infoItems)) {
       for (const item of info.infoItems) {
-        if (item.key === l("Serial Number")) {
-          lastConnectedInfo.serialNumber = item.value;
-        } else if (item.key === l("Board Model")) {
+        if (item.key === l("Board Model")) {
           lastConnectedInfo.boardModel = item.value;
         } else if (item.key === l("Color")) {
           lastConnectedInfo.color = item.value;
@@ -428,6 +427,16 @@ function updateLastConnectedInfo() {
     }
 
     $infoDiv.text(text);
+
+    if (info.serialNumber) {
+      const storageKey = `changes_${info.serialNumber}`;
+      const savedChangesState = localStorage.getItem(storageKey);
+      const hasChanges = savedChangesState ? JSON.parse(savedChangesState) : false;
+
+      const $warning = $("#lastConnectedWarning");
+      $warning.toggle(hasChanges);
+    }
+
     $lastConnected.show();
   } catch (error) {
     console.error("Error parsing last connected info:", error);

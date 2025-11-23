@@ -2,6 +2,7 @@
 
 import { draw_stick_dial } from '../stick-renderer.js';
 import { dec2hex32, float_to_str, la } from '../utils.js';
+import { Storage } from '../storage.js';
 import { auto_calibrate_stick_centers } from './calib-center-modal.js';
 import { calibrate_range } from './calib-range-modal.js';
 
@@ -496,13 +497,12 @@ export class Finetune {
   // Private methods
 
   /**
-   * Restore the show raw numbers checkbox state from localStorage
+   * Restore the show raw numbers checkbox state from storage
    */
   _restoreShowRawNumbersCheckbox() {
-    const savedState = localStorage.getItem('showRawNumbersCheckbox');
-    if (savedState) {
-      const isChecked = savedState === 'true';
-      $("#showRawNumbersCheckbox").prop('checked', isChecked);
+    const isChecked = Storage.showRawNumbersCheckbox.get();
+    if (isChecked) {
+      $("#showRawNumbersCheckbox").prop('checked', true);
     }
   }
 
@@ -740,7 +740,7 @@ export class Finetune {
     const showRawNumbers = $("#showRawNumbersCheckbox").is(":checked");
     const modal = $("#finetuneModal");
     modal.toggleClass("hide-raw-numbers", !showRawNumbers);
-    localStorage.setItem('showRawNumbersCheckbox', showRawNumbers);
+    Storage.showRawNumbersCheckbox.set(showRawNumbers);
 
     this.refresh_finetune_sticks();
   }
@@ -1156,25 +1156,23 @@ export class Finetune {
   }
 
   /**
-   * Save step size to localStorage
+   * Save step size to storage
    */
   _saveStepSizeToLocalStorage() {
-    localStorage.setItem('finetuneCenterStepSize', this._centerStepSize.toString());
-    localStorage.setItem('finetuneCircularityStepSize', this._circularityStepSize.toString());
+    Storage.finetuneCenterStepSize.set(this._centerStepSize);
+    Storage.finetuneCircularityStepSize.set(this._circularityStepSize);
   }
 
   /**
-   * Restore step size from localStorage
+   * Restore step size from storage
    */
   _restoreStepSizeFromLocalStorage() {
-    // Restore center step size
-    const savedCenterStepSize = localStorage.getItem('finetuneCenterStepSize');
+    const savedCenterStepSize = Storage.finetuneCenterStepSize.get();
     if (savedCenterStepSize) {
       this._centerStepSize = parseInt(savedCenterStepSize);
     }
 
-    // Restore circularity step size
-    const savedCircularityStepSize = localStorage.getItem('finetuneCircularityStepSize');
+    const savedCircularityStepSize = Storage.finetuneCircularityStepSize.get();
     if (savedCircularityStepSize) {
       this._circularityStepSize = parseInt(savedCircularityStepSize);
     }

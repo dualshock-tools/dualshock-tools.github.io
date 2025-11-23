@@ -1,6 +1,7 @@
 'use strict';
 
-import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, initAnalyticsApi, la, createCookie, readCookie } from './utils.js';
+import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, initAnalyticsApi, la } from './utils.js';
+import { Storage } from './storage.js';
 import { initControllerManager } from './controller-manager.js';
 import ControllerFactory from './controllers/controller-factory.js';
 import { lang_init, l } from './translations.js';
@@ -118,9 +119,8 @@ function gboot() {
 
     $("input[name='displayMode']").on('change', on_stick_mode_change);
 
-    // Setup edge modal "Don't show again" checkbox
     $('#edgeModalDontShowAgain').on('change', function() {
-      localStorage.setItem('edgeModalDontShowAgain', this.checked.toString());
+      Storage.edgeModalDontShowAgain.set(this.checked);
     });
   }
 
@@ -310,7 +310,7 @@ async function continue_connection({data, device}) {
       }
     }
 
-    localStorage.setItem('lastConnectedController', JSON.stringify(lastConnectedInfo));
+    Storage.lastConnectedController.set(lastConnectedInfo);
     updateLastConnectedInfo();
 
     // Initialize SVG controller based on model
@@ -405,17 +405,15 @@ async function disconnect() {
 function updateLastConnectedInfo() {
   const $lastConnected = $("#lastConnected");
   const $infoDiv = $("#lastConnectedInfo");
-  const lastConnectedInfo = localStorage.getItem('lastConnectedController');
+  const info = Storage.lastConnectedController.get();
 
-  if (!lastConnectedInfo) {
+  if (!info) {
     console.log("No last connected info found.", $lastConnected);
     $lastConnected.hide();
     return;
   }
 
   try {
-    const info = JSON.parse(lastConnectedInfo);
-
     const parts = [];
     if (info.color) parts.push(info.color);
     if (info.boardModel) parts.push(info.boardModel);
@@ -429,10 +427,7 @@ function updateLastConnectedInfo() {
     $infoDiv.text(text);
 
     if (info.serialNumber) {
-      const storageKey = `changes_${info.serialNumber}`;
-      const savedChangesState = localStorage.getItem(storageKey);
-      const hasChanges = savedChangesState ? JSON.parse(savedChangesState) : false;
-
+      const hasChanges = Storage.hasChangesState.get(info.serialNumber);
       const $warning = $("#lastConnectedWarning");
       $warning.toggle(hasChanges);
     }
@@ -497,7 +492,7 @@ function set_edge_progress(score) {
 }
 
 function show_welcome_modal() {
-  const already_accepted = readCookie("welcome_accepted");
+  const already_accepted = Storage.getString("welcome_accepted");
   if(already_accepted == "1")
     return;
 
@@ -506,7 +501,7 @@ function show_welcome_modal() {
 
 function welcome_accepted() {
   la("welcome_accepted");
-  createCookie("welcome_accepted", "1");
+  Storage.setString("welcome_accepted", "1");
   $("#welcomeModal").modal("hide");
 }
 
@@ -861,7 +856,7 @@ function detectFailedRangeCalibration(changes) {
 
   if (failedCalibration && !app.shownRangeCalibrationWarning && !hasOpenModals) {
     app.failedCalibrationCount++;
-    localStorage.setItem('failedCalibrationCount', app.failedCalibrationCount.toString());
+    Storage.failedCalibrationCount.set(app.failedCalibrationCount);
 
     app.shownRangeCalibrationWarning = true;
     if (app.failedCalibrationCount <= 6) {  // keep it from getting annoying
@@ -1088,8 +1083,7 @@ function show_donate_modal() {
 
 function show_edge_modal() {
   // Check if user has chosen not to show the modal again
-  const dontShowAgain = localStorage.getItem('edgeModalDontShowAgain');
-  if (dontShowAgain === 'true') {
+  if (Storage.edgeModalDontShowAgain.get()) {
     return;
   }
 
@@ -1268,7 +1262,7 @@ window.setCenterCalibrationMethod = (method, event) => {
     event.stopPropagation();
   }
   app.centerCalibrationMethod = method;
-  localStorage.setItem('centerCalibrationMethod', method);
+  Storage.centerCalibrationMethod.set(method);
   updateCalibrationMethodUI();
   // Close the dropdown
   const dropdownButton = event?.target?.closest('.dropdown-menu')?.previousElementSibling;
@@ -1310,7 +1304,7 @@ window.setRangeCalibrationMethod = (method, event) => {
     event.stopPropagation();
   }
   app.rangeCalibrationMethod = method;
-  localStorage.setItem('rangeCalibrationMethod', method);
+  Storage.rangeCalibrationMethod.set(method);
   updateCalibrationMethodUI();
   // Close the dropdown
   const dropdownButton = event?.target?.closest('.dropdown-menu')?.previousElementSibling;
@@ -1342,19 +1336,19 @@ function updateCalibrationMethodUI() {
 }
 
 function initCalibrationMethod() {
-  const savedCenterMethod = localStorage.getItem('centerCalibrationMethod');
+  const savedCenterMethod = Storage.centerCalibrationMethod.get();
   if (savedCenterMethod && (savedCenterMethod === 'quick' || savedCenterMethod === 'four-step')) {
     app.centerCalibrationMethod = savedCenterMethod;
   }
 
-  const savedRangeMethod = localStorage.getItem('rangeCalibrationMethod');
+  const savedRangeMethod = Storage.rangeCalibrationMethod.get();
   if (savedRangeMethod && (savedRangeMethod === 'normal' || savedRangeMethod === 'expert')) {
     app.rangeCalibrationMethod = savedRangeMethod;
   }
 
-  const savedFailedCalibrationCount = localStorage.getItem('failedCalibrationCount');
-  if (savedFailedCalibrationCount) {
-    app.failedCalibrationCount = parseInt(savedFailedCalibrationCount, 10);
+  const savedFailedCalibrationCount = Storage.failedCalibrationCount.get();
+  if (savedFailedCalibrationCount > 0) {
+    app.failedCalibrationCount = savedFailedCalibrationCount;
   }
 
   updateCalibrationMethodUI();

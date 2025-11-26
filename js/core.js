@@ -875,6 +875,13 @@ function isRangeCalibrationVisible() {
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
 
+  // Open Quick Test modal if options button is pressed while L1 is held down
+  if (changes.options && controller.button_states.l1) {
+    update_ds_button_svg({ l1: false }, buttonMap); // Clear L1
+    show_quick_test_modal(controller);
+    return;
+  }
+
   // Update range calibration modal stick visualization if visible
   if (isRangeCalibrationVisible() && changes.sticks) {
     collectCircularityData(changes.sticks, ll_data, rr_data);

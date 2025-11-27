@@ -25,7 +25,8 @@ const app = {
   last_disable_btn: 0,
 
   shownRangeCalibrationWarning: false,
-  failedCalibrationCount: 0,
+  failedCalibrationDetectionsCount: 0,
+  failedCalibrationModalShownCount: 0,
 
   // Calibration method preference
   centerCalibrationMethod: 'four-step', // 'quick' or 'four-step'
@@ -390,6 +391,7 @@ async function disconnect() {
   app.gj = 0;
   app.disable_btn = 0;
   app.shownRangeCalibrationWarning = false;
+  app.failedCalibrationDetectionsCount = 0;
   update_disable_btn();
 
   await controller.disconnect();
@@ -855,8 +857,13 @@ function detectFailedRangeCalibration(changes) {
   const hasOpenModals = document.querySelectorAll('.modal.show').length > 0;
 
   if (failedCalibration && !app.shownRangeCalibrationWarning && !hasOpenModals) {
-    app.failedCalibrationCount++;
-    Storage.failedCalibrationCount.set(app.failedCalibrationCount);
+    app.failedCalibrationDetectionsCount++;
+    if (app.failedCalibrationDetectionsCount < 5) {
+      return; // require 5 consecutive detections
+    }
+
+    app.failedCalibrationModalShownCount++;
+    Storage.failedCalibrationCount.set(app.failedCalibrationModalShownCount);
 
     app.shownRangeCalibrationWarning = true;
     if (app.failedCalibrationCount <= 6) {  // keep it from getting annoying
@@ -1310,6 +1317,7 @@ window.executeSelectedRangeCalibration = () => {
       if(message) {
         infoAlert(message, 2_000);
       }
+      switchToRangeMode();
     },
     app.rangeCalibrationMethod === 'expert'
   );
@@ -1335,7 +1343,7 @@ function initCalibrationMethod() {
 
   const savedFailedCalibrationCount = Storage.failedCalibrationCount.get();
   if (savedFailedCalibrationCount > 0) {
-    app.failedCalibrationCount = savedFailedCalibrationCount;
+    app.failedCalibrationModalShownCount = savedFailedCalibrationCount;
   }
 
   updateCalibrationMethodUI();

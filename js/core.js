@@ -391,6 +391,7 @@ async function disconnect() {
   app.gj = 0;
   app.disable_btn = 0;
   app.shownRangeCalibrationWarning = false;
+  app.failedCalibrationDetectionsCount = 0;
   update_disable_btn();
 
   await controller.disconnect();

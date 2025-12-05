@@ -1317,6 +1317,7 @@ window.executeSelectedRangeCalibration = () => {
       if(message) {
         infoAlert(message, 2_000);
       }
+      switchToRangeMode();
     },
     app.rangeCalibrationMethod === 'expert'
   );

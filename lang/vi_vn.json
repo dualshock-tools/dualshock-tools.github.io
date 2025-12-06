@@ -127,7 +127,6 @@
     "Board Model": "Mẫu bo mạch",
     "This feature is experimental.": "Tính năng này mang tính thử nghiệm.",
     "Please let me know if the board model of your controller is not detected correctly.": "Nếu mẫu bo mạch của tay cầm không được phát hiện chính xác, vui lòng cho tao biết.",
-    "Board model detection thanks to": "Phát hiện mẫu bo mạch nhờ",
     "This DualSense controller has outdated firmware.": "Tay cầm DualSense này có firmware đã lỗi thời.",
     "Please update the firmware and try again.": "Vui lòng cập nhật firmware và thử lại.",
     "Joystick Info": "Thông tin Joystick",
@@ -199,7 +198,6 @@
     "Cannot store data into": "Không thể lưu dữ liệu vào",
     "Cannot unlock": "Không thể mở khóa",
     "Color": "Màu sắc",
-    "Color detection thanks to": "Phát hiện màu sắc nhờ",
     "Left Module Barcode": "Mã vạch Mô-đun Trái",
     "Right Module Barcode": "Mã vạch Mô-đun Phải",
     "left module": "mô-đun trái",
@@ -308,6 +306,8 @@
     "skipped": "đã bỏ qua",
     "tests completed": "bài kiểm tra đã hoàn thành",
     "to increase the non-circularity.": "để tăng độ không tròn.",
+    "Cannot copy text to the clipboard:": "",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
+    "The item has been copied to the clipboard.": "",
     "": ""
 }

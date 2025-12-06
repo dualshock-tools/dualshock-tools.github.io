@@ -126,7 +126,6 @@
     "Board Model": "Kart Modeli",
     "This feature is experimental.": "Bu özellik deneysel.",
     "Please let me know if the board model of your controller is not detected correctly.": "Denetleyicinizin kart modeli doğru tespit edilmezse lütfen bana bildirin.",
-    "Board model detection thanks to": "Kart modeli tespiti sayesinde",
     "This DualSense controller has outdated firmware.": "Bu DualSense denetleyicisinin yazılımı güncel değil.",
     "Please update the firmware and try again.": "Lütfen yazılımı güncelleyin ve tekrar deneyin.",
     "Joystick Info": "Joystick Bilgisi",
@@ -167,7 +166,6 @@
     "Chroma Teal": "Kroma Turkuaz",
     "Cobalt Blue": "Kobalt Mavisi",
     "Color": "Renk",
-    "Color detection thanks to": "Renk tespiti sayesinde",
     "Controller Info": "Denetleyici Bilgisi",
     "Cosmic Red": "Kozmik Kırmızı",
     "Debug Info": "Hata Ayıklama Bilgisi",
@@ -308,6 +306,8 @@
     "skipped": "Atlanmış",
     "tests completed": "Tamamlanan Testler",
     "to increase the non-circularity.": "Dairesellikten sapmayı artırmak için.",
-    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Lütfen bir DualShock 4, DualSense, DualSense Edge veya VR2 kontrolcüsünü bilgisayarınıza bağlayın ve ‘Bağlan’ butonuna basın.",
+    "Cannot copy text to the clipboard:": "",
+    "The item has been copied to the clipboard.": "",
     "": ""
 }

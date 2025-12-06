@@ -126,7 +126,6 @@
     "Board Model": "Modello scheda",
     "This feature is experimental.": "Questa funzionalità è sperimentale.",
     "Please let me know if the board model of your controller is not detected correctly.": "Scrivimi se il modello della scheda del tuo controller non viene riconosciuto correttamente.",
-    "Board model detection thanks to": "Rilevamento del modello della scheda grazie a",
     "This DualSense controller has outdated firmware.": "Questo controller DualSense ha un firmware non aggiornato.",
     "Please update the firmware and try again.": "Aggiorna il firmware e riprova.",
     "Joystick Info": "Informazioni sui Joystick",
@@ -197,7 +196,6 @@
     "Cannot store data into": "Non riesco a salvare i dati nel",
     "Cannot unlock": "Non riesco a sbloccare il",
     "Color": "Colore",
-    "Color detection thanks to": "Riconoscimento colore grazie a",
     "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "Se la calibrazione non è salvata permanentemente, controlla i cablaggi della mod hardware.",
     "Left Module Barcode": "Codice modulo sinistro",
     "Right Module Barcode": "Codice modulo destro",
@@ -308,6 +306,8 @@
     "tests completed": "test completati",
     "to increase the non-circularity.": "per aumentare la non-circolarità.",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Connetti un controller DualShock 4, DualSense, DualSense Edge o VR2 al computer e premi Connetti.",
-    "The device appears to be a clone. All calibration functionality is disabled.": "",
+    "Cannot copy text to the clipboard:": "Non posso copiare il testo negli appunti:",
+    "The device appears to be a clone. All calibration functionality is disabled.": "Il dispositivo sembra un clone. Le funzioni di calibrazione sono disattivate.",
+    "The item has been copied to the clipboard.": "Testo copiato negli appunti.",
     "": ""
 }

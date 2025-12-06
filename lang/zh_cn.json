@@ -126,7 +126,6 @@
     "Board Model": "主板型号",
     "This feature is experimental.": "此功能为实验性质。",
     "Please let me know if the board model of your controller is not detected correctly.": "如果没有正确检测您手柄的主板型号，请告诉我。",
-    "Board model detection thanks to": "主板型号检测功能需要感谢",
     "This DualSense controller has outdated firmware.": "该DualSense手柄的固件已过时。",
     "Please update the firmware and try again.": "请更新固件后重试。",
     "Joystick Info": "摇杆信息",
@@ -198,7 +197,6 @@
     "Cannot store data into": "无法将数据存储到",
     "Cannot unlock": "无法解锁",
     "Color": "颜色",
-    "Color detection thanks to": "颜色检测由",
     "Left Module Barcode": "左侧模块条形码",
     "Right Module Barcode": "右侧模块条形码",
     "left module": "左侧模块",
@@ -307,7 +305,9 @@
     "skipped": "跳过",
     "tests completed": "测试已完成",
     "to increase the non-circularity.": "增加非圆度",
+    "Cannot copy text to the clipboard:": "",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
     "The device appears to be a clone. All calibration functionality is disabled.": "",
+    "The item has been copied to the clipboard.": "",
     "": ""
 }

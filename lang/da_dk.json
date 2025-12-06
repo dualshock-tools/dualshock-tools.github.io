@@ -127,7 +127,6 @@
     "Board Model": "Board Model",
     "This feature is experimental.": "Denne funktion er eksperimentel.",
     "Please let me know if the board model of your controller is not detected correctly.": "Giv mig venligst besked, hvis board modellen på din controller ikke bliver registreret korrekt.",
-    "Board model detection thanks to": "Board model detektion, tak til",
     "This DualSense controller has outdated firmware.": "Denne DualSense controller har forældet firmware.",
     "Please update the firmware and try again.": "Opdater venligst firmwaren og prøv igen.",
     "Joystick Info": "Joystick Info",
@@ -182,7 +181,6 @@
     "Chroma Teal": "Chroma Teal",
     "Cobalt Blue": "Cobalt Blue",
     "Color": "Farve",
-    "Color detection thanks to": "Farvedetektering, tak til",
     "Cosmic Red": "Cosmic Red",
     "DualSense Edge Calibration": "DualSense Edge Kalibrering",
     "FW Update": "FW Opdatering",
@@ -311,6 +309,8 @@
     "skipped": "sprunget over",
     "tests completed": "tests er gennemført",
     "to increase the non-circularity.": "for at øge ikke-cirkulariteten.",
+    "Cannot copy text to the clipboard:": "",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
+    "The item has been copied to the clipboard.": "",
     "": ""
 }

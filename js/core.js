@@ -885,20 +885,11 @@ function render_info_to_dom(infoItems) {
   if (!Array.isArray(infoItems)) return;
 
   // Add new info items
-  infoItems.forEach(({key, value, addInfoIcon, severity, isExtra, cat}) => {
+  infoItems.forEach(({key, value, addInfoIcon, severity, isExtra, cat, copyable}) => {
     if (!key) return;
 
     // Compose value with optional info icon
     let valueHtml = String(value ?? "");
-    if (addInfoIcon === 'board') {
-      const icon = '&nbsp;<a class="link-body-emphasis" href="#" onclick="board_model_info()">' +
-      '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
-      valueHtml += icon;
-    } else if (addInfoIcon === 'color') {
-      const icon = '&nbsp;<a class="link-body-emphasis" href="#" onclick="edge_color_info()">' +
-      '<svg class="bi" width="1.3em" height="1.3em"><use xlink:href="#info"/></svg></a>';
-      valueHtml += icon;
-    }
 
     // Apply severity formatting if requested
     if (severity) {
@@ -908,25 +899,43 @@ function render_info_to_dom(infoItems) {
     }
 
     if (isExtra) {
-      append_info_extra(key, valueHtml, cat || "hw");
+      appendInfoExtra(key, valueHtml, cat || "hw", copyable ?? false);
     } else {
-      append_info(key, valueHtml, cat || "hw");
+      appendInfo(key, valueHtml, cat || "hw", copyable ?? false);
     }
   });
 }
 
-function append_info_extra(key, value, cat) {
+function copyValueToClipboard(text) {
+  navigator.clipboard.writeText(text).then(function() {
+    infoAlert(l("The item has been copied to the clipboard."), 2000);
+  }).catch(function(err) {
+    errorAlert(l("Cannot copy text to the clipboard:") + " " + str(err));
+  });
+}
+
+function genCopyString(value, copyable) {
+  if(!copyable)
+    return '';
+
+  const cleanStringRegex = value.match(/^[A-Za-z0-9_.-]+/);
+  const escapedValue = cleanStringRegex ? cleanStringRegex[0] : "";
+
+  return '&nbsp;<i style="cursor:pointer;" class="fa-regular fa-copy" onclick=\'copyValueToClipboard("' + escapedValue + '")\'></i>';
+}
+
+function appendInfoExtra(key, value, cat, copyable) {
   // TODO escape html
-  const s = '<dt class="text-muted col-sm-4 col-md-6 col-xl-5">' + key + '</dt><dd class="col-sm-8 col-md-6 col-xl-7" style="text-align: right;">' + value + '</dd>';
+  const s = '<dt class="text-muted col-sm-4 col-md-6 col-xl-5">' + key + '</dt><dd class="col-sm-8 col-md-6 col-xl-7" style="text-align: right;">' + value + genCopyString(value, copyable) + '</dd>';
   $("#fwinfoextra-" + cat).html($("#fwinfoextra-" + cat).html() + s);
 }
 
 
-function append_info(key, value, cat) {
+function appendInfo(key, value, cat, copyable) {
   // TODO escape html
-  const s = '<dt class="text-muted col-6">' + key + '</dt><dd class="col-6" style="text-align: right;">' + value + '</dd>';
+  const s = '<dt class="text-muted col-6">' + key + '</dt><dd class="col-6" style="text-align: right;">' + value + genCopyString(value, copyable) + '</dd>';
   $("#fwinfo").html($("#fwinfo").html() + s);
-  append_info_extra(key, value, cat);
+  appendInfoExtra(key, value, cat, copyable);
 }
 
 function show_popup(text, is_html = false) {
@@ -962,25 +971,6 @@ function show_edge_modal() {
 function show_info_tab() {
   la("info_modal");
   $('#info-tab').tab('show');
-}
-
-function discord_popup() {
-  la("discord_popup");
-  show_popup(l("My handle on discord is: the_al"));
-}
-
-function edge_color_info() {
-  la("cm_info");
-  const text = l("Color detection thanks to") + ' romek77 from Poland.';
-  show_popup(text, true);
-}
-
-function board_model_info() {
-  la("bm_info");
-  const l1 = l("This feature is experimental.");
-  const l2 = l("Please let me know if the board model of your controller is not detected correctly.");
-  const l3 = l("Board model detection thanks to") + ' <a href="https://battlebeavercustoms.com/">Battle Beaver Customs</a>.';
-  show_popup(l3 + "<br><br>" + l1 + " " + l2, true);
 }
 
 // Alert Management Functions
@@ -1068,6 +1058,7 @@ window.connect = connect;
 window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
+window.copyValueToClipboard = copyValueToClipboard;
 window.calibrate_range = () => calibrate_range(
   controller,
   { ll_data, rr_data },
@@ -1112,8 +1103,6 @@ window.nvsunlock = nvsunlock;
 window.nvslock = nvslock;
 window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
-window.board_model_info = board_model_info;
-window.edge_color_info = edge_color_info;
 window.show_quick_test_modal = () => {
   show_quick_test_modal(controller).catch(error => {
     throw new Error("Failed to show quick test modal", { cause: error });

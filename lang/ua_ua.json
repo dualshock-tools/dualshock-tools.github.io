@@ -126,7 +126,6 @@
     "Board Model": "Модель плати",
     "This feature is experimental.": "Ця функція є експериментальною.",
     "Please let me know if the board model of your controller is not detected correctly.": "Будь ласка, повідомте, якщо модель плати вашого контролера визначена неправильно.",
-    "Board model detection thanks to": "Визначення моделі плати завдяки",
     "This DualSense controller has outdated firmware.": "Прошивка цього контролера DualSense застаріла.",
     "Please update the firmware and try again.": "Будь ласка, оновіть прошивку та спробуйте знову.",
     "Joystick Info": "Інформація про джойстик",
@@ -200,7 +199,6 @@
     "Cannot unlock": "Не вдалося розблокувати",
     "Cobalt Blue": "Кобальтово-синій",
     "Color": "Колір",
-    "Color detection thanks to": "Розпізнавання кольору завдяки",
     "Cosmic Red": "Космічний червоний",
     "Galactic Purple": "Галактичний пурпуровий",
     "God of War Ragnarok": "Обмежена серія God of War: Ragnarok",
@@ -309,5 +307,7 @@
     "to increase the non-circularity.": "щоб збільшити неокруглість.",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Під’єднайте контролер DualShock 4, DualSense, DualSense Edge або VR2 до комп’ютера та натисніть «Підключити».",
     "The device appears to be a clone. All calibration functionality is disabled.": "Схоже, цей пристрій є підробкою. Усі функції калібрування вимкнено.",
+    "Cannot copy text to the clipboard:": "",
+    "The item has been copied to the clipboard.": "",
     "": ""
 }

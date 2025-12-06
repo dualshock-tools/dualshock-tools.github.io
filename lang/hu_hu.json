@@ -126,7 +126,6 @@
     "Board Model": "Alaplap verzió",
     "This feature is experimental.": "Ez egy kisérleti funkció",
     "Please let me know if the board model of your controller is not detected correctly.": "Kérlek értesítsd a fejlesztőt, ha az alaplap verziója nem egyezik meg a felimert verzióval!",
-    "Board model detection thanks to": "Az alaplapfelismerési funkciőért köszönet illeti:",
     "This DualSense controller has outdated firmware.": "Ennek a DualSense vezérlőnek elavult a firmware-e.",
     "Please update the firmware and try again.": "Kérlek frissítsd a firmware-t, és próbáld újra.",
     "Joystick Info": "Analógkar Információ",
@@ -197,7 +196,6 @@
     "Cannot store data into": "Adatok tárolása nem lehetséges ide:",
     "Cannot unlock": "Feloldás nem lehetséges",
     "Color": "Szín",
-    "Color detection thanks to": "A színészlelésért köszönet illeti:",
     "If the calibration is not stored permanently, please double-check the wirings of the hardware mod.": "Ha a kalibráció nem került véglegesen tárolásra, kérlek, ellenőrizd újra a hardvermódosítás vezetékezését!",
     "Left Module Barcode": "Bal modul vonalkódja",
     "Right Module Barcode": "Jobb modul vonalkódja",
@@ -314,5 +312,7 @@
     "skipped": "kihagyva",
     "tests completed": "befejezett teszt",
     "to increase the non-circularity.": "a nem-körkörösség növeléséhez.",
+    "Cannot copy text to the clipboard:": "",
+    "The item has been copied to the clipboard.": "",
     "": ""
 }

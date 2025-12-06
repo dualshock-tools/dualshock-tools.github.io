@@ -178,7 +178,7 @@ class DS4Controller extends BaseController {
 
       if(!is_clone) {
         // Add Board Model (UI will append the info icon)
-        infoItems.push({ key: l("Board Model"), value: this.hwToBoardModel(hw_ver_minor), cat: "hw", addInfoIcon: 'board' });
+        infoItems.push({ key: l("Board Model"), value: this.hwToBoardModel(hw_ver_minor), cat: "hw", addInfoIcon: 'board', copyable: true });
 
         const bd_addr = await this.getBdAddr();
         infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw" });

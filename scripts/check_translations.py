@@ -20,6 +20,7 @@
 # Usage:
 #   python3 scripts/check_translations.py           # Normal output
 #   python3 scripts/check_translations.py --verbose # Show excluded strings
+#   python3 scripts/check_translations.py --compact # Compact output (no language details)
 #   python3 scripts/check_translations.py --json    # Output in JSON format
 
 import os
@@ -31,6 +32,7 @@ from pathlib import Path
 # Check for flags
 VERBOSE = '--verbose' in sys.argv or '-v' in sys.argv
 JSON_OUTPUT = '--json' in sys.argv
+COMPACT = '--compact' in sys.argv
 
 # Directories to scan
 ROOT_DIR = Path(".")
@@ -48,7 +50,6 @@ EXCLUDE_PATTERNS = [
     r'^[\w-]+\.[\w-]+$',  # CSS compound selectors like circle.ds-touch
     r'^path,rect,circle',  # SVG element lists
     r'^\\x[0-9a-fA-F]+$',  # Hex escape sequences
-    r'^(hide|show)$',  # Common CSS display values
 ]
 
 # Whitelist of strings that are in language files but should be ignored by unused check
@@ -189,7 +190,7 @@ def extract_l_function_strings(js_files):
     # Pattern to match l("string") or l('string') or this.l("string") or this.l('string')
     # Handles both single and double quotes
     # Use word boundary \b to ensure 'l' is not part of a larger word (e.g., .html)
-    pattern = r'(?:this\.)?\bl\s*\(\s*["\']([^"\']+)["\']\s*\)'
+    pattern = r'(?:this\.)?\bl\s*\(\s*["\'`]([^"\'`]+)["\'`]\s*\)'
 
     for js_file in js_files:
         try:
@@ -235,7 +236,10 @@ def extract_html_strings_from_js(js_files):
 
     # Pattern to match elements with ds-i18n class in HTML strings
     # This handles HTML within JavaScript strings (both single and double quotes)
-    pattern = r'<(\w+)[^>]*class=["\'][^"\']*ds-i18n[^"\']*["\'][^>]*>(.*?)</\1>'
+    pattern = r'<(\w+)[^>]*class=["\'`][^"\'`]*ds-i18n[^"\'`]*["\'`][^>]*>(.*?)</\1>'
+
+    # Pattern to match template literal function calls like ${l('string')} or ${l("string")}
+    template_literal_pattern = r'\$\{l\s*\(\s*["\'`]([^"\'`]+)["\'`]\s*\)\}'
 
     for js_file in js_files:
         try:
@@ -266,18 +270,39 @@ def extract_html_strings_from_js(js_files):
                         # Otherwise, keep the original text with simple formatting tags
 
                     if text:
-                        # Calculate line and column number using original content
-                        line_num = original_content[:match.start()].count('\n') + 1
-                        col_num = match.start() - original_content[:match.start()].rfind('\n')
+                        # Extract any template literal function calls like ${l('string')}
+                        template_matches = re.finditer(template_literal_pattern, text)
+                        for template_match in template_matches:
+                            extracted_string = template_match.group(1)
+                            if extracted_string:
+                                # Calculate line and column number using original content
+                                line_num = original_content[:match.start()].count('\n') + 1
+                                col_num = match.start() - original_content[:match.start()].rfind('\n')
 
-                        # Store location info
-                        if text not in strings:
-                            strings[text] = []
-                        strings[text].append({
-                            'file': str(js_file),
-                            'line': line_num,
-                            'col': col_num
-                        })
+                                # Store location info
+                                if extracted_string not in strings:
+                                    strings[extracted_string] = []
+                                strings[extracted_string].append({
+                                    'file': str(js_file),
+                                    'line': line_num,
+                                    'col': col_num
+                                })
+
+                        # Also handle text that doesn't contain template literal patterns
+                        # (for backwards compatibility with non-template literal strings)
+                        if not re.search(template_literal_pattern, text):
+                            # Calculate line and column number using original content
+                            line_num = original_content[:match.start()].count('\n') + 1
+                            col_num = match.start() - original_content[:match.start()].rfind('\n')
+
+                            # Store location info
+                            if text not in strings:
+                                strings[text] = []
+                            strings[text].append({
+                                'file': str(js_file),
+                                'line': line_num,
+                                'col': col_num
+                            })
 
         except Exception as e:
             print(f"Error reading {js_file}: {e}")
@@ -456,16 +481,16 @@ def main():
         print("-" * 80)
         for string in sorted(missing_translations):
             print(f"  - \"{string}\"")
-            # Show first location where this string was found
-            if string in used_strings_with_locations:
+            # Show first location where this string was found (skip in compact mode)
+            if not COMPACT and string in used_strings_with_locations:
                 locations = used_strings_with_locations[string]
                 if locations:
                     loc = locations[0]
                     print(f"    → {loc['file']}:{loc['line']}:{loc['col']}")
                     if len(locations) > 1:
                         print(f"    (and {len(locations) - 1} more location{'s' if len(locations) > 2 else ''})")
-            # Show which languages are missing this translation
-            if string in missing_by_language:
+            # Show which languages are missing this translation (skip in compact mode)
+            if not COMPACT and string in missing_by_language:
                 missing_langs = missing_by_language[string]
                 if len(missing_langs) == len(keys_by_language):
                     print(f"    Missing from: ALL languages ({len(missing_langs)})")

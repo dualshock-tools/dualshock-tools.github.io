@@ -417,7 +417,7 @@ function updateLastConnectedInfo() {
 
   try {
     const parts = [];
-    if (info.color) parts.push(info.color);
+    if (info.color) parts.push(l(info.color));
     if (info.boardModel) parts.push(info.boardModel);
     if (info.deviceName) parts.push(info.deviceName);
 

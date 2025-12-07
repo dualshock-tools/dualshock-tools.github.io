@@ -56,7 +56,7 @@ export class CalibrationHistoryModal {
     const container = document.getElementById('historyListContainer');
 
     if (!history || history.length === 0) {
-      container.innerHTML = `<p class="text-muted ds-i18n">${l('No saved calibrations found')}.</p>`;
+      container.innerHTML = `<p class="text-muted ds-i18n">${l('No saved calibrations found.')}</p>`;
       document.getElementById('clearAllBtn').style.display = 'none';
       return;
     }

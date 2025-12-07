@@ -11,8 +11,6 @@ import {
 } from '../utils.js';
 import { l } from '../translations.js';
 
-const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
-
 // DS4 Button mapping configuration
 const DS4_BUTTON_MAP = [
   { name: 'up', byte: 4, mask: 0x0 }, // Dpad handled separately
@@ -133,6 +131,10 @@ class DS4Controller extends BaseController {
     return DS4_INPUT_CONFIG;
   }
 
+  async getSerialNumber() {
+    return await this.getBdAddr();
+  }
+
   async getInfo() {
     // Device-only: collect info and return a common structure; do not touch the DOM
     try {
@@ -169,24 +171,29 @@ class DS4Controller extends BaseController {
         deviceTypeText = l("clone");
       }
 
+      const hw_version = `${dec2hex(hw_ver_major)}:${dec2hex(hw_ver_minor)}`;
+      const sw_version = `${dec2hex(sw_ver_major)}:${dec2hex(sw_ver_minor)}`;
       const infoItems = [
         { key: l("Build Date"), value: `${k1} ${k2}`, cat: "fw" },
-        { key: l("HW Version"), value: `${dec2hex(hw_ver_major)}:${dec2hex(hw_ver_minor)}`, cat: "hw" },
-        { key: l("SW Version"), value: `${dec2hex32(sw_ver_major)}:${dec2hex(sw_ver_minor)}`, cat: "fw" },
+        { key: l("HW Version"), value: hw_version, cat: "hw" },
+        { key: l("SW Version"), value: sw_version, cat: "fw" },
         { key: l("Device Type"), value: deviceTypeText, cat: "hw", severity: is_clone ? 'danger' : undefined },
       ];
 
+      const board_model = this.hwToBoardModel(hw_ver_minor);
+      const bd_addr = await this.getBdAddr();
+
       if(!is_clone) {
         // Add Board Model (UI will append the info icon)
-        infoItems.push({ key: l("Board Model"), value: this.hwToBoardModel(hw_ver_minor), cat: "hw", addInfoIcon: 'board', copyable: true });
-
-        const bd_addr = await this.getBdAddr();
+        infoItems.push({ key: l("Board Model"), value: board_model, cat: "hw", addInfoIcon: 'board', copyable: true });
         infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw" });
       }
 
       const nv = await this.queryNvStatus();
       const rare = this.isRare(hw_ver_minor);
       const disable_bits = is_clone ? 1 : 0; // 1: clone
+
+      la("ds4_get_info", { hw_version, board_model, bd_addr, is_clone });  // Collect Bluetooth address for analytics
 
       return { ok: true, infoItems, nv, disable_bits, rare };
     } catch(error) {
@@ -256,7 +263,7 @@ class DS4Controller extends BaseController {
         la("ds4_calibrate_range_begin_failed", {"d1": d1, "d2": d2});
         return {
           ok: false,
-          error: new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          error: new Error(`Stick range calibration begin failed: ${d1}, ${d2}`),
           code: 1, d1, d2
         };
       }
@@ -304,7 +311,7 @@ class DS4Controller extends BaseController {
         la("ds4_calibrate_sticks_begin_failed", {"d1": d1, "d2": d2});
         return {
           ok: false,
-          error: new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG)),
+          error: new Error(`Stick center calibration begin failed: ${d1}, ${d2}`),
           code: 1, d1, d2,
         };
       }
@@ -420,29 +427,29 @@ class DS4Controller extends BaseController {
     const bat_status = (bat >> 4) & 1;
     const cable_connected = bat_status === 1;
 
-    let bat_capacity = 0;
+    let charge_level = 0;
     let is_charging = false;
     let is_error = false;
 
     if (cable_connected) {
       if (bat_data < 10) {
-        bat_capacity = Math.min(bat_data * 10 + 5, 100);
+        charge_level = Math.min(bat_data * 10 + 5, 100);
         is_charging = true;
       } else if (bat_data === 10) {
-        bat_capacity = 100;
+        charge_level = 100;
         is_charging = true;
       } else if (bat_data === 11) {
-        bat_capacity = 100; // Fully charged
+        charge_level = 100; // Fully charged
       } else {
-        bat_capacity = 0;
+        charge_level = 0;
         is_error = true;
       }
     } else {
       // On battery power
-      bat_capacity = bat_data < 10 ? bat_data * 10 + 5 : 100;
+      charge_level = bat_data < 10 ? bat_data * 10 + 5 : 100;
     }
 
-    return { bat_capacity, cable_connected, is_charging, is_error };
+    return { charge_level, cable_connected, is_charging, is_error };
   }
 
   /**

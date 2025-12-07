@@ -266,6 +266,10 @@ class DS5Controller extends BaseController {
     return DS5_INPUT_CONFIG;
   }
 
+  async getSerialNumber() {
+    return await this.getSystemInfo(1, 19, 17);
+  }
+
   async getInfo() {
     return this._getInfo(false);
   }
@@ -844,7 +848,7 @@ class DS5Controller extends BaseController {
     const bat_charge = bat & 0x0f;
     const bat_status = bat >> 4;
 
-    let bat_capacity = 0;
+    let charge_level = 0;
     let cable_connected = false;
     let is_charging = false;
     let is_error = false;
@@ -852,32 +856,33 @@ class DS5Controller extends BaseController {
     switch (bat_status) {
       case 0:
         // On battery power
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        charge_level = Math.min(bat_charge * 10 + 5, 100);
         break;
       case 1:
         // Charging
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        charge_level = Math.min(bat_charge * 10 + 5, 100);
         is_charging = true;
         cable_connected = true;
         break;
       case 2:
         // Fully charged
-        bat_capacity = 100;
+        charge_level = 100;
         cable_connected = true;
         break;
       case 15:
         // Battery is flat
-        bat_capacity = 0;
+        charge_level = 0;
         is_charging = true;
         cable_connected = true;
         break;
+      case 11: // not sure yet what this error means
       default:
         // Error state
         is_error = true;
         break;
     }
 
-    return { bat_capacity, cable_connected, is_charging, is_error };
+    return { charge_level, cable_connected, is_charging, is_error };
   }
 }
 

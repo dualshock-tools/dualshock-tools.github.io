@@ -1,7 +1,10 @@
 'use strict';
 
 import { sleep, la } from './utils.js';
-import { l } from './translations.js'
+import { l } from './translations.js';
+import { Storage } from './storage.js';
+
+const NOT_GENUINE_SONY_CONTROLLER_MSG = "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.";
 
 /**
 * Controller Manager - Manages the current controller instance and provides unified interface
@@ -35,7 +38,7 @@ class ControllerManager {
     this.batteryStatus = {
       bat_txt: "",
       changed: false,
-      bat_capacity: 0,
+      charge_level: 0,
       cable_connected: false,
       is_charging: false,
       is_error: false
@@ -44,11 +47,72 @@ class ControllerManager {
   }
 
   /**
+  * Save has_changes_to_write state to storage
+  */
+  async _saveHasChangesState() {
+    if (!this.currentController) return;
+    try {
+      const serialNumber = await this.currentController.getSerialNumber();
+      Storage.hasChangesState.set(serialNumber, this.has_changes_to_write);
+    } catch (e) {
+      console.warn('Failed to save changes state:', e);
+    }
+  }
+
+  /**
+  * Restore has_changes_to_write state from storage
+  */
+  async _restoreHasChangesState() {
+    if (!this.currentController) return;
+    try {
+      const serialNumber = await this.currentController.getSerialNumber();
+      const restoredState = Storage.hasChangesState.get(serialNumber);
+      if (restoredState !== null) {
+        this.has_changes_to_write = restoredState;
+        this._updateUI();
+      }
+    } catch (e) {
+      console.warn('Failed to restore changes state:', e);
+    }
+  }
+
+  /**
+  * Update UI based on current has_changes_to_write state
+  */
+  _updateUI() {
+    const saveBtn = $("#savechanges");
+    saveBtn
+      .prop('disabled', !this.has_changes_to_write)
+      .toggleClass('btn-success', this.has_changes_to_write)
+      .toggleClass('btn-outline-secondary', !this.has_changes_to_write);
+  }
+
+  /**
+  * Clear controller state: remove storage entry and reset UI
+  * @private
+  */
+  async _clearControllerState() {
+    if (this.currentController) {
+      try {
+        const serialNumber = await this.currentController.getSerialNumber();
+        Storage.hasChangesState.clear(serialNumber);
+      } catch (e) {
+        console.warn('Failed to clear storage:', e);
+      }
+    }
+    this.has_changes_to_write = false;
+    this._updateUI();
+  }
+
+  /**
   * Set the current controller instance
   * @param {BaseController} controller Controller instance
   */
   setControllerInstance(instance) {
     this.currentController = instance;
+    if (instance) {
+      this._restoreHasChangesState().catch(e => console.warn('Failed to restore changes state:', e));
+    }
   }
 
   /**
@@ -158,13 +222,9 @@ class ControllerManager {
     if (hasChanges === this.has_changes_to_write)
       return;
 
-    const saveBtn = $("#savechanges");
-    saveBtn
-      .prop('disabled', !hasChanges)
-      .toggleClass('btn-success', hasChanges)
-      .toggleClass('btn-outline-secondary', !hasChanges);
-
     this.has_changes_to_write = hasChanges;
+    this._updateUI();
+    this._saveHasChangesState().catch(e => console.warn('Failed to save changes state:', e));
   }
 
   // Unified controller operations that delegate to the current controller
@@ -173,7 +233,7 @@ class ControllerManager {
   * Flash/save changes to the controller
   */
   async flash(progressCallback = null) {
-    this.setHasChangesToWrite(false);
+    await this._clearControllerState();
     return this.currentController.flash(progressCallback);
   }
 
@@ -181,7 +241,8 @@ class ControllerManager {
   * Reset the controller
   */
   async reset() {
-    await this.currentController.reset();
+    await this._clearControllerState();
+    return this.currentController.reset();
   }
 
   /**
@@ -211,7 +272,7 @@ class ControllerManager {
   async calibrateSticksBegin() {
     const res = await this.currentController.calibrateSticksBegin();
     if (!res.ok) {
-      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG), { cause: res.error });
     }
   }
 
@@ -245,7 +306,7 @@ class ControllerManager {
   async calibrateRangeBegin() {
     const res = await this.currentController.calibrateRangeBegin();
     if (!res.ok) {
-      throw new Error(`${l("Stick calibration failed")}. ${res.error?.message}`, { cause: res.error });
+      throw new Error(l(NOT_GENUINE_SONY_CONTROLLER_MSG), { cause: res.error });
     }
   }
 
@@ -253,6 +314,9 @@ class ControllerManager {
   * Handle range calibration on close
   */
   async calibrateRangeOnClose() {
+    if(!this.currentController) {
+      return { success: false };
+    }
     const res = await this.currentController.calibrateRangeEnd();
     if(res?.ok) {
       this.setHasChangesToWrite(true);
@@ -575,7 +639,7 @@ class ControllerManager {
   /**
   * Convert battery percentage to display text with icons
   */
-  _batteryPercentToText({bat_capacity, is_charging, is_error}) {
+  _batteryPercentToText({charge_level, is_charging, is_error}) {
     if (is_error) {
       return '<font color="red">' + l("error") + '</font>';
     }
@@ -587,10 +651,10 @@ class ControllerManager {
       { threshold: 80, icon: 'fa-battery-three-quarters' },
     ];
 
-    const icon_txt = batteryIcons.find(item => bat_capacity < item.threshold)?.icon || 'fa-battery-full';
+    const icon_txt = batteryIcons.find(item => charge_level < item.threshold)?.icon || 'fa-battery-full';
     const icon_full = `<i class="fa-solid ${icon_txt}"></i>`;
     const bolt_txt = is_charging ? '<i class="fa-solid fa-bolt"></i>' : '';
-    return [`${bat_capacity}%`, icon_full, bolt_txt].join(' ');
+    return [`${charge_level}%`, icon_full, bolt_txt].join(' ');
   }
 
   /**

@@ -74,8 +74,23 @@
 
   <div class="container p-2">
 
-    <div id="missinghid" style="display: none;">
-      <p class="ds-i18n">Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).</p>
+    <!-- Unsupported Browser Warning -->
+    <div id="missinghid" style="bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
+      <div class="container">
+        <div style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+          <p class="mb-1">
+            <i class="fas fa-hand"></i>&nbsp;&nbsp;
+            <span class="ds-i18n">Unsupported browser.</span>
+          </p>
+          <p class="mb-1">
+            <span class="ds-i18n">Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.</span>
+            <span class="ds-i18n">Firefox is supported with the WebHID extension installed.</span>
+          </p>
+          <p class="mb-0">
+            <span class="ds-i18n">Using this utility on a phone or tablet is not supported.</span>
+          </p>
+        </div>
+      </div>
     </div>
 
     <div id="offlinebar" class="vstack p-2" style="display: none;">
@@ -153,26 +168,63 @@
             <div class="col-md-6 col-sm-12" style="min-width: 330px;">
               <div class="vstack gap-2 p-2">
                 <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_stick_centers()" id="four-step-center-calib" style="display: none;">
-                  1. <span class="ds-i18n">Calibrate stick center</span>
+                  <span class="ds-i18n">Calibrate stick center</span>
                 </button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="auto_calibrate_stick_centers()" id="quick-center-calib" style="display: none;">
-                  1. <span class="ds-i18n">Calibrate stick center</span>
-                </button>
-                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_range()">
-                  2. <span class="ds-i18n">Calibrate stick range</span>
-                </button>
+                <div class="btn-group w-100" role="group" style="display: none;" id="quick-center-calib-group">
+                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedCenterCalibration()" id="quick-center-calib">
+                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    <span class="ds-i18n">Calibrate stick center</span>
+                  </button>
+                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                    <span class="visually-hidden">Toggle dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('quick', event)">
+                      <i class="fas fa-check me-2" id="check-quick" style="display: none;"></i><span class="ds-i18n">Use quick calibration</span>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('four-step', event)">
+                      <i class="fas fa-check me-2" id="check-four-step"></i><span class="ds-i18n">Use four-step calibration</span>
+                    </a></li>
+                  </ul>
+                </div>
+                <div class="btn-group w-100" role="group" id="range-calib-group">
+                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedRangeCalibration()" id="range-calib">
+                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    <span class="ds-i18n">Calibrate stick range</span>
+                  </button>
+                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                    <span class="visually-hidden">Toggle dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('normal', event)">
+                      <i class="fas fa-check me-2" id="check-range-normal"></i><span class="ds-i18n">Use normal mode</span>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('expert', event)">
+                      <i class="fas fa-check me-2" id="check-range-expert" style="display: none;"></i><span class="ds-i18n">Use expert mode</span>
+                    </a></li>
+                  </ul>
+                </div>
                 <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
-                  3. <span class="ds-i18n">Finetune stick calibration</span>
+                  <span class="ds-i18n">Finetune stick calibration</span>
                 </button>
                 <hr>
-                <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()" id="resetBtn">Save changes permanently</button>
+                <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()">Save changes permanently</button>
+                <button id="restore-calibration-btn" type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="openCalibrationHistoryModal()">Restore calibration</button>
                 <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>
 
                 <div class="card text-bg-light" >
                   <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
                   <div class="vstack px-2">
                     <center>
-                      <canvas id="stickCanvas" width="300" height="150"></canvas>
+                      <div style="position: relative; display: inline-block;">
+                        <canvas id="stickCanvas" width="300" height="150"></canvas>
+                        <svg
+                          id="circularityCheckIcon" class="bi" width="32" height="32"
+                          style="cursor: pointer; color: #ff4000cb; position: absolute; top: 25px; right: -30px; display: none;"
+                          onclick="show_circularity_warning()"
+                        >
+                          <use xlink:href="#info"/></svg>
+                      </div>
                     </center>
                   </div>
                   <div class="px-2">
@@ -314,16 +366,46 @@
     </div>
   </div>
 
+  <!-- About drift and this utility -->
+  <div id="aboutdrift" style="position: fixed; bottom: 70px; left: 0; right: 0; z-index: 1030; display: none;">
+    <div class="container">
+      <div class="mb-4" style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+        <p class="mb-2">
+          <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">This utility cannot fix stick drift.</span>
+        </p>
+        <p class="mb-2">
+          <span class="ds-i18n">Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.</span>
+          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span></p>
+        <p class="mb-0">
+          <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.</span>
+        </p>
+      </div>
+
+      <div id="lastConnected" class="gap-2">
+        <span class="text-muted"><i class="fas fa-history"></i>&nbsp;&nbsp;<span class="ds-i18n">Last connected</span>:</span>
+        <span id="lastConnectedInfo"></span>
+        <div id="lastConnectedWarning" style="display: none;">
+          <p class="text-danger" style="margin-top: 8px; margin-bottom: 0;">
+            <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;<span class="ds-i18n">This controller has unsaved changes that will be lost when the controller is rebooted.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Fixed Footer -->
   <footer class="fixed-bottom bg-body-tertiary border-top">
     <div class="container">
       <div class="d-flex flex-column flex-sm-row justify-content-between py-3" id="footbody">
-        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.21</a> (2025-12-06) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.next Beta 7</a> (2025-12-06) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
         <ul class="list-unstyled d-flex mb-0">
-          <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>
-          <li class="ms-3"><a class="link-body-emphasis" href="https://discord.gg/w2P7Rrs2Yp" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#discord"/></svg></a></li>
-          <li class="ms-3"><a class="link-body-emphasis" href="https://github.com/dualshock-tools/" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#github"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="https://discord.gg/w2P7Rrs2Yp" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#discord"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="https://github.com/dualshock-tools/" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#github"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="https://the.al/ds_history/"><svg class="bi" width="24" height="24"><use xlink:href="#time-back"/></svg></a></li>
         </ul>
       </div>
     </div>

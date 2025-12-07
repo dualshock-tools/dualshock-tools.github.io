@@ -86,9 +86,10 @@ class ControllerFactory {
           showInfo: false, 
           showFinetune: false, 
           showInfoTab: false,
-          showFourStepCalib: true,
           showQuickTests: true,
-          showQuickCalib: false
+          showFourStepCalib: true,
+          showQuickCalib: false,
+          showCalibrationHistory: false
         };
 
       case 0x0ce6: // DS5
@@ -97,9 +98,10 @@ class ControllerFactory {
           showInfo: true, 
           showFinetune: true, 
           showInfoTab: true,
-          showFourStepCalib: false,
           showQuickTests: true,
-          showQuickCalib: true
+          showFourStepCalib: false,
+          showQuickCalib: true,
+          showCalibrationHistory: true
         };
 
       case 0x0e45: // VR2 Left Controller
@@ -108,8 +110,8 @@ class ControllerFactory {
           showInfo: true, 
           showFinetune: false, 
           showInfoTab: true,
-          showFourStepCalib: true,
           showQuickTests: false,
+          showFourStepCalib: true,
           showQuickCalib: false
         };
 
@@ -118,9 +120,10 @@ class ControllerFactory {
           showInfo: false, 
           showFinetune: false, 
           showInfoTab: false,
-          showFourStepCalib: false,
           showQuickTests: false,
-          showQuickCalib: false
+          showFourStepCalib: false,
+          showQuickCalib: false,
+          showCalibrationHistory: false
         };
     }
   }

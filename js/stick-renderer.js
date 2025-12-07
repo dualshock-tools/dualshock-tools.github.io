@@ -16,7 +16,7 @@ export const CIRCULARITY_DATA_SIZE = 48; // Number of angular positions to sampl
  * @param {boolean} opts.enable_zoom_center - Whether to apply center zoom transformation
  * @param {boolean} opts.highlight - Whether to highlight the stick position
  */
-export function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
+export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, opts = {}) {
     const { circularity_data = null, enable_zoom_center = false, highlight } = opts;
 
     // Draw base circle
@@ -168,7 +168,7 @@ export function draw_stick_position(ctx, center_x, center_y, sz, stick_x, stick_
  * @param {number[]} data - Array of distance values at different angular positions
  * @returns {number} RMS deviation as percentage
  */
-function calculateCircularityError(data) {
+export function calculateCircularityError(data) {
     // Sum of squared deviations from ideal distance of 1.0, only for values > 0.2
     const sumSquaredDeviations = data.reduce((acc, val) =>
         val > 0.2 ? acc + Math.pow(val - 1, 2) : acc, 0);

@@ -100,6 +100,14 @@ class BaseController {
     }
   }
 
+  /**
+  * Get the serial number of the device
+  * @returns {Promise<string>} The device serial number
+  */
+  async getSerialNumber() {
+    throw new Error('getSerialNumber() must be implemented by subclass');
+  }
+
   // Abstract methods that must be implemented by subclasses
   async getInfo() {
     throw new Error('getInfo() must be implemented by subclass');

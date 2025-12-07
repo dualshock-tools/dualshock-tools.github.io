@@ -1,0 +1,10 @@
+{
+    "folders": [
+		{
+			"path": "."
+		}
+	],
+    "settings": {
+        "typescript.tsdk": "hygglo-core/node_modules/typescript/lib"
+    }
+}

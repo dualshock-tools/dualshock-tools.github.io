@@ -1,7 +1,8 @@
 'use strict';
 
 import { l } from '../translations.js';
-import { la } from '../utils.js'
+import { la } from '../utils.js';
+import { Storage } from '../storage.js';
 
 const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
@@ -93,36 +94,33 @@ export class QuickTestModal {
       isTransitioning: false,
       skippedTests: [],
       lightsAnimationInterval: null,
+      batteryAlertShown: false,
     };
   }
 
   /**
-   * Save skipped tests to localStorage
+   * Save skipped tests to storage
    */
   _saveSkippedTestsToStorage() {
     try {
-      localStorage.setItem('quickTestSkippedTests', JSON.stringify(this.state.skippedTests));
+      Storage.quickTestSkippedTests.set(this.state.skippedTests);
     } catch (error) {
-      console.warn('Failed to save skipped tests to localStorage:', error);
+      console.warn('Failed to save skipped tests to storage:', error);
     }
   }
 
   /**
-   * Load skipped tests from localStorage
+   * Load skipped tests from storage
    */
   _loadSkippedTestsFromStorage() {
     try {
-      const saved = localStorage.getItem('quickTestSkippedTests');
-      if (saved) {
-        const skippedTests = JSON.parse(saved);
-        if (Array.isArray(skippedTests)) {
-          this.state.skippedTests = skippedTests.filter(test => TEST_SEQUENCE.includes(test));
-          // Apply the skipped tests to the UI
-          this._applySkippedTestsToUI();
-        }
+      const skippedTests = Storage.quickTestSkippedTests.get();
+      if (Array.isArray(skippedTests) && skippedTests.length > 0) {
+        this.state.skippedTests = skippedTests.filter(test => TEST_SEQUENCE.includes(test));
+        this._applySkippedTestsToUI();
       }
     } catch (error) {
-      console.warn('Failed to load skipped tests from localStorage:', error);
+      console.warn('Failed to load skipped tests from storage:', error);
       this.state.skippedTests = [];
     }
   }
@@ -263,6 +261,7 @@ export class QuickTestModal {
       case 'haptic':
         const hapticTestDesc = l('This test will activate the controller\'s vibration motors, first the heavy one, and then the light one.');
         const hapticInstructions = l('Feel for vibration in the controller.');
+        const hapticRepeat = l('Repeat');
         return `
           <p>${hapticTestDesc}</p>
           <p><strong>${instructions}:</strong> ${hapticInstructions}</p>
@@ -272,6 +271,9 @@ export class QuickTestModal {
             </button>
             <button type="button" class="btn btn-danger" id="haptic-fail-btn" onclick="markTestResult('haptic', false)">
               <i class="fas fa-times me-1"></i><span>${fail}</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="haptic-replay-btn" onclick="replayHapticTest()">
+              <i class="fas fa-redo me-1"></i><span>${hapticRepeat}</span>
             </button>
           </div>
         `;
@@ -376,13 +378,13 @@ export class QuickTestModal {
   }
 
   /**
-   * Clear saved skipped tests from localStorage
+   * Clear saved skipped tests from storage
    */
   _clearSkippedTestsFromStorage() {
     try {
-      localStorage.removeItem('quickTestSkippedTests');
+      Storage.quickTestSkippedTests.clear();
     } catch (error) {
-      console.warn('Failed to clear skipped tests from localStorage:', error);
+      console.warn('Failed to clear skipped tests from storage:', error);
     }
   }
 
@@ -1099,7 +1101,7 @@ export class QuickTestModal {
       this.state.skippedTests.push(testType);
     }
 
-    // Save to localStorage
+    // Save to storage
     this._saveSkippedTestsToStorage();
 
     // Stop any ongoing test activities
@@ -1275,8 +1277,20 @@ export class QuickTestModal {
   /**
    * Handle controller input for test navigation and control
    */
-  handleControllerInput(changes) {
+  handleControllerInput(changes, batteryStatus) {
     if(this.state.isTransitioning) return;
+
+    // Check battery status and show/hide warning if charge is 5% or less
+    if (batteryStatus) {
+      // Only update visibility if alert hasn't been shown or charge level changed
+      if (!this.state.batteryAlertShown || batteryStatus.changed ) {
+        console.log("Battery status changed:", batteryStatus);
+        const { charge_level, is_error } = batteryStatus;
+        const $batteryWarning = $('#battery-warning-alert');
+        $batteryWarning.toggle(charge_level <= 5 || is_error);
+        this.state.batteryAlertShown = true;
+      }
+    }
 
     const activeTest = this._getCurrentActiveTest();
 
@@ -1503,7 +1517,7 @@ export class QuickTestModal {
     // Reset state
     this._initializeState();
 
-    // Load saved skipped tests from localStorage
+    // Load saved skipped tests from storage
     this._loadSkippedTestsFromStorage();
 
     // Reset button colors to initial state
@@ -1572,9 +1586,9 @@ export function isQuickTestVisible() {
 /**
  * Handle controller input for the Quick Test Modal
  */
-export function quicktest_handle_controller_input(changes) {
+export function quicktest_handle_controller_input(changes, batteryStatus) {
   if (currentQuickTestInstance && isQuickTestVisible()) {
-    currentQuickTestInstance.handleControllerInput(changes);
+    currentQuickTestInstance.handleControllerInput(changes, batteryStatus);
   }
 }
 
@@ -1632,6 +1646,12 @@ function replaySpeakerTest() {
   }
 }
 
+function replayHapticTest() {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance._startHapticTest();
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
@@ -1640,3 +1660,4 @@ window.skipTest = skipTest;
 window.addTestBack = addTestBack;
 window.testHeadphoneAudio = testHeadphoneAudio;
 window.replaySpeakerTest = replaySpeakerTest;
+window.replayHapticTest = replayHapticTest;

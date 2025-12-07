@@ -1,19 +1,22 @@
 'use strict';
 
-import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, initAnalyticsApi, la, createCookie, readCookie } from './utils.js';
+import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, initAnalyticsApi, la } from './utils.js';
+import { Storage } from './storage.js';
 import { initControllerManager } from './controller-manager.js';
 import ControllerFactory from './controllers/controller-factory.js';
 import { lang_init, l } from './translations.js';
 import { loadAllTemplates } from './template-loader.js';
-import { draw_stick_position, CIRCULARITY_DATA_SIZE } from './stick-renderer.js';
+import { draw_stick_dial, CIRCULARITY_DATA_SIZE, calculateCircularityError } from './stick-renderer.js';
 import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } from './modals/finetune-modal.js';
 import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
-import { calibrate_range } from './modals/calib-range-modal.js';
+import { calibrate_range, rangeCalibHandleControllerInput } from './modals/calib-range-modal.js';
 import { 
   show_quick_test_modal,
   isQuickTestVisible,
   quicktest_handle_controller_input
 } from './modals/quick-test-modal.js';
+import { show_calibration_history_modal } from './modals/calibration-history-modal.js';
+import { FinetuneHistory } from './finetune-history.js';
 
 // Application State - manages app-wide state and UI
 const app = {
@@ -22,6 +25,12 @@ const app = {
   last_disable_btn: 0,
 
   shownRangeCalibrationWarning: false,
+  failedCalibrationDetectionsCount: 0,
+  failedCalibrationModalShownCount: 0,
+
+  // Calibration method preference
+  centerCalibrationMethod: 'four-step', // 'quick' or 'four-step'
+  rangeCalibrationMethod: 'normal', // 'normal' or 'expert'
 
   // Language and UI state
   lang_orig_text: {},
@@ -107,12 +116,12 @@ function gboot() {
     initAnalyticsApi(app); // init just with gu for now
     lang_init(app, handleLanguageChange, show_welcome_modal);
     show_welcome_modal();
+    initCalibrationMethod();
 
     $("input[name='displayMode']").on('change', on_stick_mode_change);
 
-    // Setup edge modal "Don't show again" checkbox
     $('#edgeModalDontShowAgain').on('change', function() {
-      localStorage.setItem('edgeModalDontShowAgain', this.checked.toString());
+      Storage.edgeModalDontShowAgain.set(this.checked);
     });
   }
 
@@ -132,6 +141,8 @@ function gboot() {
   }
 
   $("#offlinebar").show();
+  $("#aboutdrift").show();
+  updateLastConnectedInfo();
   navigator.hid.addEventListener("disconnect", handleDisconnectedDevice);
 }
 
@@ -209,13 +220,15 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showFourStepCalib, showQuickTests, showQuickCalib }) {
+    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
-      $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
+      $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-center-calib").toggle(!!showQuickCalib);
+      $("#quick-center-calib-group").toggle(!!showQuickCalib);
+      $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
     }
 
     let controllerInstance = null;
@@ -260,13 +273,12 @@ async function continue_connection({data, device}) {
     $("#onlinebar").show();
     $("#mainmenu").show();
     $("#resetBtn").show();
+    $("#aboutdrift").hide();
 
     $("#d-nvstatus").text = l("Unknown");
     $("#d-bdaddr").text = l("Unknown");
 
     $('#controller-tab').tab('show');
-
-    const model = controllerInstance.getModel();
 
     const numOfSticks = controllerInstance.getNumberOfSticks();
     if(numOfSticks == 2) {
@@ -278,6 +290,29 @@ async function continue_connection({data, device}) {
     } else {
       throw new Error(`Invalid number of sticks: ${numOfSticks}`);
     }
+
+    const model = controllerInstance.getModel();
+
+    // Save controller info to local storage
+    const lastConnectedInfo = {
+      deviceName: deviceName,
+      timestamp: new Date().toISOString(),
+      serialNumber: await controllerInstance.getSerialNumber(),
+    };
+
+    // Extract info from infoItems
+    if (info.infoItems && Array.isArray(info.infoItems)) {
+      for (const item of info.infoItems) {
+        if (item.key === l("Board Model")) {
+          lastConnectedInfo.boardModel = item.value;
+        } else if (item.key === l("Color")) {
+          lastConnectedInfo.color = item.value;
+        }
+      }
+    }
+
+    Storage.lastConnectedController.set(lastConnectedInfo);
+    updateLastConnectedInfo();
 
     // Initialize SVG controller based on model
     await init_svg_controller(model);
@@ -320,6 +355,24 @@ async function continue_connection({data, device}) {
     if(model == "VR2") {
       show_popup(l("<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>"), true)
     }
+
+    // Check for unsaved calibration changes
+    if (controller.has_changes_to_write) {
+      show_popup(`<p>${
+        l("It appears the latest joystick calibration has not been saved.")
+      }</p><p>${
+        l("You should save your changes, or reboot the controller to revert back to the previous state.")
+      }</p>`, true);
+    }
+
+    // Save finetune parameters for DS5 and Edge controllers
+    if (model === "DS5" || model === "DS5_Edge") {
+      if (!controller.has_changes_to_write) {
+        const finetuneData = await controllerInstance.getInMemoryModuleData();
+        const serialNumber = await controllerInstance.getSerialNumber();
+        FinetuneHistory.save(finetuneData, serialNumber);
+      }
+    }
   } catch(err) {
     await disconnect();
     throw err;
@@ -337,6 +390,8 @@ async function disconnect() {
   }
   app.gj = 0;
   app.disable_btn = 0;
+  app.shownRangeCalibrationWarning = false;
+  app.failedCalibrationDetectionsCount = 0;
   update_disable_btn();
 
   await controller.disconnect();
@@ -345,6 +400,45 @@ async function disconnect() {
   $("#offlinebar").show();
   $("#onlinebar").hide();
   $("#mainmenu").hide();
+  $("#aboutdrift").show();
+  updateLastConnectedInfo();
+}
+
+function updateLastConnectedInfo() {
+  const $lastConnected = $("#lastConnected");
+  const $infoDiv = $("#lastConnectedInfo");
+  const info = Storage.lastConnectedController.get();
+
+  if (!info) {
+    console.log("No last connected info found.", $lastConnected);
+    $lastConnected.hide();
+    return;
+  }
+
+  try {
+    const parts = [];
+    if (info.color) parts.push(l(info.color));
+    if (info.boardModel) parts.push(info.boardModel);
+    if (info.deviceName) parts.push(info.deviceName);
+
+    let text = parts.join(" ");
+    if (info.serialNumber) {
+      text += ", " + l("serial number") + " " + info.serialNumber;
+    }
+
+    $infoDiv.text(text);
+
+    if (info.serialNumber) {
+      const hasChanges = Storage.hasChangesState.get(info.serialNumber);
+      const $warning = $("#lastConnectedWarning");
+      $warning.toggle(hasChanges);
+    }
+
+    $lastConnected.show();
+  } catch (error) {
+    console.error("Error parsing last connected info:", error);
+    $lastConnected.hide();
+  }
 }
 
 // Wrapper function for HTML onclick handlers
@@ -400,7 +494,7 @@ function set_edge_progress(score) {
 }
 
 function show_welcome_modal() {
-  const already_accepted = readCookie("welcome_accepted");
+  const already_accepted = Storage.getString("welcome_accepted");
   if(already_accepted == "1")
     return;
 
@@ -409,7 +503,7 @@ function show_welcome_modal() {
 
 function welcome_accepted() {
   la("welcome_accepted");
-  createCookie("welcome_accepted", "1");
+  Storage.setString("welcome_accepted", "1");
   $("#welcomeModal").modal("hide");
 }
 
@@ -445,6 +539,9 @@ async function init_svg_controller(model) {
   }
 
   svgContainer.innerHTML = svgContent;
+
+  // Reset trackpad bounding box so it's recalculated for the new SVG
+  trackpadBbox = undefined;
 
   const lightBlue = '#7ecbff';
   const midBlue = '#3399cc';
@@ -487,9 +584,9 @@ function collectCircularityData(stickStates, leftData, rightData) {
   }
 }
 
-function clear_circularity() {
-  ll_data.fill(0);
-  rr_data.fill(0);
+function clear_circularity(leftOrRight = 'both') {
+  if(['left', 'both'].includes(leftOrRight)) ll_data.fill(0);
+  if(['right', 'both'].includes(leftOrRight)) rr_data.fill(0);
 }
 
 function reset_circularity_mode() {
@@ -517,14 +614,14 @@ function refresh_stick_pos() {
   const enable_circ_test = circ_checked();
 
   // Draw left stick
-  draw_stick_position(ctx, hb, yb, sz, plx, ply, {
+  draw_stick_dial(ctx, hb, yb, sz, plx, ply, {
     circularity_data: enable_circ_test ? ll_data : null,
     enable_zoom_center,
   });
 
   if(!hasSingleStick) {
     // Draw right stick
-    draw_stick_position(ctx, w-hb, yb, sz, prx, pry, {
+    draw_stick_dial(ctx, w-hb, yb, sz, prx, pry, {
       circularity_data: enable_circ_test ? rr_data : null,
       enable_zoom_center,
     });
@@ -584,6 +681,17 @@ function refresh_stick_pos() {
   } catch (e) {
     // Fail silently if SVG not present
   }
+
+  const circularityCheckIcon = document.getElementById('circularityCheckIcon');
+  if (!enable_circ_test) {
+    circularityCheckIcon.style.display = 'none';
+    return;
+  }
+
+  const ll_error = calculateCircularityError(ll_data);
+  const rr_error = calculateCircularityError(rr_data);
+  const isTooSmall = (ll_error && ll_error < 5 || rr_error && rr_error < 5);
+  circularityCheckIcon.style.display = isTooSmall ? 'block' : 'none';
 }
 
 const circ_checked = () => $("#checkCircularityMode").is(':checked');
@@ -623,7 +731,7 @@ const throttled_refresh_sticks = (() => {
 
 const update_stick_graphics = (changes) => throttled_refresh_sticks(changes);
 
-function update_battery_status({/* bat_capacity, cable_connected, is_charging, is_error, */ bat_txt, changed}) {
+function update_battery_status({/* charge_level, cable_connected, is_charging, is_error, */ bat_txt, changed}) {
   if(changed) {
     $("#d-bat").html(bat_txt);
   }
@@ -749,18 +857,48 @@ function detectFailedRangeCalibration(changes) {
   const hasOpenModals = document.querySelectorAll('.modal.show').length > 0;
 
   if (failedCalibration && !app.shownRangeCalibrationWarning && !hasOpenModals) {
+    app.failedCalibrationDetectionsCount++;
+    if (app.failedCalibrationDetectionsCount < 5) {
+      return; // require 5 consecutive detections
+    }
+
+    app.failedCalibrationModalShownCount++;
+    Storage.failedCalibrationCount.set(app.failedCalibrationModalShownCount);
+
     app.shownRangeCalibrationWarning = true;
-    show_popup(l("Range calibration appears to have failed. Please try again and make sure you rotate the sticks."));
+    if (app.failedCalibrationCount <= 6) {  // keep it from getting annoying
+      show_popup(l("Range calibration appears to have failed. Please try again and make sure you rotate the sticks."));
+    }
   }
+}
+
+function isRangeCalibrationVisible() {
+  const modal = document.getElementById('rangeModal');
+  if (!modal) return false;
+  return modal.classList.contains('show');
 }
 
 // Callback function to handle UI updates after controller input processing
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
 
+  // Open Quick Test modal if options button is pressed while L1 is held down
+  if (changes.options && controller.button_states.l1) {
+    update_ds_button_svg({ l1: false }, buttonMap); // Clear L1
+    show_quick_test_modal(controller);
+    return;
+  }
+
+  // Update range calibration modal stick visualization if visible
+  if (isRangeCalibrationVisible() && changes.sticks) {
+    collectCircularityData(changes.sticks, ll_data, rr_data);
+    rangeCalibHandleControllerInput(changes);
+    return;
+  }
+
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {
-    quicktest_handle_controller_input(changes);
+    quicktest_handle_controller_input(changes, batteryStatus);
     return;
   }
 
@@ -959,8 +1097,7 @@ function show_donate_modal() {
 
 function show_edge_modal() {
   // Check if user has chosen not to show the modal again
-  const dontShowAgain = localStorage.getItem('edgeModalDontShowAgain');
-  if (dontShowAgain === 'true') {
+  if (Storage.edgeModalDontShowAgain.get()) {
     return;
   }
 
@@ -971,6 +1108,15 @@ function show_edge_modal() {
 function show_info_tab() {
   la("info_modal");
   $('#info-tab').tab('show');
+}
+
+function show_circularity_warning() {
+  const message = `<p>
+  ${l("Sony controllers come from the factory calibrated to have an average circularity error of nearly 10 %, and this is now what games expect. Too perfect circularity can make movements and aim feel stiff and unresponsive in some games.")
+  }</p><p>
+  ${l("Aim for a circularity error of around 7-9 % for the best playing experience.")}`;
+  
+  show_popup(message, true);
 }
 
 // Alert Management Functions
@@ -1059,50 +1205,153 @@ window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;
 window.copyValueToClipboard = copyValueToClipboard;
-window.calibrate_range = () => calibrate_range(
-  controller,
-  { ll_data, rr_data },
-  (success, message) => {
-    if (success) {
-      resetStickDiagrams();
-      successAlert(message);
-      switchToRangeMode();
-      app.shownRangeCalibrationWarning = false
-    }
-  }
-);
+
 window.calibrate_stick_centers = () => calibrate_stick_centers(
   controller,
   (success, message) => {
     if (success) {
       resetStickDiagrams();
-      successAlert(message);
+      infoAlert(message, 2_000);
       switchTo10xZoomMode();
     }
   }
 );
-window.auto_calibrate_stick_centers = () => auto_calibrate_stick_centers(
-  controller,
-  (success, message) => {
-    if (success) {
-      resetStickDiagrams();
-      successAlert(message);
-      switchTo10xZoomMode();
-    }
-  }
-);
+
 window.ds5_finetune = () => ds5_finetune(
   controller,
   { ll_data, rr_data, clear_circularity },
   (success) => success && switchToRangeMode()
 );
+
+window.openCalibrationHistoryModal = async () => {
+  let currentFinetuneData = null;
+  let controllerSerialNumber = null;
+  try {
+    if (controller && typeof controller.getInMemoryModuleData === 'function') {
+      currentFinetuneData = await controller.getInMemoryModuleData('finetune');
+    }
+    if (controller && typeof controller.getDeviceInfo === 'function') {
+      const info = await controller.getDeviceInfo();
+      const serialNumberItem = info?.infoItems?.find(item => item.key === l("Serial Number"));
+      controllerSerialNumber = serialNumberItem?.value;
+    }
+  } catch (error) {
+    console.warn('Could not retrieve current finetune data or serial number:', error);
+  }
+  await show_calibration_history_modal(controller, currentFinetuneData, controllerSerialNumber, (success, message) => {
+    if(!message) return;
+    success ? infoAlert(message) : errorAlert(message);
+  });
+};
+
 window.flash_all_changes = flash_all_changes;
 window.reboot_controller = reboot_controller;
 window.refresh_nvstatus = refresh_nvstatus;
 window.nvsunlock = nvsunlock;
+
+// Calibration method selection
+window.setCenterCalibrationMethod = (method, event) => {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  app.centerCalibrationMethod = method;
+  Storage.centerCalibrationMethod.set(method);
+  updateCalibrationMethodUI();
+  // Close the dropdown
+  const dropdownButton = event?.target?.closest('.dropdown-menu')?.previousElementSibling;
+  if (dropdownButton) {
+    const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+    if (dropdown) dropdown.hide();
+  }
+};
+
+window.executeSelectedCenterCalibration = () => {
+  if (app.centerCalibrationMethod === 'quick') {
+    auto_calibrate_stick_centers(
+      controller,
+      (success, message) => {
+        if (success) {
+          resetStickDiagrams();
+          infoAlert(message, 2_000);
+          switchTo10xZoomMode();
+        }
+      }
+    );
+  } else {
+    calibrate_stick_centers(
+      controller,
+      (success, message) => {
+        if (success) {
+          resetStickDiagrams();
+          infoAlert(message, 2_000);
+          switchTo10xZoomMode();
+        }
+      }
+    );
+  }
+};
+
+window.setRangeCalibrationMethod = (method, event) => {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  app.rangeCalibrationMethod = method;
+  Storage.rangeCalibrationMethod.set(method);
+  updateCalibrationMethodUI();
+  // Close the dropdown
+  const dropdownButton = event?.target?.closest('.dropdown-menu')?.previousElementSibling;
+  if (dropdownButton) {
+    const dropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+    if (dropdown) dropdown.hide();
+  }
+};
+
+window.executeSelectedRangeCalibration = () => {
+  calibrate_range(
+    controller,
+    { ll_data, rr_data },
+    (success, message) => {
+      resetStickDiagrams();
+      if(message) {
+        infoAlert(message, 2_000);
+      }
+      switchToRangeMode();
+    },
+    app.rangeCalibrationMethod === 'expert'
+  );
+};
+
+function updateCalibrationMethodUI() {
+  $('#check-quick').toggle(app.centerCalibrationMethod === 'quick');
+  $('#check-four-step').toggle(app.centerCalibrationMethod === 'four-step');
+  $('#check-range-normal').toggle(app.rangeCalibrationMethod === 'normal');
+  $('#check-range-expert').toggle(app.rangeCalibrationMethod === 'expert');
+}
+
+function initCalibrationMethod() {
+  const savedCenterMethod = Storage.centerCalibrationMethod.get();
+  if (savedCenterMethod && (savedCenterMethod === 'quick' || savedCenterMethod === 'four-step')) {
+    app.centerCalibrationMethod = savedCenterMethod;
+  }
+
+  const savedRangeMethod = Storage.rangeCalibrationMethod.get();
+  if (savedRangeMethod && (savedRangeMethod === 'normal' || savedRangeMethod === 'expert')) {
+    app.rangeCalibrationMethod = savedRangeMethod;
+  }
+
+  const savedFailedCalibrationCount = Storage.failedCalibrationCount.get();
+  if (savedFailedCalibrationCount > 0) {
+    app.failedCalibrationModalShownCount = savedFailedCalibrationCount;
+  }
+
+  updateCalibrationMethodUI();
+}
 window.nvslock = nvslock;
 window.welcome_accepted = welcome_accepted;
 window.show_donate_modal = show_donate_modal;
+window.show_circularity_warning = show_circularity_warning;
 window.show_quick_test_modal = () => {
   show_quick_test_modal(controller).catch(error => {
     throw new Error("Failed to show quick test modal", { cause: error });

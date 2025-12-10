@@ -230,7 +230,7 @@
     "Circularity (R1)": "Dairesellik (R1)",
     "Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. Flick it and adjust it again if it is off center or flickers.": "Analoğu ayar için seçin, ardından analoğa dokunmadan yön tuşlarını kullanarak merkez noktasını ayarlayın. Analoğu hafifçe oynatın, merkezden kaymışsa veya titreme oluyorsa tekrar ayarlayın.",
     "Please release the stick to center position before adjusting with D-pad buttons.": "Lütfen yön tuşlarıyla ayarlamadan önce analoğu merkez konumuna bırakın.",
-    "Press the D-pad or face buttons in the direction you want the stick position to move.": "Analoğun konumunu hareket ettirmek istediğiniz yöne yön tuşlarına veya yüzey tuşlarına(△, ☐, O, ✕) basın.",
+    "Press the D-pad or face buttons in the direction you want the stick position to move.": "Analoğun konumunu hareket ettirmek istediğiniz yöne (↑, ↓, ⬅, ➡) veya (△, ☐, O, ✕) tuşlarına basarak ayarlayın.",
     "Push the stick straight up/down/left/right as far as possible.": "Analoğu mümkün olduğunca yukarı/aşağı/sola/sağa itin.",
     "Show raw numbers": "Ham değerleri göster",
     "The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead.": "Cihaz Bluetooth üzerinden bağlı. Bunun yerine bağlantıyı kesip USB kablosu ile yeniden bağlayın.",
@@ -307,7 +307,7 @@
     "tests completed": "Tamamlanan Testler",
     "to increase the non-circularity.": "Dairesellikten sapmayı artırmak için.",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Lütfen bir DualShock 4, DualSense, DualSense Edge veya VR2 kontrolcüsünü bilgisayarınıza bağlayın ve ‘Bağlan’ butonuna basın.",
-    "Cannot copy text to the clipboard:": "",
-    "The item has been copied to the clipboard.": "",
+    "Cannot copy text to the clipboard:": "Metin panoya kopyalanamıyor:",
+    "The item has been copied to the clipboard.": "Öğe panoya kopyalandı.",
     "": ""
 }

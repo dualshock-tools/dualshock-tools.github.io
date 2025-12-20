@@ -305,9 +305,9 @@
     "skipped": "跳过",
     "tests completed": "测试已完成",
     "to increase the non-circularity.": "增加非圆度",
-    "Cannot copy text to the clipboard:": "",
-    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
-    "The device appears to be a clone. All calibration functionality is disabled.": "",
-    "The item has been copied to the clipboard.": "",
+    "Cannot copy text to the clipboard:": "无法将文本复制到剪贴板",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "请将DualShock 4、DualSense、DualSense Edge或VR2控制器连接到您的计算机，然后按'连接'。",
+    "The device appears to be a clone. All calibration functionality is disabled.": "此手柄不是索尼正品手柄。所有校准功能均无法使用。",
+    "The item has been copied to the clipboard.": "该项目已复制到剪贴板。",
     "": ""
 }

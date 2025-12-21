@@ -56,3 +56,6 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+
+.zencoder/
+*.code-workspace

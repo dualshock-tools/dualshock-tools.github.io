@@ -309,5 +309,6 @@
     "The device appears to be a clone. All calibration functionality is disabled.": "Схоже, цей пристрій є підробкою. Усі функції калібрування вимкнено.",
     "Cannot copy text to the clipboard:": "Не вдалося скопіювати",
     "The item has been copied to the clipboard.": "Скопійовано до буфера обміну",
+    "Cannot read module barcodes": "",
     "": ""
 }

@@ -50,14 +50,25 @@ class DS5EdgeController extends DS5Controller {
   }
 
   async getBarcode() {
-    await this.sendFeatureReport(0x80, [21,34]);
-    await sleep(100);
-
-    const data = await this.receiveFeatureReport(0x81);
-    const td = new TextDecoder();
-    const r_bc = td.decode(data.buffer.slice(21, 21+17));
-    const l_bc = td.decode(data.buffer.slice(40, 40+17));
-    return [r_bc, l_bc];
+    try {
+      const td = new TextDecoder();
+  
+      await this.sendFeatureReport(0x80, [21,34,0]);
+      await sleep(100);
+  
+      const r_data = await this.receiveFeatureReport(0x81);
+      const r_bc = td.decode(r_data.buffer.slice(21, 21+17));
+  
+      await this.sendFeatureReport(0x80, [21,34,1]);
+      await sleep(100);
+  
+      const l_data = await this.receiveFeatureReport(0x81);
+      const l_bc = td.decode(l_data.buffer.slice(21, 21+17));
+      return [l_bc, r_bc];
+    } catch(error) {
+      la("ds5_edge_barcode_modules_failed", {"r": error});
+      throw new Error(l("Cannot read module barcodes"), { cause: error });
+    }
   }
 
   async unlockModule(i) {

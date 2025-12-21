@@ -309,5 +309,6 @@
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Lütfen bir DualShock 4, DualSense, DualSense Edge veya VR2 kontrolcüsünü bilgisayarınıza bağlayın ve ‘Bağlan’ butonuna basın.",
     "Cannot copy text to the clipboard:": "Metin panoya kopyalanamıyor:",
     "The item has been copied to the clipboard.": "Öğe panoya kopyalandı.",
+    "Cannot read module barcodes": "",
     "": ""
 }

@@ -313,6 +313,7 @@
     "tests completed": "befejezett teszt",
     "to increase the non-circularity.": "a nem-körkörösség növeléséhez.",
     "Cannot copy text to the clipboard:": "",
+    "Cannot read module barcodes": "",
     "The item has been copied to the clipboard.": "",
     "": ""
 }

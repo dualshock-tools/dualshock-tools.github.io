@@ -309,6 +309,6 @@
     "Cannot copy text to the clipboard:": "Non posso copiare il testo negli appunti:",
     "The device appears to be a clone. All calibration functionality is disabled.": "Il dispositivo sembra un clone. Le funzioni di calibrazione sono disattivate.",
     "The item has been copied to the clipboard.": "Testo copiato negli appunti.",
-    "Cannot read module barcodes": "",
+    "Cannot read module barcodes": "Errore nella lettura dei codici a barre dei moduli",
     "": ""
 }

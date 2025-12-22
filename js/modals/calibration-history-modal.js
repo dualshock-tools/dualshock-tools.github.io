@@ -1,7 +1,7 @@
 'use strict';
 
 import { FinetuneHistory } from '../finetune-history.js';
-import { formatLocalizedDate } from '../utils.js';
+import { formatLocalizedDate, la } from '../utils.js';
 import { l } from '../translations.js';
 
 export class CalibrationHistoryModal {
@@ -133,6 +133,7 @@ export class CalibrationHistoryModal {
     await this._applyCalibration(entry.data);
     this.close();
     this.doneCallback(true, l('The calibration was restored successfully! Remember to save the changes in order not to loose them when the controller is rebooted.'));
+    la("calibration_history_restored");
   }
 
   /**

@@ -1238,6 +1238,7 @@ window.openCalibrationHistoryModal = async () => {
   } catch (error) {
     console.warn('Could not retrieve current finetune data or serial number:', error);
   }
+  la("calibration_history_modal_open");
   await show_calibration_history_modal(controller, currentFinetuneData, controllerSerialNumber, (success, message) => {
     if(!message) return;
     success ? infoAlert(message) : errorAlert(message);

@@ -109,7 +109,7 @@ export class CalibCenterModal {
     this._updateUI(6, "Stick center calibration", "Done", true);
     yield 6;
 
-    this._close(true, "Stick calibration completed");
+    this._close(true, l("Stick calibration completed"));
   }
 
   /**

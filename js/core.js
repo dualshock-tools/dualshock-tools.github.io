@@ -125,6 +125,17 @@ function gboot() {
     $('#edgeModalDontShowAgain').on('change', function() {
       Storage.edgeModalDontShowAgain.set(this.checked);
     });
+
+    $('#debug-tab').hide();
+    $('#mainTabs').on('click', (() => {
+      let clickCount = 0;
+      return function({target}) {
+        if(target.id == "mainTabs") {
+          clickCount++;
+          if(clickCount == 10) $('#debug-tab').show();
+        }
+      }
+    })());
   }
 
   // Since modules are deferred, DOM might already be loaded

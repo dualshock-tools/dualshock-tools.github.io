@@ -42,6 +42,7 @@ const DS5_INPUT_CONFIG = {
   dpadByte: 7,
   l2AnalogByte: 4,
   r2AnalogByte: 5,
+  imuOffset: 15,
   touchpadOffset: 32,
 };
 

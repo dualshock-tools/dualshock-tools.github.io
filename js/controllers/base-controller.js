@@ -149,6 +149,10 @@ class BaseController {
     throw new Error('calibrateRangeEnd() must be implemented by subclass');
   }
 
+  parseDeviceSpecificInputs(data) {
+    return {};
+  }
+
   parseBatteryStatus(data) {
     throw new Error('parseBatteryStatus() must be implemented by subclass');
   }

@@ -4,10 +4,11 @@ import { l } from '../translations.js';
 import { la } from '../utils.js';
 import { Storage } from '../storage.js';
 
-const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
+const TEST_SEQUENCE = ['usb', 'buttons', 'imu', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
   'usb': 'USB Connector',
   'buttons': 'Buttons',
+  'imu': 'IMU (Gyroscope & Accelerometer)',
   'haptic': 'Haptic Vibration',
   'adaptive': 'Adaptive Trigger',
   'lights': 'Lights',
@@ -65,6 +66,7 @@ export class QuickTestModal {
     this._boundModalHidden = () => {
     // Clean up any active tests BEFORE resetting state
       this._stopButtonsTest();
+      this._stopImuTest();
       this._stopAdaptiveTest();
       this._stopLightsTest();
       this._stopMicrophoneTest();
@@ -79,6 +81,7 @@ export class QuickTestModal {
     this.state = {
       usb: null,
       buttons: null,
+      imu: null,
       haptic: null,
       adaptive: null,
       lights: null,
@@ -88,6 +91,13 @@ export class QuickTestModal {
       microphoneStream: null,
       microphoneContext: null,
       microphoneMonitoring: false,
+      imuMonitoring: false,
+      imuDataHistory: [],
+      imuOffset: {
+        gyro: { x: 0, y: 0, z: 0 },
+        accel: { x: 0, y: 0, z: 0 }
+      },
+      lastImuData: null,
       buttonPressCount: {},
       longPressTimers: {},
       longPressThreshold: 400,
@@ -258,6 +268,47 @@ export class QuickTestModal {
             </button>
           </div>
         `);
+      case 'imu':
+        const imuTestDesc = l('This test will visualize the controller\'s gyroscope and accelerometer data.');
+        const imuInstructions = l('Rotate and move the controller to see the IMU sensor readings update in real-time.');
+        const resetImu = l('Reset');
+        return `
+          <p>${imuTestDesc}</p>
+          <p><strong>${instructions}:</strong> ${imuInstructions}</p>
+          <div class="mb-3">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <div>
+                <label class="form-label"><strong>${l('Gyroscope')}</strong></label>
+                <div style="font-family: monospace; background: #f5f5f5; padding: 12px; border-radius: 4px; font-size: 14px;">
+                  <div>Tilt left/right: <span id="imu-gyro-x">0.00</span></div>
+                  <div>Tilt forward/back: <span id="imu-gyro-z">0.00</span></div>
+                  <div>Upside down: <span id="imu-gyro-y">0.00</span></div>
+                </div>
+                <!-- <div style="margin-top: 8px; height: 150px; border: 1px solid #ddd; border-radius: 4px;" id="imu-gyro-chart"></div> -->
+              </div>
+              <div>
+                <label class="form-label"><strong>${l('Accelerometer')}</strong></label>
+                <div style="font-family: monospace; background: #f5f5f5; padding: 12px; border-radius: 4px; font-size: 14px;">
+                  <div>X: <span id="imu-accel-x">0.00</span> G</div>
+                  <div>Y: <span id="imu-accel-y">0.00</span> G</div>
+                  <div>Z: <span id="imu-accel-z">0.00</span> G</div>
+                </div>
+                <!-- <div style="margin-top: 8px; height: 150px; border: 1px solid #ddd; border-radius: 4px;" id="imu-accel-chart"></div> -->
+              </div>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="imu-pass-btn" onclick="markTestResult('imu', true)">
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="imu-fail-btn" onclick="markTestResult('imu', false)">
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="imu-reset-btn" onclick="resetImuOffset()">
+              <i class="fas fa-redo me-1"></i><span>${resetImu}</span>
+            </button>
+          </div>
+        `;
       case 'haptic':
         const hapticTestDesc = l("This test will activate the controller's vibration motors, first the heavy one, and then the light one.");
         const hapticInstructions = l('Feel for vibration in the controller.');
@@ -650,6 +701,9 @@ export class QuickTestModal {
         case 'buttons':
           this._startButtonsTest();
           break;
+        case 'imu':
+          this._startImuTest();
+          break;
         case 'haptic':
           this._startHapticTest();
           break;
@@ -686,6 +740,9 @@ export class QuickTestModal {
         break;
       case 'buttons':
         this._stopButtonsTest();
+        break;
+      case 'imu':
+        this._stopImuTest();
         break;
       case 'adaptive':
         this._stopAdaptiveTest();
@@ -1031,6 +1088,93 @@ export class QuickTestModal {
   }
 
   /**
+   * Start IMU (Gyroscope and Accelerometer) test
+   */
+  _startImuTest() {
+    this._startIconAnimation('imu');
+    if (!this.state) return;
+    this.state.imuMonitoring = true;
+    this.state.imuDataHistory = [];
+  }
+
+  /**
+   * Stop IMU test
+   */
+  _stopImuTest() {
+    this._stopIconAnimation('imu');
+    if (!this.state) return;
+    this.state.imuMonitoring = false;
+  }
+
+  /**
+   * Reset IMU offset to current sensor values
+   */
+  resetImuOffset(currentImuData) {
+    if (!this.state) return;
+    if (!currentImuData) return;
+
+    this.state.imuOffset = {
+      gyro: {
+        x: currentImuData.gyro?.x || 0,
+        y: currentImuData.gyro?.y || 0,
+        z: currentImuData.gyro?.z || 0
+      },
+      accel: {
+        x: currentImuData.accel?.x || 0,
+        y: currentImuData.accel?.y || 0,
+        z: currentImuData.accel?.z || 0
+      }
+    };
+  }
+
+  /**
+   * Update IMU data visualization
+   */
+  _updateImuVisualization(imuData) {
+    if (!this.state.imuMonitoring) return;
+
+    this.state.lastImuData = {
+      gyro: { ...imuData.gyro },
+      accel: { ...imuData.accel }
+    };
+
+    const formatValue = (value) => {
+      return typeof value === 'number' ? value.toFixed(1) : '0.0';
+    };
+
+    const offset = this.state.imuOffset || { gyro: { x: 0, y: 0, z: 0 }, accel: { x: 0, y: 0, z: 0 } };
+
+    const adjustedGyroX = Math.round((imuData.gyro?.x || 0) - offset.gyro.x);
+    const adjustedGyroY = Math.round((imuData.gyro?.y || 0) - offset.gyro.y);
+    const adjustedGyroZ = Math.round((imuData.gyro?.z || 0) - offset.gyro.z);
+    const adjustedAccelX = (imuData.accel?.x || 0) - offset.accel.x;
+    const adjustedAccelY = (imuData.accel?.y || 0) - offset.accel.y;
+    const adjustedAccelZ = (imuData.accel?.z || 0) - offset.accel.z;
+
+    $('#imu-gyro-x').text(`${Math.abs(adjustedGyroX) < 10 ? '\u00a0' : ''}${Math.abs(adjustedGyroX)}° ${adjustedGyroX >= 0 ? 'left' : 'right' }`);
+    $('#imu-gyro-z').text(`${Math.abs(adjustedGyroZ) < 10 ? '\u00a0' : ''}${Math.abs(adjustedGyroZ)}° ${adjustedGyroZ >= 0 ? 'forward' : 'backward' }`);
+    $('#imu-gyro-y').text(`${Math.abs(adjustedGyroY) < 10 ? '\u00a0' : ''}${Math.abs(adjustedGyroY)}° ${adjustedGyroY >= 0 ? 'upright' : 'upside down' }`);
+
+    $('#imu-accel-x').text(`${adjustedAccelX >= 0 ? '+' : ''}${formatValue(adjustedAccelX)}`);
+    $('#imu-accel-y').text(`${adjustedAccelY >= 0 ? '+' : ''}${formatValue(adjustedAccelY)}`);
+    $('#imu-accel-z').text(`${adjustedAccelZ >= 0 ? '+' : ''}${formatValue(adjustedAccelZ)}`);
+
+    if (!this.state.imuDataHistory) {
+      this.state.imuDataHistory = [];
+    }
+
+    this.state.imuDataHistory.push({
+      timestamp: Date.now(),
+      gyro: { x: adjustedGyroX, y: adjustedGyroY, z: adjustedGyroZ },
+      accel: { x: adjustedAccelX, y: adjustedAccelY, z: adjustedAccelZ }
+    });
+
+    if (this.state.imuDataHistory.length > 100) {
+      this.state.imuDataHistory.shift();
+    }
+  }
+
+  /**
    * Test headphone audio output by playing through controller headphones
    * This specifically routes audio to headphones instead of the built-in speaker
    */
@@ -1298,6 +1442,11 @@ export class QuickTestModal {
     if (activeTest === 'buttons') {
       this._trackButtonPresses(changes);
       return;
+    }
+
+    // If IMU test is active, update visualization
+    if (activeTest === 'imu' && changes.imu) {
+      this._updateImuVisualization(changes.imu);
     }
 
     // Helper function to handle button press with transition
@@ -1652,6 +1801,12 @@ function replayHapticTest() {
   }
 }
 
+function resetImuOffset() {
+  if (currentQuickTestInstance && currentQuickTestInstance.state?.lastImuData) {
+    currentQuickTestInstance.resetImuOffset(currentQuickTestInstance.state.lastImuData);
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
@@ -1661,3 +1816,4 @@ window.addTestBack = addTestBack;
 window.testHeadphoneAudio = testHeadphoneAudio;
 window.replaySpeakerTest = replaySpeakerTest;
 window.replayHapticTest = replayHapticTest;
+window.resetImuOffset = resetImuOffset;

@@ -204,7 +204,7 @@ class BaseController {
    */
   getSupportedQuickTests() {
     // Default implementation - supports all tests
-    return ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
+    return ['usb', 'buttons', 'imu', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
   }
 }
 

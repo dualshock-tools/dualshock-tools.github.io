@@ -326,7 +326,7 @@
     "The item has been copied to the clipboard.": "Elementet er blevet kopieret til udklipsholderen.",
     "This controller has unsaved changes that will be lost when the controller is rebooted.": "Denne controller har ikke-gemte ændringer, som vil gå tabt, når controlleren genstartes.",
     "This utility cannot fix stick drift.": "Dette værktøj kan ikke rette stick drift.",
-    "Unsupported browser.": "",
+    "Unsupported browser.": "Browseren understøttes ikke.",
     "Use expert mode": "Brug eksperttilstand",
     "Use four-step calibration": "Brug fire-trins kalibrering",
     "Use normal mode": "Brug normal tilstand",

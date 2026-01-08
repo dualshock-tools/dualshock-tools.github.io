@@ -193,7 +193,9 @@ class DS5OutputStruct {
   }
 }
 
-function ds5_color(x) {
+function ds5_color(serialNumber) {
+  // Color is obtained by the 5th and 6th characters of the serial number
+  // e.g. A12305xxx0000000 -> '05' -> Starlight Blue
   const colorMap = {
     '00': 'White',
     '01': 'Midnight Black',
@@ -214,9 +216,10 @@ function ds5_color(x) {
     'Z3': 'Astro Bot',
     'Z4': 'Fortnite',
     'Z6': 'The Last of Us',
+    'ZB': 'Icon Blue Limited Edition',
   };
 
-  const colorCode = x.slice(4, 6);
+  const colorCode = serialNumber.slice(4, 6);
   const colorName = colorMap[colorCode] || 'Unknown';
   return colorName;
 }

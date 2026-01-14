@@ -318,6 +318,9 @@ async function continue_connection({data, device}) {
 
     // Initialize SVG controller based on model
     await init_svg_controller(model);
+    if (model === "DS5_Edge") {
+      update_stop_sliders(controller.button_states);
+    }
 
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
@@ -843,6 +846,25 @@ function update_touchpad_circles(points) {
   });
 }
 
+function update_stop_sliders(changes) {
+  const sliderYOffset = { 0: 0, 1: 16, 2: 31, };
+  if (typeof changes?.l2_stop_slider !== 'undefined') {
+    const l2Handle = document.getElementById('L2_stop_slider_handle');
+    if (l2Handle) {
+      const positionIndex = changes.l2_stop_slider;
+      l2Handle.setAttribute('transform', `translate(0, ${sliderYOffset[positionIndex]})`);
+    }
+  }
+
+  if (typeof changes?.r2_stop_slider !== 'undefined') {
+    const r2Handle = document.getElementById('R2_stop_slider_handle');
+    if (r2Handle) {
+      const positionIndex = changes.r2_stop_slider;
+      r2Handle.setAttribute('transform', `translate(0, ${sliderYOffset[positionIndex]})`);
+    }
+  }
+}
+
 function get_current_main_tab() {
   const mainTabs = document.getElementById('mainTabs');
   const activeBtn = mainTabs?.querySelector('.nav-link.active');
@@ -918,6 +940,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
         update_stick_graphics(changes);
         update_ds_button_svg(changes, buttonMap);
         update_touchpad_circles(touchPoints);
+        update_stop_sliders(changes);
         detectFailedRangeCalibration(changes);
       }
       break;

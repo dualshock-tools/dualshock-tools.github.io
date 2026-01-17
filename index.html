@@ -6,7 +6,7 @@
 <title>DualShock Calibration GUI</title>
 
 <link id="bootstrap-css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-      rel="stylesheet" 
+      rel="stylesheet"
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
       crossorigin="anonymous">
 
@@ -15,7 +15,7 @@
       integrity="sha384-NvKbDTEnL+A8F/AA5Tc5kmMLSJHUO868P+lDtTpJIeQdGYaUIuLr4lVGOEA1OcMy"
       crossorigin="anonymous">
 
-<link rel="stylesheet" 
+<link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css"
       integrity="sha384-h/hnnw1Bi4nbpD6kE7nYfCXzovi622sY5WBxww8ARKwpdLj5kUWjRuyiXaD1U2JT"
       crossorigin="anonymous">
@@ -26,7 +26,7 @@
         crossorigin="anonymous"></script>
 
 <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
-<script src="core.js"></script>
+<script type="module" src="js/core.js"></script>
 
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -38,802 +38,378 @@
 <link rel="shortcut icon" href="/favicon.ico" />
 <meta name="apple-mobile-web-app-title" content="DS Tools" />
 
-<style>
-dl.row dt { font-weight: normal; }
-dl.row dd { font-family: monospace; }
-</style>
+<!-- External CSS files -->
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/finetune.css">
 
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
-<symbol id="paypal" viewBox="0 0 384 512">
-<path fill="#ffffff" d="M111.4 295.9c-3.5 19.2-17.4 108.7-21.5 134-.3 1.8-1 2.5-3 2.5H12.3c-7.6 0-13.1-6.6-12.1-13.9L58.8 46.6c1.5-9.6 10.1-16.9 20-16.9 152.3 0 165.1-3.7 204 11.4 60.1 23.3 65.6 79.5 44 140.3-21.5 62.6-72.5 89.5-140.1 90.3-43.4 .7-69.5-7-75.3 24.2zM357.1 152c-1.8-1.3-2.5-1.8-3 1.3-2 11.4-5.1 22.5-8.8 33.6-39.9 113.8-150.5 103.9-204.5 103.9-6.1 0-10.1 3.3-10.9 9.4-22.6 140.4-27.1 169.7-27.1 169.7-1 7.1 3.5 12.9 10.6 12.9h63.5c8.6 0 15.7-6.3 17.4-14.9 .7-5.4-1.1 6.1 14.4-91.3 4.6-22 14.3-19.7 29.3-19.7 71 0 126.4-28.8 142.9-112.3 6.5-34.8 4.6-71.4-23.8-92.6z"/>
-</symbol>
-<symbol id="ethereum" viewBox="0 0 320 512">
-<path fill="#ffffff" d="M311.9 260.8L160 353.6 8 260.8 160 0l151.9 260.8zM160 383.4L8 290.6 160 512l152-221.4-152 92.8z"/>
-</symbol>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-<symbol id="info" viewBox="0 -860 960 960">
-<path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
-</symbol>
-<symbol id="discord" viewBox="0 0 640 512">
-<path d="M524.531,69.836a1.5,1.5,0,0,0-.764-.7A485.065,485.065,0,0,0,404.081,32.03a1.816,1.816,0,0,0-1.923.91,337.461,337.461,0,0,0-14.9,30.6,447.848,447.848,0,0,0-134.426,0,309.541,309.541,0,0,0-15.135-30.6,1.89,1.89,0,0,0-1.924-.91A483.689,483.689,0,0,0,116.085,69.137a1.712,1.712,0,0,0-.788.676C39.068,183.651,18.186,294.69,28.43,404.354a2.016,2.016,0,0,0,.765,1.375A487.666,487.666,0,0,0,176.02,479.918a1.9,1.9,0,0,0,2.063-.676A348.2,348.2,0,0,0,208.12,430.4a1.86,1.86,0,0,0-1.019-2.588,321.173,321.173,0,0,1-45.868-21.853,1.885,1.885,0,0,1-.185-3.126c3.082-2.309,6.166-4.711,9.109-7.137a1.819,1.819,0,0,1,1.9-.256c96.229,43.917,200.41,43.917,295.5,0a1.812,1.812,0,0,1,1.924.233c2.944,2.426,6.027,4.851,9.132,7.16a1.884,1.884,0,0,1-.162,3.126,301.407,301.407,0,0,1-45.89,21.83,1.875,1.875,0,0,0-1,2.611,391.055,391.055,0,0,0,30.014,48.815,1.864,1.864,0,0,0,2.063.7A486.048,486.048,0,0,0,610.7,405.729a1.882,1.882,0,0,0,.765-1.352C623.729,277.594,590.933,167.465,524.531,69.836ZM222.491,337.58c-28.972,0-52.844-26.587-52.844-59.239S193.056,219.1,222.491,219.1c29.665,0,53.306,26.82,52.843,59.239C275.334,310.993,251.924,337.58,222.491,337.58Zm195.38,0c-28.971,0-52.843-26.587-52.843-59.239S388.437,219.1,417.871,219.1c29.667,0,53.307,26.82,52.844,59.239C470.715,310.993,447.538,337.58,417.871,337.58Z"/>
-</symbol>
-<symbol id="mail" viewBox="0 0 512 512">
-<path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"/>
-</symbol>
-<symbol id="github" viewBox="0 0 496 512">
-<path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/>
-</symbol>
-<symbol id="mug" viewBox="0 0 512 512">
-<path fill="#ffffff" d="M88 0C74.7 0 64 10.7 64 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C120.5 112.3 128 119.9 128 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C119.5 47.7 112 40.1 112 24c0-13.3-10.7-24-24-24zM32 192c-17.7 0-32 14.3-32 32V416c0 53 43 96 96 96H288c53 0 96-43 96-96h16c61.9 0 112-50.1 112-112s-50.1-112-112-112H352 32zm352 64h16c26.5 0 48 21.5 48 48s-21.5 48-48 48H384V256zM224 24c0-13.3-10.7-24-24-24s-24 10.7-24 24c0 38.9 23.4 59.4 39.1 73.1l1.1 1C232.5 112.3 240 119.9 240 136c0 13.3 10.7 24 24 24s24-10.7 24-24c0-38.9-23.4-59.4-39.1-73.1l-1.1-1C231.5 47.7 224 40.1 224 24z"/>
-</symbol>
-<symbol id="lang" viewBox="0 0 640 512">
-<path d="M0 128C0 92.7 28.7 64 64 64H256h48 16H576c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H320 304 256 64c-35.3 0-64-28.7-64-64V128zm320 0V384H576V128H320zM178.3 175.9c-3.2-7.2-10.4-11.9-18.3-11.9s-15.1 4.7-18.3 11.9l-64 144c-4.5 10.1 .1 21.9 10.2 26.4s21.9-.1 26.4-10.2l8.9-20.1h73.6l8.9 20.1c4.5 10.1 16.3 14.6 26.4 10.2s14.6-16.3 10.2-26.4l-64-144zM160 233.2L179 276H141l19-42.8zM448 164c11 0 20 9 20 20v4h44 16c11 0 20 9 20 20s-9 20-20 20h-2l-1.6 4.5c-8.9 24.4-22.4 46.6-39.6 65.4c.9 .6 1.8 1.1 2.7 1.6l18.9 11.3c9.5 5.7 12.5 18 6.9 27.4s-18 12.5-27.4 6.9l-18.9-11.3c-4.5-2.7-8.8-5.5-13.1-8.5c-10.6 7.5-21.9 14-34 19.4l-3.6 1.6c-10.1 4.5-21.9-.1-26.4-10.2s.1-21.9 10.2-26.4l3.6-1.6c6.4-2.9 12.6-6.1 18.5-9.8l-12.2-12.2c-7.8-7.8-7.8-20.5 0-28.3s20.5-7.8 28.3 0l14.6 14.6 .5 .5c12.4-13.1 22.5-28.3 29.8-45H448 376c-11 0-20-9-20-20s9-20 20-20h52v-4c0-11 9-20 20-20z"/>
-</symbol>
-</svg>
+  <nav class="navbar bg-body-tertiary navbar-expand-md bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand ds-i18n" href="https://dualshock-tools.github.io">DualShock Calibration GUI</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
+      <div class="collapse navbar-collapse container-fluid justify-content-end" id="navbarNavDropdown">
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-
-<nav class="navbar bg-body-tertiary navbar-expand-md bg-body-tertiary">
-  <div class="container-fluid">
-    <a class="navbar-brand ds-i18n" href="https://dualshock-tools.github.io">DualShock Calibration GUI</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse container-fluid justify-content-end" id="navbarNavDropdown">
-
-    <ul class="navbar-nav">
-    <li class="nav-item">
-        <a class="nav-link ds-i18n" href="#" onclick="show_faq_modal();">Frequently Asked Questions</a>
-    </li>
-    <li class="nav-item dropdown" id="navbarNavAltMarkup">
-        <a class="nav-link dropdown-toggle" id="langMenuButton" role="button" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
-            <svg class="bi text-secondary" width="1.5em" height="1.5em" ><use xlink:href="#lang"/></svg>&nbsp;<span id="curLang">English</span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langMenuButton"  id="availLangs">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link ds-i18n" href="#" onclick="show_faq_modal();">Frequently Asked Questions</a>
+          </li>
+          <li class="nav-item dropdown" id="navbarNavAltMarkup">
+            <a class="nav-link dropdown-toggle" id="langMenuButton" role="button" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
+              <svg class="bi text-secondary" width="1.5em" height="1.5em" ><use xlink:href="#lang"/></svg>&nbsp;<span id="curLang">English</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langMenuButton"  id="availLangs">
+            </ul>
+          </li>
         </ul>
-    </li>
-    </ul>
+      </div>
+
     </div>
+  </nav>
 
-  </div>
-</nav>
+  <div class="container p-2">
 
-
-<div class="container p-2">
-
-<div id="missinghid" style="display: none;">
-<p class="ds-i18n">Unsupported browser. Please use a web browser with WebHID support (e.g. Chrome).</p>
-</div>
-
-<div id="offlinebar" class="vstack p-2" style="display: none;">
-<p class="ds-i18n">Please connect a DualShock 4, a DualSense or DualSense Edge controller to your computer and press Connect.</p>
-<button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">
-    <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
-    <span class="ds-i18n">Connect</span>
-</button>
-<br>
-</div>
-
-<div id="onlinebar" class="vstack p-2" style="display: none;">
-<div class="row">
-    <div class="col-sm-9 hstack">
-        <p><b class="ds-i18n">Connected to:</b></p>&nbsp;<p id="devname"></p>
-    </div>
-    <div class="col-sm-3">
-        <p id="d-bat" style="text-align: right;"></p>
-    </div>
-</div>
-<button type="button" class="btn btn-outline-secondary ds-i18n" onclick="disconnect()">Disconnect</button><br>
-</div>
-
-<div id="mainmenu" class="container" style="display: none;">
-<div class="row">
-    <div class="col-md-6 col-sm-12">
-        <div class="card text-bg-light" >
-            <div class="card-header"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></div>
-            <dl class="row px-3 py-2" id="fwinfo"></dl>
-            <span id="infoshowall" class="pb-4 px-4 row">
-            <button class="btn btn-outline-secondary" onclick="show_info_modal()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
-            </span>
+    <!-- Unsupported Browser Warning -->
+    <div id="missinghid" style="bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
+      <div class="container">
+        <div style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+          <p class="mb-1">
+            <i class="fas fa-hand"></i>&nbsp;&nbsp;
+            <span class="ds-i18n">Unsupported browser.</span>
+          </p>
+          <p class="mb-1">
+            <span class="ds-i18n">Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.</span>
+            <span class="ds-i18n">Firefox is supported with the WebHID extension installed.</span>
+          </p>
+          <p class="mb-0">
+            <span class="ds-i18n">Using this utility on a phone or tablet is not supported.</span>
+          </p>
         </div>
-        <br>
+      </div>
     </div>
 
-    <div class="col-md-6 col-sm-12" style="min-width: 330px;">
-        <div class="vstack gap-2 p-2">
-            <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="calib_open()">Calibrate stick center</button>
-            <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_range()">Calibrate stick range</button>
-            <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune"><span class="ds-i18n">Finetune stick calibration</span> <i id="ds-i18n">(beta)</i></button>
-            <hr>
-            <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_flash()" id="resetBtn">Save changes permanently</button>
-            <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="multi_reset()" id="resetBtn">Reboot controller</button>
+    <div id="offlinebar" class="vstack p-2" style="display: none;">
+      <p class="ds-i18n">Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.</p>
+      <button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">
+        <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
+        <span class="ds-i18n">Connect</span>
+      </button>
+      <br>
+    </div>
 
-            <div class="card text-bg-light" >
-                <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
-                <div class="vstack px-2">
+    <div id="onlinebar" class="vstack p-2" style="display: none;">
+      <div class="row">
+        <div class="col-sm-9 hstack">
+          <p><b class="ds-i18n">Connected to:</b></p>&nbsp;<p id="devname"></p>
+        </div>
+        <div class="col-sm-3">
+          <p id="d-bat" style="text-align: right;"></p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-outline-secondary ds-i18n" onclick="disconnect()">Disconnect</button><br>
+    </div>
+
+    <div id="mainmenu" class="container" style="display: none;">
+      <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="controller-tab" data-bs-toggle="tab" data-bs-target="#controller-content" type="button" role="tab" aria-controls="controller-content" aria-selected="true">
+            <i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Calibration</span>
+          </button>
+        </li>
+        <!-- <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tests-tab" data-bs-toggle="tab" data-bs-target="#tests-content" type="button" role="tab" aria-controls="tests-content" aria-selected="false">
+            <i class="fas fa-vial"></i>&nbsp;&nbsp;<span class="ds-i18n">Tests</span>
+          </button>
+        </li> -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info-content" type="button" role="tab" aria-controls="info-content" aria-selected="false">
+            <i class="fas fa-info-circle"></i>&nbsp;&nbsp;<span class="ds-i18n">Info</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="debug-tab" data-bs-toggle="tab" data-bs-target="#debug-content" type="button" role="tab" aria-controls="debug-content" aria-selected="false">
+            <i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="mainTabsContent">
+        <div class="tab-pane show active" id="controller-content" role="tabpanel" aria-labelledby="controller-tab">
+          <!-- Main page content (controller info, calibration, joystick info) -->
+          <div class="row">
+            <div class="col-md-6 col-sm-12">
+              <div class="card text-bg-light" >
+                <div class="card-header"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></div>
+                <dl class="row px-3 py-2" id="fwinfo"></dl>
+                <span id="infoshowall" class="pb-4 px-4 row">
+                  <button class="btn btn-outline-secondary" onclick="show_info_tab()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
+                </span>
+              </div>
+              <br>
+
+              <div class="d-flex justify-content-end" id="quick-tests-div">
+                <button type="button" class="btn btn-outline-primary ds-btn mb-3" onclick="show_quick_test_modal()" id="quick-test-btn">
+                  <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
+                  <span id="quick-test-text" class="ds-i18n">Quick Test</span>
+                </button>
+              </div>
+
+              <div class="text-center mx-3" id="controller-svg-container">
+                <!-- DualSense 5 Controller SVG loaded from template -->
+                <div id="controller-svg-placeholder"></div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-sm-12" style="min-width: 330px;">
+              <div class="vstack gap-2 p-2">
+                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_stick_centers()" id="four-step-center-calib" style="display: none;">
+                  <span class="ds-i18n">Calibrate stick center</span>
+                </button>
+                <div class="btn-group w-100" role="group" style="display: none;" id="quick-center-calib-group">
+                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedCenterCalibration()" id="quick-center-calib">
+                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    <span class="ds-i18n">Calibrate stick center</span>
+                  </button>
+                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                    <span class="visually-hidden">Toggle dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('quick', event)">
+                      <i class="fas fa-check me-2" id="check-quick" style="display: none;"></i><span class="ds-i18n">Use quick calibration</span>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('four-step', event)">
+                      <i class="fas fa-check me-2" id="check-four-step"></i><span class="ds-i18n">Use four-step calibration</span>
+                    </a></li>
+                  </ul>
+                </div>
+                <div class="btn-group w-100" role="group" id="range-calib-group">
+                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedRangeCalibration()" id="range-calib">
+                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    <span class="ds-i18n">Calibrate stick range</span>
+                  </button>
+                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                    <span class="visually-hidden">Toggle dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('normal', event)">
+                      <i class="fas fa-check me-2" id="check-range-normal"></i><span class="ds-i18n">Use normal mode</span>
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('expert', event)">
+                      <i class="fas fa-check me-2" id="check-range-expert" style="display: none;"></i><span class="ds-i18n">Use expert mode</span>
+                    </a></li>
+                  </ul>
+                </div>
+                <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
+                  <span class="ds-i18n">Finetune stick calibration</span>
+                </button>
+                <hr>
+                <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()">Save changes permanently</button>
+                <button id="restore-calibration-btn" type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="openCalibrationHistoryModal()">Restore calibration</button>
+                <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>
+
+                <div class="card text-bg-light" >
+                  <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
+                  <div class="vstack px-2">
                     <center>
+                      <div style="position: relative; display: inline-block;">
                         <canvas id="stickCanvas" width="300" height="150"></canvas>
+                        <svg
+                          id="circularityCheckIcon" class="bi" width="32" height="32"
+                          style="cursor: pointer; color: #ff4000cb; position: absolute; top: 25px; right: -30px; display: none;"
+                          onclick="show_circularity_warning()"
+                        >
+                          <use xlink:href="#info"/></svg>
+                      </div>
                     </center>
-                </div>
-                <div class="px-2">
-                        <div class="hstack">
-                            <div class="vstack" style="text-align: center;">
-                                <span>LX:</span> 
-                                <pre id="lx-lbl" style="min-width: 80px;"></pre>
-                            </div>
+                  </div>
+                  <div class="px-2">
+                    <div class="hstack">
+                      <div class="vstack" style="text-align: center;">
+                        <span>LX:</span>
+                        <pre id="lx-lbl" style="min-width: 80px;"></pre>
+                      </div>
 
-                            <div class="vstack" style="text-align: center;">
-                                <span>LY:</span> 
-                                <pre id="ly-lbl" style="min-width: 80px;"></pre>
-                            </div>
+                      <div class="vstack" style="text-align: center;">
+                        <span>LY:</span>
+                        <pre id="ly-lbl" style="min-width: 80px;"></pre>
+                      </div>
 
-                            <div class="vstack" style="text-align: center;">
-                                <span>RX:</span> 
-                                <pre id="rx-lbl" style="min-width: 80px;"></pre>
-                            </div>
+                      <div id="stick-item-rx" class="vstack" style="text-align: center;">
+                        <span>RX:</span>
+                        <pre id="rx-lbl" style="min-width: 80px;"></pre>
+                      </div>
 
-                            <div class="vstack" style="text-align: center;">
-                                <span>RY:</span> 
-                                <pre id="ry-lbl" style="min-width: 80px;"></pre>
-                            </div>
-                        </div>
-                </div>
-                <div class="px-2">
+                      <div id="stick-item-ry" class="vstack" style="text-align: center;">
+                        <span>RY:</span>
+                        <pre id="ry-lbl" style="min-width: 80px;"></pre>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="px-2">
                     <center>
-                        <input class="form-check-input" type="checkbox" value="" id="checkCircularity">
-                        <label class="form-check-label ds-i18n" for="checkCircularity">Check circularity</label>
-                        <div class="hstack" id="circ-data">
-                            <div class="vstack" style="text-align: center;">
-                                <span class="ds-i18n">Err L:</span> 
-                                <pre id="el-lbl" style="min-width: 80px;"></pre>
-                            </div>
+                      <div class="btn-group mb-3" role="group" aria-label="Display mode options">
+                        <input type="radio" class="btn-check" name="displayMode" id="normalMode" value="normal" checked>
+                        <label class="btn btn-outline-secondary btn-sm ds-i18n" for="normalMode">Normal</label>
 
-                            <div class="vstack" style="text-align: center;">
-                                <span class="ds-i18n">Err R:</span> 
-                                <pre id="er-lbl" style="min-width: 80px;"></pre>
-                            </div>
-                        </div>
+                        <input type="radio" class="btn-check" name="displayMode" id="centerZoomMode" value="centerZoom">
+                        <label class="btn btn-outline-secondary btn-sm ds-i18n" for="centerZoomMode">10x zoom</label>
+
+                        <input type="radio" class="btn-check" name="displayMode" id="checkCircularityMode" value="checkCircularity">
+                        <label class="btn btn-outline-secondary btn-sm ds-i18n" for="checkCircularityMode">Check circularity</label>
+                      </div>
                     </center>
+                  </div>
                 </div>
+              </div>
             </div>
-
+          </div>
         </div>
-    </div>
-
-</div>
-
-<div class="row">
-<p class="ds-i18n">Sections below are not useful, just some debug infos or manual commands</p>
-</div>
-<div class="row">
-    <div class="col-md-6 col-sm-12">
-        <div class="card text-bg-light" >
-            <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
-            <div class="vstack p-2">
-                <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
+        <!-- <div class="tab-pane" id="tests-content" role="tabpanel" aria-labelledby="tests-tab">
+          <div class="card text-bg-light mt-3" style="min-height: 500px;">
+            <div class="card-header">
+              <i class="fas fa-vial"></i>&nbsp;&nbsp;<span class="ds-i18n">Tests</span>
             </div>
-        </div>
-        <br>
-    </div>
-
-    <div class="col-md-6 col-sm-12">
-        <div class="card text-bg-light" >
-        <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
-        <div class="vstack gap-2 p-2">
-            <div class="hstack gap-2">
-                <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="multi_nvstatus()">Query NVS status</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvsunlock()">NVS unlock</button>
-                <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_nvslock()">NVS lock</button>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-4">
+                  <div class="list-group" id="tests-list" role="tablist">
+                    <a class="list-group-item list-group-item-action active ds-i18n" id="haptic-test-tab" data-bs-toggle="list" href="#haptic-test-pane">Haptic Motors</a>
+                  </div>
+                </div>
+                <div class="col-8">
+                  <div class="bg-white border rounded-3 p-4">
+                    <div class="tab-content">
+                      <div class="tab-pane show active" id="haptic-test-pane" role="tabpanel" aria-labelledby="haptic-test-tab">
+                        <h5 class="ds-i18n">Test the Haptic Motors</h5>
+                        <p class="ds-i18n">Press L2 to test the strong (left) haptic motor</p>
+                        <p class="ds-i18n">Press R2 to test the weak (right) haptic motor</p>
+                        <p class="ds-i18n">The motor strength will match how hard you press the trigger</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button id="btnmcs" type="button" class="btn btn-primary ds-btn ds-i18n" onclick="multi_calibrate_sticks()">Fast calibrate stick center (OLD)</button>
-        </div>
-        </div>
-    </div>
-</div>
-
-</div>
-
-<!-- Finetune Modal -->
-<div class="modal fade" id="finetuneModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="finetuneModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5 ds-i18n" id="finetuneModalLabel">Finetune stick calibration</h1>
-        <button type="button" class="btn-close" aria-label="Close" onclick="finetune_cancel()"></button>
-      </div>
-      <div class="modal-body">
-        <p class="ds-i18n">This screen allows to finetune raw calibration data on your controller</p>
-        <div style="width: 100%; display: flex; justify-content: center;">
-          <div class="container-fluid">
+          </div>
+        </div> -->
+        <div class="tab-pane" id="info-content" role="tabpanel" aria-labelledby="info-tab">
+          <div class="container-fluid py-4">
             <div class="row">
-              <div class="col col-lg-6 col-12">
-
-                <div class="card text-bg-light" >
-                  <div class="card-header"><span class="ds-i18n">Left stick</span></div>
+              <div class="col-lg-12 col-xl-6 py-3">
+                <div class="card">
+                  <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;<span class="ds-i18n">Software</span></h5>
                   <div class="card-body">
-                    <div class="container-fluid">
-                      <div class="row">
-                        <table>
-                          <tr><td></td><td style="text-align: center;">
-                              <input id="finetuneLT" type="number" class="form-control" min="0" max="65535" value="0">
-                            </td><td></td></tr>
-                            <tr>
-                              <td height="160px" style="vertical-align: middle; align: right;">
-                                <input id="finetuneLL" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                              <td><canvas id="finetuneStickCanvasL" width="150" height="150"></canvas></td>
-                              <td height="160px" style="vertical-align: middle; align: left;">
-                                <input id="finetuneLR" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                            </tr>
-                            <tr><td></td><td style="text-align: center;">
-                                <input id="finetuneLB" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td><td></td></tr>
-                        </table>
-                      </div>
-                      <div class="row">
-                        <div class="col"></div>
-                        <div class="col col-auto">
-                          <label for="finetuneLX" class="col-form-label ds-i18n">Center X</label>
-                        </div>
-                        <div class="col col-auto">
-                          <input id="finetuneLX" type="number" class="form-control" min="0" max="65535" value="0">
-                        </div>
-                        <div class="col"></div>
-                      </div>
-                      <div class="row">
-                        <div class="col"></div>
-                        <div class="col-auto">
-                          <label for="finetuneLY" class="col-form-label ds-i18n">Center Y</label>
-                        </div>
-                        <div class="col-auto">
-                          <input id="finetuneLY" type="number" class="form-control" min="0" max="65535" value="0">
-                        </div>
-                        <div class="col"></div>
-                      </div>
-                    </div>
-
-                    <div class="px-2">
-                            <div class="hstack">
-                                <div class="vstack" style="text-align: center;">
-                                    <span>LX:</span> 
-                                    <pre id="finetuneStickCanvasLx-lbl" style="min-width: 80px;"></pre>
-                                </div>
-
-                                <div class="vstack" style="text-align: center;">
-                                    <span>LY:</span> 
-                                    <pre id="finetuneStickCanvasLy-lbl" style="min-width: 80px;"></pre>
-                                </div>
-                            </div>
-                    </div>
-
+                    <dl class="row" id="fwinfoextra-fw"></dl>
                   </div>
                 </div>
-
-              </div> <!-- col -->
-              <div class="col col-lg-6 col-12">
-                <div class="card text-bg-light" >
-                  <div class="card-header"><span class="ds-i18n">Right stick</span></div>
+              </div>
+              <div class="col-lg-12 col-xl-6 py-3">
+                <div class="card">
+                  <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;<span class="ds-i18n">Hardware</span></h5>
                   <div class="card-body">
-                    <div class="container-fluid">
-                      <div class="row">
-                        <table>
-                          <tr><td></td><td style="text-align: center;">
-                              <input id="finetuneRT" type="number" class="form-control" min="0" max="65535" value="0">
-                            </td><td></td></tr>
-                            <tr>
-                              <td height="160px" style="vertical-align: middle; align: right;">
-                                <input id="finetuneRL" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                              <td><canvas id="finetuneStickCanvasR" width="150" height="150"></canvas></td>
-                              <td height="160px" style="vertical-align: middle; align: left;">
-                                <input id="finetuneRR" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td>
-                            </tr>
-                            <tr><td></td><td style="text-align: center;">
-                                <input id="finetuneRB" type="number" class="form-control" min="0" max="65535" value="0">
-                              </td><td></td></tr>
-                        </table>
-                      </div>
-                      <div class="row">
-                        <div class="col"></div>
-                        <div class="col col-auto">
-                          <label for="finetuneRX" class="col-form-label ds-i18n">Center X</label>
-                        </div>
-                        <div class="col col-auto">
-                          <input id="finetuneRX" type="number" class="form-control" min="0" max="65535" value="0">
-                        </div>
-                        <div class="col"></div>
-                      </div>
-                      <div class="row">
-                        <div class="col"></div>
-                        <div class="col-auto">
-                          <label for="finetuneRY" class="col-form-label ds-i18n">Center Y</label>
-                        </div>
-                        <div class="col-auto">
-                          <input id="finetuneRY" type="number" class="form-control" min="0" max="65535" value="0">
-                        </div>
-                        <div class="col"></div>
-                      </div>
-                    </div>
-
-                    <div class="px-2">
-                            <div class="hstack">
-                                <div class="vstack" style="text-align: center;">
-                                    <span>RX:</span> 
-                                    <pre id="finetuneStickCanvasRx-lbl" style="min-width: 80px;"></pre>
-                                </div>
-
-                                <div class="vstack" style="text-align: center;">
-                                    <span>RY:</span> 
-                                    <pre id="finetuneStickCanvasRy-lbl" style="min-width: 80px;"></pre>
-                                </div>
-                            </div>
-                    </div>
-
+                    <dl class="row" id="fwinfoextra-hw"></dl>
                   </div>
                 </div>
-              </div> <!-- col -->
-            </div> <!-- row -->
+              </div>
+            </div>
           </div>
-
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button direction="button" class="btn btn-outline-secondary ds-i18n" onclick="finetune_cancel()">Cancel</button>
-        <button type="button" class="btn btn-primary ds-i18n" onclick="finetune_save()">Save</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Welcome Modal -->
-<div class="modal fade" id="welcomeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5 ds-i18n" id="welcomeModalLabel">Welcome to the Calibration GUI</h1>
-      </div>
-      <div class="modal-body">
-      <p class="ds-i18n">Just few things to know before you can start:</p>
-      <ul>
-        <li class="ds-i18n">This website is not affiliated with Sony, PlayStation &amp; co.</li>
-        <li class="ds-i18n">This service is provided without warranty. Use at your own risk.</li>
-        <li class="ds-i18n">This website uses analytics to improve the service.</li>
-        <li class="ds-i18n">Keep the internal battery of the controller connected and ensure it is well charged. If the battery dies during operations, the controller will be damaged and rendered unusable.</li>
-        <li class="ds-i18n">Before doing the permanent calibration, try the temporary one to ensure that everything is working well.</li>
-      </ul>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary ds-i18n" onclick="welcome_accepted();">Understood</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- New calibrate modal -->
-<div class="modal fade" id="calibCenterModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="calibTitle" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5 ds-i18n" id="calibTitle">Stick center calibration</h1>
-        <button type="button" id="calibCross" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-
-        <div class="row">
-            <div class="col-4">
-                <div class="list-group" id="list-tab">
-                <a class="ds-i18n list-group-item list-group-item-action active" id="list-1-calib">Welcome</a>
-                <a class="ds-i18n list-group-item list-group-item-action" id="list-2-calib">Step 1</a>
-                <a class="ds-i18n list-group-item list-group-item-action" id="list-3-calib">Step 2</a>
-                <a class="ds-i18n list-group-item list-group-item-action" id="list-4-calib">Step 3</a>
-                <a class="ds-i18n list-group-item list-group-item-action" id="list-5-calib">Step 4</a>
-                <a class="ds-i18n list-group-item list-group-item-action" id="list-6-calib">Completed</a>
-                </div>
-            </div>
-            <div class="col-8">
-                <div class="container" id="list-1">
-                    <h4 class="ds-i18n">Welcome to the stick center-calibration wizard!</h4>
-
-                    <p class="ds-i18n">This tool will guide you in re-centering the analog sticks of your controller. It consists in four steps: you will be asked to move both sticks in a direction and release them.</p>
-
-                    <p class="ds-i18n">Please be aware that, <i>once the calibration is running, it cannot be canceled</i>. Do not close this page or disconnect your controller until is completed.</p>
-
-                    <p class="ds-i18n">Press <b>Start</b> to begin calibration.</p>
-                </div>
-                <div class="container" style="display: none;" id="list-2">
-                    <p class="ds-i18n">Please move both sticks to the <b>top-left corner</b> and release them.</p>
-                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
-                </div>
-                <div class="container" style="display: none;" id="list-3">
-                    <p class="ds-i18n">Please move both sticks to the <b>top-right corner</b> and release them.</p>
-                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
-                </div>
-                <div class="container" style="display: none;" id="list-4">
-                    <p class="ds-i18n">Please move both sticks to the <b>bottom-left corner</b> and release them.</p>
-                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
-                </div>
-                <div class="container" style="display: none;" id="list-5">
-                    <p class="ds-i18n">Please move both sticks to the <b>bottom-right corner</b> and release them.</p>
-                    <p class="ds-i18n">When the sticks are back in the center, press <b>Continue</b>.</p>
-                </div>
-                <div class="container" style="display: none;" id="list-6">
-                    <p class="ds-i18n">Calibration completed successfully!</p>
-                    <p><span class="ds-i18n">You can check the calibration with the</span> <a href="https://hardwaretester.com/gamepad" target="_blank">gamepad tester</a>.</p>
-                    <p class="ds-i18n">Have a nice day :)</p>
-                </div>
-            </div>
         </div>
 
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" id="calibNext" onclick="calib_next()">
-        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" id="btnSpinner" style="display: none;"></span>
-        <span id="calibNextText" class="ds-i18n">Next</span>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+        <div class="tab-pane" id="debug-content" role="tabpanel" aria-labelledby="debug-tab">
+          <div class="container-fluid py-4">
+            <div class="row">
+              <p class="ds-i18n">Sections below are not useful, just some debug infos or manual commands</p>
+            </div>
 
-<!-- Modal -->
-<div class="modal fade" id="infoModal" tabindex="-1" aria-labelledby="infoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-fullscreen-md-down">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="infoModalLabel"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-      <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-12 col-xl-6 py-3">
-                <div class="card">
-                    <h5 class="card-header"><i class="fas fa-code"></i>&nbsp;&nbsp;Software</h5>
-                    <div class="card-body">
-                        <dl class="row" id="fwinfoextra-fw"></dl>
+            <div class="row">
+              <div class="col-md-6 col-sm-12">
+                <div class="card text-bg-light" >
+                  <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
+                  <div class="vstack p-2">
+                    <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
+                  </div>
+                </div>
+                <br>
+              </div>
+
+              <div class="col-md-6 col-sm-12">
+                <div class="card text-bg-light" >
+                  <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
+                  <div class="vstack gap-2 p-2">
+                    <div class="hstack gap-2">
+                      <button type="button" class="btn btn-success ds-btn ds-i18n" onclick="refresh_nvstatus()">Query NVS status</button>
+                      <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="nvsunlock()">NVS unlock</button>
+                      <button type="button" class="btn btn-primary ds-btn ds-i18n" onclick="nvslock()">NVS lock</button>
                     </div>
+                  </div>
                 </div>
+              </div>
             </div>
-            <div class="col-lg-12 col-xl-6 py-3">
-                <div class="card">
-                    <h5 class="card-header"><i class="fas fa-microchip"></i>&nbsp;&nbsp;Hardware</h5>
-                    <div class="card-body">
-                        <dl class="row" id="fwinfoextra-hw"></dl>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Alert Messages Container -->
+  <div class="container-fluid fixed-bottom " style="z-index: 1040; pointer-events: none; bottom: 70px;">
+    <div class="container">
+      <div id="alert-container" class="mb-3" style="pointer-events: auto;">
+        <!-- Alert messages will be dynamically inserted here -->
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modal -->
-<div class="modal fade" id="calibrateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Calibrating center</h1>
-      </div>
-      <div class="modal-body">
-        <p class="ds-i18n">Recentering the controller sticks. </p>
-        <p class="ds-i18n">Please do not close this window and do not disconnect your controller. </p>
-        <div class="progress" role="progressbar" aria-label="Centering" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress-bar" style="width: 0%"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal -->
-<div class="modal fade" id="rangeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5 ds-i18n" id="staticBackdropLabel">Range calibration</h1>
-      </div>
-      <div class="modal-body">
-        <p class="ds-i18n"><b>The controller is now sampling data!</b></p>
-        <p class="ds-i18n">Rotate the sticks slowly to cover the whole range. Press "Done" when completed.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary ds-i18n" onclick="multi_calibrate_range_on_close()">Done</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Edge in progress Modal -->
-<div class="modal fade" id="edgeProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="edgeProgressLabel" aria-hidden="true">
-  <div class="modal-dialog  modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5 ds-i18n" id="edgeProgressLabel">Storing calibration...</h1>
-      </div>
-      <div class="modal-body">
-        <p class="ds-i18n">Calibration is being stored in the stick modules.</p>
-        <p class="ds-i18n">Please do not close this window and do not disconnect your controller. </p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="edgeModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title ds-i18n">DualSense Edge Calibration</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
-      <div class="modal-body p-4" id="donateBody">
-          <p class="ds-i18n">Support for calibrating DualSense Edge stick modules is now available as an <b>experimental feature</b>.</p>
-          <p class="ds-i18n">Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.</p>
-          <p class="ds-i18n">To store a custom calibration on the stick's internal memory, a <b>hardware modification</b> is required.</p>
-          <p class="ds-i18n">This involves temporarily disabling write protection by applying <b>+1.8V</b> to a specific test point on each module.</p>
-          <p></p>
-
-          <p><span class="ds-i18n">You can do this in two ways:</span>
-          <ul>
-            <li class="ds-i18n"><b>Internally</b>: by soldering a wire from a +1.8V source to the write-protect TP.</li>
-            <li class="ds-i18n"><b>Externally</b>: by applying +1.8V directly to the visible test point without opening the controller.</li>
-          </ul>
+  <!-- About drift and this utility -->
+  <div id="aboutdrift" style="position: fixed; bottom: 70px; left: 0; right: 0; z-index: 1030; display: none;">
+    <div class="container">
+      <div class="mb-4" style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
+        <p class="mb-2">
+          <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">This utility cannot fix stick drift.</span>
         </p>
-
-        <p><b><span class="ds-i18n">This is only for advanced users. If you're not sure what you're doing, please do not attempt it.</span></b></p>
-        <p><span class="ds-i18n">More details and images</span>&nbsp;<a href="https://github.com/lewy20041/Dualsense_Edge_Modules_Callibration">here</a>.</p>
-
-        <p class="ds-i18n">We are not responsible for any damage caused by attempting this modification.</p>
-        <p class="ds-i18n">For more info or help, feel free to reach out on Discord.</p>
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Understood</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="donateModal" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <p class="mb-2">
+          <span class="ds-i18n">Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.</span>
+          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span></p>
+        <p class="mb-0">
+          <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.</span>
+        </p>
       </div>
 
-      <div class="modal-body p-4" id="donateBody">
-        <p class="ds-i18n">Hi, thank you for using this software.</p>
-        <p><span class="ds-i18n">If you're finding it helpful and you want to support my efforts, feel free to</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="text-body-secondary ds-i18n">buy me a coffee</a><span class="ds-i18n">! :)</span></p>
-        <p class="ds-i18n">Do you have any suggestion or issue? Drop me a message via email or discord.</p>
-        <p class="ds-i18n">Cheers!</p>
-
-        <div class="collapse" id="ethereumCollapse">
-            <div class="card card-body">
-                <h5 class="card-title">Ethereum Address</h5>
-                <center><img src="donate.png" width="128px" /></center>
-                <input type="text" class="form-control" value="0x27dDA2f15A6A477fcdFB3709Ed0760aEF0246D5D" readonly />
-            </div>
+      <div id="lastConnected" class="gap-2">
+        <span class="text-muted"><i class="fas fa-history"></i>&nbsp;&nbsp;<span class="ds-i18n">Last connected</span>:</span>
+        <span id="lastConnectedInfo"></span>
+        <div id="lastConnectedWarning" style="display: none;">
+          <p class="text-danger" style="margin-top: 8px; margin-bottom: 0;">
+            <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;<span class="ds-i18n">This controller has unsaved changes that will be lost when the controller is rebooted.</span>
+          </p>
         </div>
       </div>
-      <div class="modal-footer">
-        <button data-bs-toggle="collapse" data-bs-target="#ethereumCollapse" aria-expanded="false" aria-controls="ethereumCollapse" type="button" class="btn btn-success"> 
-            <svg class="bi" width="18" height="18"><use xlink:href="#ethereum"/></svg>&nbsp;Ethereum
-        </button>
-
-        <button onclick="window.open('https://paypal.me/alaincarlucci')" type="button" class="btn btn-primary" data-bs-dismiss="modal">
-            <svg class="bi" width="18" height="18"><use xlink:href="#paypal"/></svg>&nbsp;&nbsp;PayPal
-        </button>
-      </div>
     </div>
   </div>
-</div>
 
-<!-- Popup -->
-<div class="modal fade" id="popupModal" tabindex="-1" aria-labelledby="popupTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-body" id="popupBody"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+  <!-- Fixed Footer -->
+  <footer class="fixed-bottom bg-body-tertiary border-top">
+    <div class="container">
+      <div class="d-flex flex-column flex-sm-row justify-content-between py-3" id="footbody">
+        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.24</a> (2026-01-13) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+
+        <ul class="list-unstyled d-flex mb-0">
+          <li class="ms-3"><a class="text-dark" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="https://discord.gg/w2P7Rrs2Yp" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#discord"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="https://github.com/dualshock-tools/" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#github"/></svg></a></li>
+          <li class="ms-3"><a class="text-dark" href="https://the.al/ds_history/"><svg class="bi" width="24" height="24"><use xlink:href="#time-back"/></svg></a></li>
+        </ul>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- FAQ -->
-<div class="modal fade" id="faqModal" tabindex="-1" role="dialog" aria-labelledby="faqModalTitle" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-fullscreen-md-down" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title ds-i18n" id="faqModalTitle">Frequently Asked Questions</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="p-3 ds-i18n">Welcome to the F.A.Q. section! Below, you'll find answers to some of the most commonly asked questions about this website. If you have any other inquiries or need further assistance, feel free to reach out to me directly. Your feedback and questions are always welcome!</div>
-        <div class="accordion accordion-flush" id="accordionFlushExample">
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse3" aria-expanded="false" aria-controls="flush-collapse3">How does it work?</button>
-            </h2>
-            <div id="flush-collapse3" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">Behind the scenes, this website is the culmination of one year of dedicated effort in reverse-engineering DualShock controllers for fun/hobby from a random guy on the internet.</p>
-                
-                <p><span class="ds-i18n">Through</span> <a class="ds-i18n" href='https://blog.the.al' target='_blank'>this research</a><span class="ds-i18n">, it was discovered that there exist some undocumented commands on DualShock controllers that can be sent via USB and are used during factory assembly process. If these commands are sent, the controller starts the recalibration of analog sticks.</span></p>
-                <p class="ds-i18n">While the primary focus of this research wasn't initially centered on recalibration, it became apparent that a service offering this capability could greatly benefit numerous individuals. And thus, here we are.</p>
-              </div>
-            </div>
-          </div>
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">Does the calibration remain effective during gameplay on PS4/PS5?</button>
-            </h2>
-            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="ds-i18n accordion-body">Yes, if you tick the checkbox "Write changes permanently in the controller". In that case, the calibration is flashed directly in the controller firmware. This ensures that it remains in place regardless of the console it's connected to.</div>
-            </div>
-          </div>
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">Is this an officially endorsed service?</button>
-            </h2>
-            <div id="flush-collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="ds-i18n accordion-body">No, this service is simply a creation by a DualShock enthusiast.</div>
-            </div>
-          </div>
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse4" aria-expanded="false" aria-controls="flush-collapse4">Does this website detects if a controller is a clone?</button>
-            </h2>
-            <div id="flush-collapse4" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">Yes, only DualShock4 at the moment. This happened because I accidentally purchased some clones, spent time identifying the differences and added this functionality to prevent future deception.</p>
-                
-                <p class="ds-i18n">Unfortunately, the clones cannot be calibrated anyway, because they only clone the behavior of a DualShock4 during a normal gameplay, not all the undocumented functionalities.</p>
-
-                <p class="ds-i18n">If you want to extend this detection functionality to DualSense, please ship me a fake DualSense and you'll see it in few weeks.</p>
-              </div>
-            </div>
-          </div>
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse5" aria-expanded="false" aria-controls="flush-collapse5">What development is in plan?</button>
-            </h2>
-            <div id="flush-collapse5" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">I maintain two separate to-do lists for this project, although the priority has yet to be established.</p>
-                
-                <p class="ds-i18n">The first list is about enhancing support for DualShock4 and DualSense controllers:</p>
-                <ul>
-                <li class="ds-i18n">Implement calibration of L2/R2 triggers.</li>
-                <li class="ds-i18n">Improve detection of clones, particularly beneficial for those seeking to purchase used controllers with assurance of authenticity.</li>
-                <li class="ds-i18n">Enhance user interface (e.g. provide additional controller information)</li>
-                <li class="ds-i18n">Add support for recalibrating IMUs.</li>
-                <li class="ds-i18n">Additionally, explore the possibility of reviving non-functioning DualShock controllers (further discussion available on Discord for interested parties).</li>
-                </ul>
-                
-                <p class="ds-i18n">The second list contains new controllers I aim to support:</p>
-                <ul>
-                <li class="ds-i18n">DualSense Edge</li>
-                <li class="ds-i18n">DualShock 3</li>
-                <li class="ds-i18n">XBox Controllers</li>
-                </ul>
-                
-                <p class="ds-i18n">Each of these tasks presents both immense interest and significant time investment. To provide context, supporting a new controller typically demands 6-12 months of full-time research, alongside a stroke of good fortune.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse7" aria-expanded="false" aria-controls="flush-collapse7">Can I reset a permanent calibration to previous calibration?</button>
-            </h2>
-            <div id="flush-collapse7" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">No.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse8" aria-expanded="false" aria-controls="flush-collapse8">Can you overwrite a permanent calibration?</button>
-            </h2>
-            <div id="flush-collapse8" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">Yes. Simply do another permanent calibration.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse9" aria-expanded="false" aria-controls="flush-collapse9">Does this software resolve stickdrift?</button>
-            </h2>
-            <div id="flush-collapse9" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                    <p class="ds-i18n">Stickdrift is caused by a physical defect; namely dirt, worn potentiometer or in some cases a worn spring.</p>
-                    <p class="ds-i18n">This software will not fix stick drift on its own if you already experience that. What it will help with, is ensuring the new joystick(s) will function properly after replacing the old one(s) to work well with.</p>
-                    <p class="ds-i18n">I have noticed some controllers out of the box have worse factory calibration than if I would recalibrate them. Especially true for circularity of SCUF controllers with a unique shell.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse10" aria-expanded="false" aria-controls="flush-collapse10">(Dualsense) Will updating the firmware reset calibration?</button>
-            </h2>
-            <div id="flush-collapse10" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">No.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse11" aria-expanded="false" aria-controls="flush-collapse11">After range calibration, joysticks always go in corners.</button>
-            </h2>
-            <div id="flush-collapse11" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">This issue happens because you have clicked "Done" immediately after starting a range calibration.</p>
-                <b><p class="ds-i18n">Please read the instructions.</p></b>
-                <p class="ds-i18n">You have to rotate the joysticks before you press "Done".</p>
-                <p class="ds-i18n">Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.</p>
-                <p class="ds-i18n">Only after you have done that, you click on "Done".</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse6" aria-expanded="false" aria-controls="flush-collapse6">I love this service, it helped me! How can I contribute?</button>
-            </h2>
-            <div id="flush-collapse6" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">I'm glad to hear that you found this helpful! If you're interested in contributing, here are a few ways you can help me:</p>
-                <ul>
-                <li><span class="ds-i18n">Consider making a</span> <a href="https://paypal.me/alaincarlucci" target="_blank" class="ds-i18n">donation</a> <span class="ds-i18n">to support my late-night caffeine-fueled reverse-engineering efforts.</span></li>
-                <li class="ds-i18n">Ship me a controller you would love to add (send me an email for organization).</li>
-                <li><a href="https://github.com/dualshock-tools/dualshock-tools.github.io/blob/main/TRANSLATIONS.md" class="ds-i18n" target="_blank">Translate this website in your language</a><span class="ds-i18n">, to help more people like you!</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="container">
-  <footer>
-    <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top" id="footbody">
-        <p><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.3</a> (2025-04-10) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
-
-      <ul class="list-unstyled d-flex">
-        <li class="ms-3"><a class="link-body-emphasis" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>
-        <li class="ms-3"><a class="link-body-emphasis" href="https://discord.gg/w2P7Rrs2Yp" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#discord"/></svg></a></li>
-        <li class="ms-3"><a class="link-body-emphasis" href="https://github.com/dualshock-tools/" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#github"/></svg></a></li>
-      </ul>
     </div>
   </footer>
-</div>
 
 </body>
 <!-- Google tag (gtag.js) -->
@@ -843,6 +419,8 @@ dl.row dd { font-family: monospace; }
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-FSXPMDXLLS');
-  gboot();
+
+  // The gboot() function is now auto-called when the core.js module loads
+  // No manual initialization needed here
 </script>
 </html>

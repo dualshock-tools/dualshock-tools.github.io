@@ -1,0 +1,51 @@
+<!-- Modal -->
+<div class="modal fade" id="rangeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="staticBackdropLabel">Range calibration</h1>
+      </div>
+      <div class="modal-body">
+        <p><b class="ds-i18n pulsing-text">The controller is now sampling data!</b></p>
+        <p class="ds-i18n">Rotate the sticks slowly at least 2 times in one direction and 2 times in the other direction to cover the whole range.</p>
+
+        <div style="display: flex; justify-content: center; gap: 0px; align-items: center; font-family: monospace; font-size: 0.85em;">
+          <div style="text-align: left; min-width: 65px;">
+            <div><small>LX: <span id="range-lx-lbl">0.00</span></small></div>
+            <div><small>LY: <span id="range-ly-lbl">0.00</span></small></div>
+          </div>
+          <div style="text-align: center;">
+            <canvas id="range-left-stick-canvas" width="150" height="150"></canvas>
+          </div>
+          <div style="text-align: center;">
+            <canvas id="range-right-stick-canvas" width="150" height="150"></canvas>
+          </div>
+          <div style="text-align: left; min-width: 65px;">
+            <div id="range-rx"><small>RX: <span id="range-rx-lbl">0.00</span></small></div>
+            <div id="range-ry"><small>RY: <span id="range-ry-lbl">0.00</span></small></div>
+          </div>
+        </div>
+
+        <div class="progress mt-2" id="range-progress-container" role="progressbar" aria-label="Range calibration progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div id="range-progress-bar" class="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="mt-2" id="range-progress-text-container">
+          <small class="text-muted">
+            <span class="ds-i18n">Progress</span>: <span id="range-progress-text">0%</span>
+          </small>
+        </div>
+
+        <div class="alert alert-info mt-3" id="range-calibration-alert" role="alert">
+          <span id="keep-rotating-alert" ><i class="fas fa-info-circle"></i>
+            <small class="ds-i18n">Keep rotating the sticks even if you see no progress!</small>
+          </span>
+          <br><br>
+          <small class="ds-i18n">The <b>Done</b> button will unlock after at most 15 seconds. If you press <b>Done</b> without rotating the sticks, the calibration will be incomplete and you will need to repeat it.</small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="range-done-btn" class="btn btn-outline-primary ds-i18n" onclick="calibrate_range_on_close()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>

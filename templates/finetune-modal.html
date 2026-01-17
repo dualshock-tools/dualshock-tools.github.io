@@ -1,0 +1,241 @@
+<div class="modal fade" id="finetuneModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="finetuneModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-fullscreen-lg-down">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="finetuneModalLabel">Finetune stick calibration</h1>
+        <button type="button" class="btn-close" aria-label="Close" onclick="finetune_cancel()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-header border-top-0 pt-0">
+          <div class="btn-group w-100" role="group" aria-label="Finetune mode selection">
+            <input type="radio" class="btn-check" name="finetuneMode" id="finetuneModeCenter" autocomplete="off" checked>
+            <label class="btn btn-outline-primary ds-i18n" for="finetuneModeCenter">Center (L1)</label>
+
+            <input type="radio" class="btn-check" name="finetuneMode" id="finetuneModeCircularity" autocomplete="off">
+            <label class="btn btn-outline-primary ds-i18n" for="finetuneModeCircularity">Circularity (R1)</label>
+          </div>
+        </div>
+
+        <div class="alert alert-info finetune-center-mode" role="alert">
+          <i class="fas fa-info-circle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Move the stick to select it for tuning, then without touching the stick use the D-pad buttons to adjust the center point. Flick it and adjust it again if it is off center or flickers.</span>
+        </div>
+        <div class="alert alert-warning finetune-center-mode" role="alert" id="finetuneCenterWarning">
+          <i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Please release the stick to center position before adjusting with D-pad buttons.</span>
+        </div>
+        <div class="alert alert-success finetune-center-mode" role="alert" id="finetuneCenterSuccess">
+          <i class="fas fa-check-circle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Press the D-pad or face buttons in the direction you want the stick position to move.</span>
+        </div>
+        <div class="alert alert-info finetune-circularity-mode" role="alert">
+          <p>
+            <i class="fas fa-info-circle"></i>&nbsp;&nbsp;
+            <span class="ds-i18n">While holding the stick to be adjusted straight up/down/left/right, make adjustments until you see lightblue sectors in all four directions after circling the stick both left and right. Then use the</span>
+            <svg width="24" height="24" style="vertical-align: -6px;"><use xlink:href="#arrows-alt"/></svg>
+            <span class="ds-i18n">to increase the non-circularity.</span>
+          </p>
+          <p class="mb-0">
+            <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
+            <span class="ds-i18n"><strong>Average circularity error:</strong> smaller is not always better! Aim for 7-9 %.</span>
+            <a class="btn-link text-decoration-none ds-i18n" href="#" id="learn-more-link">Learn more...</a>
+          </p>
+          <p class="mb-0" id="learn-more-text" style="display: none;">
+            <span class="ds-i18n">Sony controllers come from the factory calibrated to have an average circularity error of nearly 10 %, and this is now what games expect. Too perfect circularity can make movements and aim feel stiff and unresponsive in some games.</span>
+          </p>
+        </div>
+        <div class="alert alert-warning finetune-circularity-mode" role="alert" id="finetuneCircularityWarning">
+          <i class="fas fa-exclamation-triangle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Push the stick straight up/down/left/right as far as possible.</span>
+        </div>
+        <div class="alert alert-success finetune-circularity-mode" role="alert" id="finetuneCircularitySuccess">
+          <i class="fas fa-check-circle"></i>&nbsp;&nbsp;
+          <span class="ds-i18n">Press the D-pad or face buttons in the direction you want the stick position to move.</span>
+        </div>
+        <div style="width: 100%; display: flex; justify-content: center;">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col col-lg-6 col-12">
+
+                <div class="card text-bg-light" id="left-stick-card" style="height: 350px;">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="ds-i18n">Left stick</span>
+                  </div>
+                  <div class="card-body position-relative">
+                    <button type="button" class="btn btn-secondary position-absolute top-0 end-0 finetune-circularity-mode" id="leftErrorSlackBtn" style="z-index: 10; margin: 0.5rem;">
+                      <svg class="bi" width="32" height="32" style="margin: -15px -8px -12px -8px;"><use xlink:href="#arrows-alt"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-warning position-absolute top-0 end-0 finetune-circularity-mode d-none" id="leftErrorSlackUndoBtn" style="z-index: 10; margin: 0.5rem;">
+                      <i class="fas fa-undo"></i>
+                    </button>
+                    <div class="container-fluid">
+                      <div class="finetune-grid">
+                        <div class="finetune-top finetune-center-mode">
+                          <input id="finetuneLY" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-top finetune-circularity-mode">
+                          <input id="finetuneLT" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-left finetune-circularity-mode">
+                          <input id="finetuneLL" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-left finetune-center-mode">
+                          <input id="finetuneLX" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-center">
+                          <canvas id="finetuneStickCanvasL" width="150px" height="150px"></canvas>
+                          <canvas id="finetuneStickCanvasL_large" width="210px" height="210px"></canvas>
+                        </div>
+                        <div class="finetune-right finetune-circularity-mode">
+                          <input id="finetuneLR" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-bottom finetune-circularity-mode">
+                          <input id="finetuneLB" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- LX/LY values display -->
+                    <div class="px-2 left-stick-values">
+                      <div class="spacer finetune-center-mode hide-raw-numbers" style="height: 35px;">&nbsp;</div>
+
+                      <div class="hstack">
+                        <div class="vstack" style="text-align: center;">
+                          <span>LX:</span>
+                          <strong><pre id="finetuneStickCanvasLx-lbl" style="min-width: 80px;"></pre></strong>
+                        </div>
+
+                        <div class="vstack" style="text-align: center;">
+                          <span>LY:</span>
+                          <strong><pre id="finetuneStickCanvasLy-lbl" style="min-width: 80px;"></pre></strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Circularity slider for left stick -->
+                    <div class="px-2 mt-2 finetune-circularity-mode left-stick-slider" style="display: none;">
+                      <label for="leftCircularitySlider" class="form-label ds-i18n" style="margin-bottom: 2px;">Increase non-circularity</label>
+                      <input type="range" class="form-range" min="0" max="100" value="0" id="leftCircularitySlider">
+                    </div>
+
+                  </div>
+                </div>
+              </div> <!-- col -->
+
+              <div class="col col-lg-6 col-12">
+                <div class="card text-bg-light" id="right-stick-card" style="height: 350px;">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="ds-i18n">Right stick</span>
+                  </div>
+                  <div class="card-body position-relative">
+                    <button type="button" class="btn btn-secondary position-absolute top-0 end-0 finetune-circularity-mode" id="rightErrorSlackBtn" style="z-index: 10; margin: 0.5rem;">
+                      <svg class="bi" width="32" height="32" style="margin: -15px -8px -12px -8px;"><use xlink:href="#arrows-alt"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-warning position-absolute top-0 end-0 finetune-circularity-mode d-none" id="rightErrorSlackUndoBtn" style="z-index: 10; margin: 0.5rem;">
+                      <i class="fas fa-undo"></i>
+                    </button>
+                    <div class="container-fluid">
+                      <div class="finetune-grid">
+                        <div class="finetune-top finetune-center-mode">
+                          <input id="finetuneRY" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-top finetune-circularity-mode">
+                          <input id="finetuneRT" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-left finetune-circularity-mode">
+                          <input id="finetuneRL" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-left finetune-center-mode">
+                          <input id="finetuneRX" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-center">
+                          <canvas id="finetuneStickCanvasR" width="150px" height="150px"></canvas>
+                          <canvas id="finetuneStickCanvasR_large" width="210px" height="210px"></canvas>
+                        </div>
+                        <div class="finetune-right finetune-circularity-mode">
+                          <input id="finetuneRR" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                        <div class="finetune-bottom finetune-circularity-mode">
+                          <input id="finetuneRB" type="number" class="form-control" min="0" max="65535" value="0">
+                        </div>
+                      </div>
+
+                      <!-- RX/RY values display -->
+                      <div class="px-2 right-stick-values">
+                        <div class="spacer finetune-center-mode hide-raw-numbers" style="height: 35px;">&nbsp;</div>
+
+                        <div class="hstack">
+                          <div class="vstack" style="text-align: center;">
+                            <span>RX:</span>
+                            <strong><pre id="finetuneStickCanvasRx-lbl" style="min-width: 80px;"></pre></strong>
+                          </div>
+
+                          <div class="vstack" style="text-align: center;">
+                            <span>RY:</span>
+                            <strong><pre id="finetuneStickCanvasRy-lbl" style="min-width: 80px;"></pre></strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Circularity slider for right stick -->
+                      <div class="px-2 mt-2 finetune-circularity-mode right-stick-slider" style="display: none;">
+                        <label for="rightCircularitySlider" class="form-label ds-i18n" style="margin-bottom: 2px;">Increase non-circularity</label>
+                        <input type="range" class="form-range" min="0" max="100" value="0" id="rightCircularitySlider">
+                      </div>
+
+                    </div>
+                  </div>
+                </div> <!-- col -->
+              </div> <!-- row -->
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <div class="form-check me-auto">
+            <input class="form-check-input" type="checkbox" id="showRawNumbersCheckbox">
+            <label class="form-check-label ds-i18n" for="showRawNumbersCheckbox">Show raw numbers</label>
+          </div>
+          <div class="dropdown me-2">
+            <a class="btn btn-link text-decoration-none" href="#" role="button" id="stepSizeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="ds-i18n">Step size</span>: <span id="stepSizeValue">1</span>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="stepSizeDropdown">
+              <li><a class="dropdown-item" href="#" data-step="15">15</a></li>
+              <li><a class="dropdown-item" href="#" data-step="14">14</a></li>
+              <li><a class="dropdown-item" href="#" data-step="13">13</a></li>
+              <li><a class="dropdown-item" href="#" data-step="12">12</a></li>
+              <li><a class="dropdown-item" href="#" data-step="11">11</a></li>
+              <li><a class="dropdown-item" href="#" data-step="10">10</a></li>
+              <li><a class="dropdown-item" href="#" data-step="9">9</a></li>
+              <li><a class="dropdown-item" href="#" data-step="8">8</a></li>
+              <li><a class="dropdown-item" href="#" data-step="7">7</a></li>
+              <li><a class="dropdown-item" href="#" data-step="6">6</a></li>
+              <li><a class="dropdown-item" href="#" data-step="5">5</a></li>
+              <li><a class="dropdown-item" href="#" data-step="4">4</a></li>
+              <li><a class="dropdown-item" href="#" data-step="3">3</a></li>
+              <li><a class="dropdown-item" href="#" data-step="2">2</a></li>
+              <li><a class="dropdown-item" href="#" data-step="1">1</a></li>
+            </ul>
+          </div>
+          <div class="dropdown me-2">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="quickCalibrateDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-bolt"></i>&nbsp;<span class="ds-i18n">Quick calibrate</span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="quickCalibrateDropdown">
+              <li><a class="dropdown-item" href="#" onclick="finetune_quick_calibrate_center()">
+                <i class="fas fa-crosshairs"></i>&nbsp;<span class="ds-i18n">Center</span>
+              </a></li>
+              <li><a class="dropdown-item" href="#" onclick="finetune_quick_calibrate_range()">
+                <i class="fas fa-expand-arrows-alt"></i>&nbsp;<span class="ds-i18n">Circularity</span>
+              </a></li>
+            </ul>
+          </div>
+          <button type="button" class="btn btn-secondary ds-i18n" onclick="finetune_cancel()">Cancel</button>
+          <button type="button" class="btn btn-primary ds-i18n" onclick="finetune_save()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

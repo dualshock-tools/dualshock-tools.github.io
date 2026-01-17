@@ -1,0 +1,42 @@
+<!-- Quick Test Modal -->
+<div class="modal fade" id="quickTestModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="quickTestModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 ds-i18n" id="quickTestModalLabel">Quick Test</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="ds-i18n mb-3">Run through these tests to verify your controller's functionality.</p>
+        <div id="battery-warning-alert" style="display: none; background-color: white; color: #ff4000cb; padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; border: 2px solid;">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <span class="ds-i18n">Battery level is low. Tests may fail due to the controller being in power saving mode.</span>
+        </div>
+        <div class="alert alert-info mb-4" id="quick-test-instructions">
+          <i class="fas fa-gamepad me-2"></i>
+          <span class="ds-i18n" id="quick-test-instructions-text"></span>
+        </div>
+
+        <div class="accordion" id="quickTestAccordion">
+          <!-- Accordion items will be dynamically generated -->
+        </div>
+
+        <div class="mt-4">
+          <h6><span class="ds-i18n">Test Summary</span>:</h6>
+          <div id="test-summary" class="text-muted ds-i18n">No tests completed yet.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="dropdown" id="skipped-tests-dropdown" style="display: none;">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" id="skippedTestsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-list me-1"></i><span class="ds-i18n">Add test</span>
+          </button>
+          <ul class="dropdown-menu" aria-labelledby="skippedTestsDropdown" id="skipped-tests-list">
+            <!-- Skipped tests will be populated here -->
+          </ul>
+        </div>
+        <button type="button" class="btn btn-primary ds-i18n" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

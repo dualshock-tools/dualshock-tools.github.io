@@ -252,7 +252,7 @@
     "PCBA ID": "PCBA-ID",
     "Pass": "Bestanden",
     "Passed": "Bestanden",
-    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Verbinde einen DualShock 4, DualSense, DualSense Edge oder VR2 Controller mit dem Rechner und klicke auf "Verbinden".",
+    "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "Verbinde einen DualShock 4, DualSense, DualSense Edge oder VR2 Controller mit dem Rechner und klicke auf \"Verbinden\".",
     "Please note: the stick modules on the DS Edge <b>cannot be calibrated via software alone</b>.": "Bitte Beachte: die Stick-Module vom DualSense Edge <b>können nicht alleinig per Software kalibriert werden</b>.",
     "Please release the stick to center position before adjusting with D-pad buttons.": "Lass die Sticks los bevor du die mit dem D-Pad justierst.",
     "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "Bitte nutze einen Browser mit WebHID support wie Google Chrome oder Edge auf einem PC oder Mac.",

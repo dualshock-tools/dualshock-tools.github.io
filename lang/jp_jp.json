@@ -322,7 +322,7 @@
     "Wiggle the USB cable to see if the controller disconnects.": "USBケーブルを揺らしてみて、コントローラーの接続が切れるかどうか確認してください。",
     "Yes. Simply do another permanent calibration.": "はい。再度永久キャリブレーションを実施してください。",
     "You can do this in two ways:": "2つの方法があります。",
-    "You have to rotate the joysticks before you press \"Done\".": "",
+    "You have to rotate the joysticks before you press \"Done\".": " \"完了\"をクリックする前に、スティックを回転させてください。",
     "You should save your changes, or reboot the controller to revert back to the previous state.": "変更を保存するか、コントローラーを再起動して前の状態に戻してください。",
     "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "このデバイスはSONY純正ではない可能性があります。このデバイスがクローン品ではない場合は、この問題を報告してください。",
     "failed": "失敗しました",

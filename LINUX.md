@@ -31,10 +31,10 @@ here is two rules to resolve the problem.
 
 *simply add it with your favorite text editor*
 
-# DualSense
+### DualSense
 `SUBSYSTEM=="hidraw", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="0ce6", GROUP="plugdev", MODE="0660"`
 
-# DualShock 4
+### DualShock 4
 `SUBSYSTEM=="hidraw", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="09cc", GROUP="plugdev", MODE="0660"`
 
 ## 3. Reload rules

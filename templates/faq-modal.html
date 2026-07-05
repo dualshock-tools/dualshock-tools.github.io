@@ -11,6 +11,27 @@
         <div class="accordion accordion-flush" id="accordionFlushExample">
           <div class="accordion-item">
             <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse13" aria-expanded="false" aria-controls="flush-collapse6">Which controllers does DualShock Calibration GUI support?</button>
+            </h2>
+            <div id="flush-collapse13" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+		      <p class="ds-i18n">Only official controllers are supported, no third-party or "fake" controllers.</p>
+		      <p class="ds-i18n">The website supports the following official controllers:</p>
+		      <ul>
+			      <li class="ds-i18n">Sony DualShock 4</li>
+			      <li class="ds-i18n">Sony DualSense</li>
+			      <li><span class="ds-i18n">Sony DualSense Edge</span>*</li>
+			      <li class="ds-i18n">PlayStation Virtual Reality 2</li>
+		      </ul>
+		      <p class="ds-i18n">The finetuning and quick test menus are only accessible for DualSense and DualSense Edge.</p>
+		      <p>*<span class="ds-i18n">Saving calibration is locked by default on DualSense Edge joystick modules. A hardware mod is required to save the calibration permanently. The calibration is saved on the modules themselves, so you have to perform the mod twice: once for each module. You would need to bridge two points on the PCB with enamelled wire. There are multiple methods, I personally recommend using either of these two locations to solder the wire to. See images below. Ensure the wire is thin enough so that the shell is closed properly. Make sure you don't short the wire to ground through the letters near the bottom joint.</span></p>
+		      <p><span class="ds-i18n">Images</span>: <a target="_blank" href="./images/FAQ_option_1.jpg" class="ds-i18n">Option 1</a>, <a target="_blank" href="./images/FAQ_option_2.jpg" class="ds-i18n">Option 2</a>, <a target="_blank" href="./images/FAQ_Housing_Closing.jpg" class="ds-i18n">Housing</a>.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
               <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse3" aria-expanded="false" aria-controls="flush-collapse3">How does it work?</button>
             </h2>
             <div id="flush-collapse3" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
@@ -22,14 +43,7 @@
               </div>
             </div>
           </div>
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">Does the calibration remain effective during gameplay on PS4/PS5?</button>
-            </h2>
-            <div id="flush-collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="ds-i18n accordion-body">Yes, if you tick the checkbox "Write changes permanently in the controller". In that case, the calibration is flashed directly in the controller firmware. This ensures that it remains in place regardless of the console it's connected to.</div>
-            </div>
-          </div>
+
           <div class="accordion-item">
             <h2 class="accordion-header">
               <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseTwo" aria-expanded="false" aria-controls="flush-collapseTwo">Is this an officially endorsed service?</button>
@@ -52,53 +66,28 @@
               </div>
             </div>
           </div>
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse5" aria-expanded="false" aria-controls="flush-collapse5">What development is in plan?</button>
-            </h2>
-            <div id="flush-collapse5" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">I maintain two separate to-do lists for this project, although the priority has yet to be established.</p>
-
-                <p class="ds-i18n">The first list is about enhancing support for DualShock4 and DualSense controllers:</p>
-                <ul>
-                <li class="ds-i18n">Implement calibration of L2/R2 triggers.</li>
-                <li class="ds-i18n">Improve detection of clones, particularly beneficial for those seeking to purchase used controllers with assurance of authenticity.</li>
-                <li class="ds-i18n">Enhance user interface (e.g. provide additional controller information)</li>
-                <li class="ds-i18n">Add support for recalibrating IMUs.</li>
-                <li class="ds-i18n">Additionally, explore the possibility of reviving non-functioning DualShock controllers (further discussion available on Discord for interested parties).</li>
-                </ul>
-
-                <p class="ds-i18n">The second list contains new controllers I aim to support:</p>
-                <ul>
-                <li class="ds-i18n">DualSense Edge</li>
-                <li class="ds-i18n">DualShock 3</li>
-                <li class="ds-i18n">XBox Controllers</li>
-                </ul>
-
-                <p class="ds-i18n">Each of these tasks presents both immense interest and significant time investment. To provide context, supporting a new controller typically demands 6-12 months of full-time research, alongside a stroke of good fortune.</p>
-              </div>
-            </div>
-          </div>
 
           <div class="accordion-item">
             <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse7" aria-expanded="false" aria-controls="flush-collapse7">Can I reset a permanent calibration to previous calibration?</button>
-            </h2>
-            <div id="flush-collapse7" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
-              <div class="accordion-body">
-                <p class="ds-i18n">No.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="accordion-item">
-            <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse8" aria-expanded="false" aria-controls="flush-collapse8">Can you overwrite a permanent calibration?</button>
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse8" aria-expanded="false" aria-controls="flush-collapse8">Can I overwrite a (permanent) calibration?</button>
             </h2>
             <div id="flush-collapse8" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
-                <p class="ds-i18n">Yes. Simply do another permanent calibration.</p>
+                <p class="ds-i18n">Yes. Simply do another calibration, and click the green button to save permanently.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse15" aria-expanded="false" aria-controls="flush-collapse6">Can I restore a previous calibration?</button>
+            </h2>
+            <div id="flush-collapse15" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+		      <p class="ds-i18n">If you have not clicked the green button "Save changes permanently", then unplugging the controller will reset to the previously saved calibration. It is recommended you test your calibration before saving.</p>
+		      <p class="ds-i18n">If you have saved the changes permanently, you can reset the changes only if you are using a DualSense or DualSense Edge. You can click on the grey button "Restore Calibration" to go back to one of the previous calibrations that was saved on the controller. Known issue: You may need to reboot your controller first in order for previous calibrations to show up.</p>
+		      <p class="ds-i18n">These previous calibrations are stored locally in your browser's storage. Meaning you can only restore calibrations using the same computer and browser that you used to calibrate it with, and deleting the cache or using Incognito will make any previous calibration irrecoverable.</p>
+		      <p><span class="ds-i18n">Images</span>: <a target="_blank" href="./images/FAQ_save_changes.png">Image 1</a>, <a target="_blank" href="./images/FAQ_history.png">Image 2</a></p>
               </div>
             </div>
           </div>
@@ -109,16 +98,17 @@
             </h2>
             <div id="flush-collapse9" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
-                    <p class="ds-i18n">Stickdrift is caused by a physical defect; namely dirt, worn potentiometer or in some cases a worn spring.</p>
-                    <p class="ds-i18n">This software will not fix stick drift on its own if you already experience that. What it will help with, is ensuring the new joystick(s) will function properly after replacing the old one(s) to work well with.</p>
-                    <p class="ds-i18n">I have noticed some controllers out of the box have worse factory calibration than if I would recalibrate them. Especially true for circularity of SCUF controllers with a unique shell.</p>
+	      	    <p class="ds-i18n">Stickdrift is caused by a physical defect; namely dirt, worn potentiometer or in some cases a worn spring.</p>
+	      	    <p class="ds-i18n">This software is not intended to fix stickdrift and will <b>not</b> fix stickdrift on its own if you already experience that.</p>
+		    <p><b><span class="ds-i18n">In most cases, calibrating your joysticks that have prior drift issues may result in a worse and unpredictable calibration.</span></b></p>
+	      	    <p class="ds-i18n">What the software will help with, is ensuring new joysticks will function properly after replacing the old broken joysticks that drift. This step involves opening up the controller and soldering new potentiometers or an entire new joystick.</p>
               </div>
             </div>
           </div>
 
           <div class="accordion-item">
             <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse10" aria-expanded="false" aria-controls="flush-collapse10">(Dualsense) Will updating the firmware reset calibration?</button>
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse10" aria-expanded="false" aria-controls="flush-collapse10">(DualSense &amp; DualSense Edge) Will updating the firmware reset calibration?</button>
             </h2>
             <div id="flush-collapse10" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
@@ -134,7 +124,7 @@
             <div id="flush-collapse11" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
                 <p class="ds-i18n">This issue happens because you have clicked "Done" immediately after starting a range calibration.</p>
-                <b><p class="ds-i18n">Please read the instructions.</p></b>
+		<p><b><span class="ds-i18n">Please read the instructions.</span></b></p>
                 <p class="ds-i18n">You have to rotate the joysticks before you press "Done".</p>
                 <p class="ds-i18n">Make sure to touch the edges of the joystick frame and rotate slowly, preferably in each direction - clockwise and anti-clockwise.</p>
                 <p class="ds-i18n">Only after you have done that, you click on "Done".</p>
@@ -144,9 +134,84 @@
 
           <div class="accordion-item">
             <h2 class="accordion-header">
-              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse6" aria-expanded="false" aria-controls="flush-collapse6">I love this service, it helped me! How can I contribute?</button>
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse17" aria-expanded="false" aria-controls="flush-collapse6">(DualSense Edge) Is the calibration stored on the controller or the modules?</button>
             </h2>
-            <div id="flush-collapse6" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+            <div id="flush-collapse17" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+		<p class="ds-i18n">The calibration is stored on each module individually. It is carried over if you place the modules in a different DualSense Edge. Likewise, if you place a different set of modules in your DualSense Edge, you will get a different calibration that is tied to those new modules.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse19" aria-expanded="false" aria-controls="flush-collapse6">How do I use the finetuning feature?</button>
+            </h2>
+            <div id="flush-collapse19" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+		      <p class="ds-i18n">Finetuning is only available for DualSense and DualSense Edge.</p>
+		      <p><a href="https://discord.com/channels/1245307680604684341/1446938771579863050/1468605031539413123" class="ds-i18n">This video from V2.16 shows how to use the finetuning menu.</a></p>
+		      <p class="ds-i18n">Not shown in the video: You can now also increase the range in each direction uniformly by using the cross in the top right and moving the slider up, which may speed up finetuning. Make sure to rotate the joystick first, otherwise the button cannot be pressed.</p>
+		      <p><span class="ds-i18n">Images</span>: <a target="_blank" href="./images/FAQ_finetuning.png" class="ds-i18n">Image 1</a></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse20" aria-expanded="false" aria-controls="flush-collapse6">What are the risks of using the calibration?</button>
+            </h2>
+            <div id="flush-collapse20" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+		      <p class="ds-i18n">When calibrating, there is no risk. However, if your controller disconnects during the split second that you save a calibration, then you have a chance of bricking your controller. Make sure your battery has enough charge and is plugged into the controller, and the USB cable is securely connected. This prevents your controller from being bricked if the USB cable accidentally disconnects.</p>
+		      <p class="ds-i18n">If you don't have a battery connected or the connected battery is empty, AND your cable disconnects during saving the calibration, then your controller has a high chance of being bricked.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse21" aria-expanded="false" aria-controls="flush-collapse6">What circularity percentage to aim for when calibrating and finetuning.</button>
+            </h2>
+            <div id="flush-collapse21" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+		      <p class="ds-i18n">We recommend a circularity between 7% and 9%. The reason for this is to mimic a stock controllers calibration. However, symmetrical overshoot is more important and if you need to deviate from this range to achieve better symmetry, that is fine too.</p>
+		      <p class="ds-i18n">A sample test was done with 30 dualsense edge modules, and the results showed that the inner quartile range (IQR) is 8.3% and 9.0%, with an average of 8.6%. This goes to show that stock controllers by default have a relatively high range, and the rule of thumb is to follow factory calibration.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse5" aria-expanded="false" aria-controls="flush-collapse5">What development is in plan?</button>
+            </h2>
+            <div id="flush-collapse5" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+              <div class="accordion-body">
+                <p class="ds-i18n">I maintain two separate to-do lists for this project, although the priority has yet to be established.</p>
+
+                <p class="ds-i18n">The first list is about enhancing support for DualShock4 and DualSense controllers:</p>
+                <ul>
+                <li class="ds-i18n">Implement calibration of L2/R2 triggers.</li>
+                <li class="ds-i18n">Improve detection of clones, particularly beneficial for those seeking to purchase used controllers with assurance of authenticity.</li>
+                <li class="ds-i18n">Add support for recalibrating IMUs.</li>
+                <li class="ds-i18n">Additionally, explore the possibility of reviving non-functioning DualShock controllers (further discussion available on Discord for interested parties).</li>
+                </ul>
+
+                <p class="ds-i18n">The second list contains new controllers I aim to support:</p>
+                <ul>
+                <li class="ds-i18n">DualShock 3</li>
+                <li class="ds-i18n">XBox Controllers</li>
+                </ul>
+
+                <p class="ds-i18n">Each of these tasks presents both immense interest and significant time investment. To provide context, supporting a new controller typically demands 6-12 months of full-time research, alongside a stroke of good fortune.</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="ds-i18n accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse12" aria-expanded="false" aria-controls="flush-collapse6">I love this service, it helped me! How can I contribute?</button>
+            </h2>
+            <div id="flush-collapse12" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
               <div class="accordion-body">
                 <p class="ds-i18n">I'm glad to hear that you found this helpful! If you're interested in contributing, here are a few ways you can help me:</p>
                 <ul>
@@ -157,6 +222,7 @@
               </div>
             </div>
           </div>
+
 
         </div>
       </div>

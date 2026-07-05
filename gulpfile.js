@@ -47,6 +47,7 @@ const paths = {
       'site.webmanifest',
       'assets/donate.png',
       'googlec4c2e36a49e62fa3.html',
+      'images/*.*',
       'fa.min.css'
     ],
     svg: 'assets/**/*.svg'

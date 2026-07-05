@@ -216,6 +216,7 @@ function ds5_color(serialNumber) {
     'Z3': 'Astro Bot',
     'Z4': 'Fortnite',
     'Z6': 'The Last of Us',
+    'ZA': 'God of War 20th Anniversary',
     'ZB': 'Icon Blue Limited Edition',
   };
 

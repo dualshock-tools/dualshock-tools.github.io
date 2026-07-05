@@ -75,6 +75,7 @@ WHITELIST_UNUSED = {
     "The Last of Us",
     "Volcanic Red",
     "White",
+    "God of War 20th Anniversary"
 
     "Sony DualSense",
     "Sony DualSense Edge",

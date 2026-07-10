@@ -40,7 +40,7 @@ const DS4_INPUT_CONFIG = {
   dpadByte: 4,
   l2AnalogByte: 7,
   r2AnalogByte: 8,
-  imuOffset: 11,
+  imuOffset: 12, // bytes 9-10 timestamp, 11 battery, 12-17 gyro, 18-23 accel
   touchpadOffset: 34,
 };
 

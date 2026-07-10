@@ -322,6 +322,10 @@ async function continue_connection({data, device}) {
       update_stop_sliders(controller.button_states);
     }
 
+    // Redraw the stick diagrams now that the stick count is known; the
+    // earlier draw during connect() defaulted to two sticks
+    refresh_stick_pos();
+
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
       infoAlert(l("A reboot is needed to continue using this DualSense Edge. Please disconnect and reconnect your controller."));
@@ -594,7 +598,7 @@ function start_vr2_raw_monitor() {
   // Copy the latest report as hex text for sharing/analysis
   document.getElementById('vr2-raw-copy')?.addEventListener('click', (event) => {
     event.preventDefault();
-    const data = controller.lastRawInput;
+    const data = controller?.lastRawInput;
     if (!data) return;
     const lines = [];
     for (let row = 0; row < data.byteLength; row += 16) {
@@ -609,7 +613,7 @@ function start_vr2_raw_monitor() {
 
   const render = () => {
     const el = document.getElementById('vr2-raw-hex');
-    if (!el) return; // Panel was replaced or removed; stop the loop
+    if (!el || !controller) return; // Panel removed or disconnected; stop the loop
 
     const data = controller.lastRawInput;
     if (data) {

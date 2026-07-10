@@ -205,3 +205,22 @@ dl.row {
 	bottom: 0;
 	border-radius: 3px;
 }
+
+/* VR2 button panel: pills light up light blue on capacitive touch and
+   dark blue while clicked */
+.vr2-btn {
+	background-color: #e9ecef;
+	color: #6c757d;
+	font-size: 0.9rem;
+	transition: background-color 0.1s, color 0.1s;
+
+	&.touched {
+		background-color: #7ecbff; /* same light blue as the controller SVG body */
+		color: #0b3050;
+	}
+
+	&.pressed {
+		background-color: #1a237e; /* same dark blue as the SVG pressed infill */
+		color: #ffffff;
+	}
+}

@@ -140,6 +140,11 @@
           </button>
         </li>
         <li class="nav-item" role="presentation">
+          <button class="nav-link" id="shortcuts-tab" data-bs-toggle="tab" data-bs-target="#shortcuts-content" type="button" role="tab" aria-controls="shortcuts-content" aria-selected="false">
+            <i class="fas fa-keyboard"></i>&nbsp;&nbsp;<span class="ds-i18n">Shortcuts</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
           <button class="nav-link" id="debug-tab" data-bs-toggle="tab" data-bs-target="#debug-content" type="button" role="tab" aria-controls="debug-content" aria-selected="false">
             <i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug</span>
           </button>
@@ -325,6 +330,49 @@
                   <div class="card-body">
                     <dl class="row" id="fwinfoextra-hw"></dl>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="shortcuts-content" role="tabpanel" aria-labelledby="shortcuts-tab">
+          <div class="container-fluid py-4">
+            <div class="row">
+              <div class="col-lg-12 col-xl-8">
+                
+                <div class="table-responsive">
+                  <table class="table align-middle">
+                    <thead>
+                      <tr>
+                        <th style="width: 12rem;"><span class="ds-i18n">Shortcut</span></th>
+                        <th><span class="ds-i18n">Action</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="text-nowrap"><kbd>L1</kbd> + <kbd>Options</kbd></td>
+                        <td><span class="ds-i18n">Open Quick Test</span></td>
+                      </tr>
+                      <tr>
+                        <td class="text-nowrap"><kbd>L1</kbd> + <svg width="22" height="22" style="vertical-align: -5px;"><use xlink:href="#ps-circle"/></svg></td>
+                        <td><span class="ds-i18n">Next display mode (Normal -> 10x Zoom -> Check circularity). When already on Check circularity, the sampled circularity data is cleared.</span></td>
+                      </tr>
+                      <tr>
+                        <td class="text-nowrap"><kbd>L1</kbd> + <svg width="22" height="22" style="vertical-align: -5px;"><use xlink:href="#ps-square"/></svg></td>
+                        <td><span class="ds-i18n">Previous display mode.</span></td>
+                      </tr>
+
+                      <tr>
+                        <td class="text-nowrap"><kbd>L1</kbd> + <svg width="22" height="22" style="vertical-align: -5px;"><use xlink:href="#ps-triangle"/></svg></td>
+                        <td><span class="ds-i18n">Run the calibration sequence: stick center, then range, then finetune.</span></td>
+                      </tr>
+                      <tr>
+                        <td class="text-nowrap"><kbd>L1</kbd> + <svg width="22" height="22" style="vertical-align: -5px;"><use xlink:href="#ps-cross"/></svg></td>
+                        <td><span class="ds-i18n">Save calibration changes permanently</span></span></td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

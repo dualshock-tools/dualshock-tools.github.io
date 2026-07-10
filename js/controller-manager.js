@@ -695,16 +695,17 @@ class ControllerManager {
   * @returns {Object} IMU data with gyro and accel values
   */
   _parseIMUData(data, imuOffset) {
-    const ACCEL_SENSITIVITY_LSB_PER_G = 35583.0;
-    // GYRO_SENSITIVITY_LSB_PER_DPS = 14.31;
-    const GRAVITY_MS2 = 9.80665;
+    // Nominal, uncalibrated sensitivities. In both DS4 and DS5 input reports
+    // the gyroscope (pitch, yaw, roll) comes first, followed by the accelerometer.
+    const GYRO_SENSITIVITY_LSB_PER_DPS = 14.31;
+    const ACCEL_SENSITIVITY_LSB_PER_G = 8192.0;
 
-    const [accelX, accelY, accelZ] = [0, 2, 4]
+    const [gyroX, gyroY, gyroZ] = [0, 2, 4]
       .map(i => data.getInt16(imuOffset + i, true))
-      .map(v => (v / ACCEL_SENSITIVITY_LSB_PER_G) * GRAVITY_MS2);
-    const [gyroX, gyroY, gyroZ] = [6, 8, 10]
+      .map(v => v / GYRO_SENSITIVITY_LSB_PER_DPS);  // degrees per second
+    const [accelX, accelY, accelZ] = [6, 8, 10]
       .map(i => data.getInt16(imuOffset + i, true))
-      .map(v => v/100)  // 100ths of a degree
+      .map(v => v / ACCEL_SENSITIVITY_LSB_PER_G);   // g (should total ~1g at rest)
 
     return {
       gyro: {

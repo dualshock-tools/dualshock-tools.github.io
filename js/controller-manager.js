@@ -527,6 +527,7 @@ class ControllerManager {
   * @returns {Object|null} IMU changes or null if no changes
   */
   _parseImuState(data, imuOffset) {
+    if (imuOffset === undefined) return null; // device has no known IMU data
     const newIMU = this._parseIMUData(data, imuOffset);
     if (this._imuChanged(this.imuState, newIMU)) {
       this.imuState = newIMU;
@@ -557,11 +558,12 @@ class ControllerManager {
       changes.sticks = newSticks;
     }
 
-    // L2/R2 analog values
+    // L2/R2 analog values (byte undefined = trigger not present on this device)
     [
       ['l2', l2AnalogByte],
       ['r2', r2AnalogByte]
     ].forEach(([name, byte]) => {
+      if (byte === undefined) return;
       const val = data.getUint8(byte);
       const key = name + '_analog';
       if (val !== this.button_states[key]) {
@@ -570,19 +572,21 @@ class ControllerManager {
       }
     });
 
-    // Dpad is a 4-bit hat value
-    const hat = data.getUint8(dpadByte) & 0x0F;
-    const dpad_map = {
-      up:    (hat === 0 || hat === 1 || hat === 7),
-      right: (hat === 1 || hat === 2 || hat === 3),
-      down:  (hat === 3 || hat === 4 || hat === 5),
-      left:  (hat === 5 || hat === 6 || hat === 7)
-    };
-    for (const dir of ['up', 'right', 'down', 'left']) {
-      const pressed = dpad_map[dir];
-      if (this.button_states[dir] !== pressed) {
-        this.button_states[dir] = pressed;
-        changes[dir] = pressed;
+    // Dpad is a 4-bit hat value (dpadByte undefined = no dpad on this device)
+    if (dpadByte !== undefined) {
+      const hat = data.getUint8(dpadByte) & 0x0F;
+      const dpad_map = {
+        up:    (hat === 0 || hat === 1 || hat === 7),
+        right: (hat === 1 || hat === 2 || hat === 3),
+        down:  (hat === 3 || hat === 4 || hat === 5),
+        left:  (hat === 5 || hat === 6 || hat === 7)
+      };
+      for (const dir of ['up', 'right', 'down', 'left']) {
+        const pressed = dpad_map[dir];
+        if (this.button_states[dir] !== pressed) {
+          this.button_states[dir] = pressed;
+          changes[dir] = pressed;
+        }
       }
     }
 

@@ -540,17 +540,18 @@ class ControllerManager {
   * Generic button processing for DS4/DS5
   * Records button states and returns changes
   */
-  _recordButtonStates(data, BUTTON_MAP, dpadByte, l2AnalogByte, r2AnalogByte) {
+  _recordButtonStates(data, BUTTON_MAP, dpadByte, l2AnalogByte, r2AnalogByte, stickBytes) {
     const changes = {};
 
-    // Stick positions (always at bytes 0-3)
-    const [new_lx, new_ly, new_rx, new_ry] = [0, 1, 2, 3]
-      .map(i => data.getUint8(i))
-      .map(v => Math.round((v - 127.5) / 128 * 100) / 100);
+    // Stick positions: bytes 0-3 unless the device layout says otherwise;
+    // axes without a byte (e.g. the missing second stick on VR2) read as 0
+    const { lx, ly, rx, ry } = stickBytes ?? { lx: 0, ly: 1, rx: 2, ry: 3 };
+    const readAxis = (byte) =>
+      byte === undefined ? 0 : Math.round((data.getUint8(byte) - 127.5) / 128 * 100) / 100;
 
     const newSticks = {
-      left: { x: new_lx, y: new_ly },
-      right: { x: new_rx, y: new_ry }
+      left: { x: readAxis(lx), y: readAxis(ly) },
+      right: { x: readAxis(rx), y: readAxis(ry) }
     };
 
     if (this._sticksChanged(this.button_states.sticks, newSticks)) {
@@ -621,12 +622,15 @@ class ControllerManager {
   processControllerInput(inputData) {
     const { data } = inputData;
 
+    // Keep the latest raw report around for debug/inspection views
+    this.lastRawInput = data;
+
     const inputConfig = this.currentController.getInputConfig();
     const { buttonMap, dpadByte, l2AnalogByte, r2AnalogByte, imuOffset } = inputConfig;
     const { touchpadOffset } = inputConfig;
 
     // Process button states using the device-specific configuration
-    const changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte);
+    const changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte, inputConfig.stickBytes);
 
     // Record IMU state if available
     const imuChanges = this._parseImuState(data, imuOffset);

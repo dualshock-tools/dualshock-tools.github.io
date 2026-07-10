@@ -13,39 +13,56 @@ import {
 } from '../utils.js';
 import { l } from '../translations.js';
 
-// VR2 Sense controller button mapping, one map per hand. Each controller
-// only carries its own buttons; the shared report positions are:
-// byte 9 high nibble = face buttons, byte 10 = system buttons.
+// VR2 Sense controller button mapping, one map per hand. Report layout based
+// on https://gist.github.com/Swyter/4a4ea4c35dbedd144d22c10a7906facc shifted
+// down two bytes (that gist documents Bluetooth packets, which carry the 0x31
+// report ID plus one extra byte; USB via WebHID drops both), and verified on
+// hardware: bytes 0-1 stick X/Y, 2 trigger analog, 3 trigger capacitive,
+// 4 grip capacitive, byte 7 = face/grip/trigger buttons, byte 8 = system
+// buttons, byte 9 = capacitive touch bits.
 const VR2_LEFT_BUTTON_MAP = [
-  { name: 'square', byte: 9, mask: 0x10, svg: 'Square' },
-  { name: 'triangle', byte: 9, mask: 0x80, svg: 'Triangle' },
-  { name: 'l1', byte: 0, mask: 0x0 }, // Grip button, report bit not yet verified
-  { name: 'l2', byte: 4, mask: 0xff }, // analog handled separately
-  { name: 'create', byte: 10, mask: 0x01, svg: 'Create' },
-  { name: 'l3', byte: 10, mask: 0x04, svg: 'L3' },
+  { name: 'square', byte: 7, mask: 0x01, svg: 'Square' },
+  { name: 'triangle', byte: 7, mask: 0x08, svg: 'Triangle' },
+  { name: 'l1', byte: 7, mask: 0x10, svg: 'L1' }, // Grip click
+  { name: 'l2', byte: 7, mask: 0x40, svg: 'L2' }, // Trigger half-pull; analog handled separately
+  { name: 'create', byte: 8, mask: 0x01, svg: 'Create' },
+  { name: 'l3', byte: 8, mask: 0x04, svg: 'L3' },
+  { name: 'touchTriangle', byte: 9, mask: 0x01 }, // Capacitive: finger resting on the button
+  { name: 'touchSquare', byte: 9, mask: 0x02 },
+  { name: 'touchStick', byte: 9, mask: 0x04 }, // Not confirmed on hardware yet
+  { name: 'touchGrip', byte: 9, mask: 0x08 },
+  { name: 'touchTrigger', byte: 8, mask: 0x80 }, // L2 capacitive rest (verified on right hand only)
 ];
 
 const VR2_RIGHT_BUTTON_MAP = [
-  { name: 'cross', byte: 9, mask: 0x20, svg: 'Cross' },
-  { name: 'circle', byte: 9, mask: 0x40, svg: 'Circle' },
-  { name: 'r1', byte: 0, mask: 0x0 }, // Grip button, report bit not yet verified
-  { name: 'r2', byte: 4, mask: 0xff }, // analog handled separately
-  { name: 'options', byte: 10, mask: 0x02, svg: 'Options' },
-  { name: 'r3', byte: 10, mask: 0x08, svg: 'R3' },
-  { name: 'ps', byte: 10, mask: 0x10, svg: 'PS' },
+  { name: 'cross', byte: 7, mask: 0x02, svg: 'Cross' },
+  { name: 'circle', byte: 7, mask: 0x04, svg: 'Circle' },
+  { name: 'r1', byte: 7, mask: 0x20, svg: 'R1' }, // Grip click
+  { name: 'r2', byte: 7, mask: 0x80, svg: 'R2' }, // Trigger half-pull; analog handled separately
+  { name: 'options', byte: 8, mask: 0x02, svg: 'Options' },
+  { name: 'r3', byte: 8, mask: 0x08, svg: 'R3' },
+  { name: 'ps', byte: 8, mask: 0x10, svg: 'PS' },
+  { name: 'touchCircle', byte: 9, mask: 0x01 }, // Capacitive: finger resting on the button
+  { name: 'touchCross', byte: 9, mask: 0x02 },
+  { name: 'touchStick', byte: 9, mask: 0x04 }, // Not confirmed on hardware yet
+  { name: 'touchGrip', byte: 9, mask: 0x08 },
+  { name: 'touchTrigger', byte: 8, mask: 0x80 }, // R2 capacitive rest
 ];
 
-// VR2 input processing configuration. No dpad, no touchpad and no verified
-// IMU offset: those fields are omitted so they are not parsed from bytes
-// that mean something else on this device.
+// VR2 input processing configuration. The single stick lives at bytes 0-1,
+// the trigger analog at byte 2. No dpad, no touchpad and no mapped IMU (the
+// VR2 reports accel before gyro, unlike DS4/DS5): those fields are omitted
+// so they are not parsed from bytes that mean something else on this device.
 const VR2_LEFT_INPUT_CONFIG = {
   buttonMap: VR2_LEFT_BUTTON_MAP,
-  l2AnalogByte: 4,
+  l2AnalogByte: 2,
+  stickBytes: { lx: 0, ly: 1 },
 };
 
 const VR2_RIGHT_INPUT_CONFIG = {
   buttonMap: VR2_RIGHT_BUTTON_MAP,
-  r2AnalogByte: 4,
+  r2AnalogByte: 2,
+  stickBytes: { lx: 0, ly: 1 },
 };
 
 // DS5 Adaptive Trigger Effect Modes
@@ -596,7 +613,12 @@ class VR2Controller extends BaseController {
   * Parse DS5 battery status from input data
   */
   parseBatteryStatus(data) {
-    const bat = data.getUint8(52); // Battery byte position copied from DS5, to be verified for VR2
+    // Provisional: byte 52 (the DS5 position) is always 0x00 on VR2. Byte 41
+    // is the best candidate found on real hardware: it read 0x2a (fully
+    // charged, DS5-style decoding) on a USB-connected controller, and bytes
+    // 39/42 are the fallback candidates if this proves wrong. To verify:
+    // connect with a partially drained controller and check the percentage.
+    const bat = data.getUint8(41);
 
     // bat_charge = low 4 bits, bat_status = high 4 bits
     const bat_charge = bat & 0x0f;

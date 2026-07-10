@@ -514,7 +514,16 @@ function welcome_accepted() {
 
 async function init_svg_controller(model) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
-  const colorMode = Storage.preferredTheme.get();
+const colorMode = Storage.preferredTheme.get();
+
+  // No SVG art for VR2 controllers; clear the placeholder and bail out
+  // before the asset fetch (fetching an undefined filename would get the
+  // dev server's SPA fallback: index.html nested inside the placeholder)
+  if (model === 'VR2') {
+    svgContainer.innerHTML = '';
+    return;
+  }
+
   // Determine which SVG to load based on controller model
   const svgFileName = (() => {
     switch(model) {
@@ -524,10 +533,6 @@ async function init_svg_controller(model) {
         return 'dualsense-controller.svg';
       case 'DS5_Edge':
         return 'ds-edge-controller.svg';
-      case 'VR2':
-        // Disable SVG controller for VR2
-        svgContainer.innerHTML = '';
-        return;
       default:
         throw new Error(`Unknown controller model: ${model}`);
     }

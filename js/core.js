@@ -887,6 +887,23 @@ function switchTo10xZoomMode() {
   resetStickDiagrams();
 }
 
+// Display modes in on-screen order, stepped through with L1+square / L1+circle
+const DISPLAY_MODES = ['normalMode', 'centerZoomMode', 'checkCircularityMode'];
+
+function stepDisplayMode(direction) {
+  const current = DISPLAY_MODES.findIndex(id => $(`#${id}`).is(':checked'));
+  const next = current + direction;
+  if (next < 0 || next >= DISPLAY_MODES.length) {
+    // No wrap-around; L1+circle while already on Check circularity clears the sampled data
+    if (direction > 0 && DISPLAY_MODES[current] === 'checkCircularityMode') {
+      resetStickDiagrams();
+    }
+    return;
+  }
+  $(`#${DISPLAY_MODES[next]}`).prop('checked', true);
+  resetStickDiagrams();
+}
+
 function switchToRangeMode() {
   $("#checkCircularityMode").prop('checked', true);
   resetStickDiagrams();
@@ -1109,6 +1126,23 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
       if(isFinetuneVisible()) {
         finetune_handle_controller_input(changes);
       } else {
+        // L1 combos: square/circle step through the display modes, triangle
+        // starts the full calibration sequence, cross saves pending changes
+        if (controller.button_states.l1) {
+          if (changes.square === true) {
+            stepDisplayMode(-1);
+          } else if (changes.circle === true) {
+            stepDisplayMode(1);
+          } else if (changes.triangle === true) {
+            update_ds_button_svg({ l1: false, triangle: false }, buttonMap); // Clear pressed states
+            startCalibrationSequence();
+            return;
+          } else if (changes.cross === true && controller.has_changes_to_write) {
+            update_ds_button_svg({ l1: false, cross: false }, buttonMap); // Clear pressed states
+            flash_all_changes();
+            return;
+          }
+        }
         update_stick_graphics(changes);
         if (controller.getModel() === 'VR2') {
           update_vr2_button_panel(changes);
@@ -1422,11 +1456,68 @@ window.calibrate_stick_centers = () => calibrate_stick_centers(
   }
 );
 
-window.ds5_finetune = () => ds5_finetune(
-  controller,
-  { ll_data, rr_data, clear_circularity },
-  (success) => success && switchToRangeMode()
-);
+window.ds5_finetune = () => runFinetune();
+
+// Chainable launchers for the three calibration dialogs; each mirrors the
+// standalone button behavior and reports completion to an optional onDone
+function runCenterCalibration(onDone) {
+  const cb = (success, message) => {
+    if (success) {
+      resetStickDiagrams();
+      infoAlert(message, 2_000);
+      switchTo10xZoomMode();
+    }
+    onDone?.(success);
+  };
+  if (app.centerCalibrationMethod === 'quick') {
+    auto_calibrate_stick_centers(controller, cb);
+  } else {
+    calibrate_stick_centers(controller, cb);
+  }
+}
+
+function runRangeCalibration(onDone) {
+  calibrate_range(
+    controller,
+    { ll_data, rr_data },
+    (success, message) => {
+      resetStickDiagrams();
+      if(message) {
+        infoAlert(message, 2_000);
+      }
+      switchToRangeMode();
+      onDone?.(success);
+    },
+    app.rangeCalibrationMethod === 'expert'
+  );
+}
+
+function runFinetune(onDone) {
+  ds5_finetune(
+    controller,
+    { ll_data, rr_data, clear_circularity },
+    (success) => {
+      if (success) switchToRangeMode();
+      onDone?.(success);
+    }
+  );
+}
+
+// L1+triangle: run the calibration dialogs one after the other (center,
+// range, then finetune where supported), stopping if a step is cancelled
+function startCalibrationSequence() {
+  const NEXT_DIALOG_DELAY = 400; // let the previous modal finish hiding
+
+  la("calibration_sequence_start");
+  runCenterCalibration((centerOk) => {
+    if (!centerOk) return;
+    setTimeout(() => runRangeCalibration((rangeOk) => {
+      if (!rangeOk) return;
+      if (!$("#ds5finetune").is(":visible")) return;
+      setTimeout(() => runFinetune(), NEXT_DIALOG_DELAY);
+    }), NEXT_DIALOG_DELAY);
+  });
+}
 
 window.openCalibrationHistoryModal = async () => {
   let currentFinetuneData = null;
@@ -1472,31 +1563,7 @@ window.setCenterCalibrationMethod = (method, event) => {
   }
 };
 
-window.executeSelectedCenterCalibration = () => {
-  if (app.centerCalibrationMethod === 'quick') {
-    auto_calibrate_stick_centers(
-      controller,
-      (success, message) => {
-        if (success) {
-          resetStickDiagrams();
-          infoAlert(message, 2_000);
-          switchTo10xZoomMode();
-        }
-      }
-    );
-  } else {
-    calibrate_stick_centers(
-      controller,
-      (success, message) => {
-        if (success) {
-          resetStickDiagrams();
-          infoAlert(message, 2_000);
-          switchTo10xZoomMode();
-        }
-      }
-    );
-  }
-};
+window.executeSelectedCenterCalibration = () => runCenterCalibration();
 
 window.setRangeCalibrationMethod = (method, event) => {
   if (event) {
@@ -1514,20 +1581,7 @@ window.setRangeCalibrationMethod = (method, event) => {
   }
 };
 
-window.executeSelectedRangeCalibration = () => {
-  calibrate_range(
-    controller,
-    { ll_data, rr_data },
-    (success, message) => {
-      resetStickDiagrams();
-      if(message) {
-        infoAlert(message, 2_000);
-      }
-      switchToRangeMode();
-    },
-    app.rangeCalibrationMethod === 'expert'
-  );
-};
+window.executeSelectedRangeCalibration = () => runRangeCalibration();
 
 function updateCalibrationMethodUI() {
   $('#check-quick').toggle(app.centerCalibrationMethod === 'quick');

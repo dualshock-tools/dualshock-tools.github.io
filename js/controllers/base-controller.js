@@ -1,6 +1,27 @@
 'use strict';
 
 /**
+* Race a promise against a timeout. USB feature/output transfers on a genuine
+* controller complete in milliseconds; some clones ignore reports they don't
+* implement, leaving the transfer to hang until the OS timeout (seconds).
+* @param {Promise} promise - The transfer promise
+* @param {number} timeoutMs - Reject after this many ms (0 disables)
+* @param {string} label - Description used in the timeout error
+*/
+export async function withTimeout(promise, timeoutMs, label) {
+  if (!timeoutMs) return await promise;
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
 * Base Controller class that provides common functionality for all controller types
 */
 class BaseController {
@@ -84,11 +105,17 @@ class BaseController {
   }
 
   /**
-  * Receive feature report from device
+  * Receive feature report from device.
   * @param {number} reportId Report ID
+  * @param {number} timeoutMs Optional: reject if no response within this many
+  *   ms. Off by default; used for probing reports a clone may ignore (which
+  *   would otherwise hang the USB control transfer until the OS timeout).
   */
-  async receiveFeatureReport(reportId) {
-    return await this.device.receiveFeatureReport(reportId);
+  async receiveFeatureReport(reportId, timeoutMs = 0) {
+    return await withTimeout(
+      this.device.receiveFeatureReport(reportId),
+      timeoutMs,
+      `receiveFeatureReport(0x${reportId.toString(16)})`);
   }
 
   /**

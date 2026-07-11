@@ -206,12 +206,17 @@ async function connect() {
 }
 
 async function continue_connection({data, device}) {
-  try {
-    if (!controller || controller.isConnected()) {
-      device.oninputreport = null;  // this function is called repeatedly if not cleared
-      return;
-    }
+  // Re-entry guard, outside the try below: input reports keep arriving while
+  // the async setup runs (seconds for a clone, whose getInfo probe is slow).
+  // A re-entrant call must return without running the finally, which would
+  // otherwise hide the connect spinner before the first call has revealed the
+  // main screen.
+  if (!controller || controller.isConnected()) {
+    device.oninputreport = null;  // this function is called repeatedly if not cleared
+    return;
+  }
 
+  try {
     // Detect if the controller is connected via USB
     const reportLen = data.byteLength;
     if(reportLen != 63) {
@@ -236,6 +241,7 @@ async function continue_connection({data, device}) {
 
     let controllerInstance = null;
     let info = null;
+    let isClone = false;
 
     try {
       // Create controller instance using factory
@@ -243,9 +249,12 @@ async function continue_connection({data, device}) {
       controller.setControllerInstance(controllerInstance);
 
       info = await controllerInstance.getInfo();
+      isClone = (info?.disable_bits & 1) !== 0;
 
-      // Initialize output state for DS5 controllers
-      if (controllerInstance.initializeCurrentOutputState) {
+      // Initialize output state (lights/rumble defaults). Skip for clones:
+      // they don't handle the output report and the send would hang until
+      // the USB timeout, and their calibration is disabled anyway.
+      if (!isClone && controllerInstance.initializeCurrentOutputState) {
         await controllerInstance.initializeCurrentOutputState();
       }
     } catch (error) {
@@ -296,11 +305,23 @@ async function continue_connection({data, device}) {
 
     const model = controllerInstance.getModel();
 
+    // Serial number is best-effort: clones don't answer the report it reads
+    // (skip them to avoid the timeout), and a missing serial must not abort
+    // the whole connection.
+    let serialNumber = null;
+    if (!isClone) {
+      try {
+        serialNumber = await controllerInstance.getSerialNumber();
+      } catch (e) {
+        console.warn('Could not read serial number:', e);
+      }
+    }
+
     // Save controller info to local storage
     const lastConnectedInfo = {
       deviceName: deviceName,
       timestamp: new Date().toISOString(),
-      serialNumber: await controllerInstance.getSerialNumber(),
+      serialNumber: serialNumber,
     };
 
     // Extract info from infoItems

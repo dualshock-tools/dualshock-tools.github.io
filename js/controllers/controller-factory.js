@@ -4,6 +4,7 @@ import DS4Controller from './ds4-controller.js';
 import DS5Controller from './ds5-controller.js';
 import DS5EdgeController from './ds5-edge-controller.js';
 import VR2Controller from './vr2-controller.js';
+import DS3Controller from './ds3-controller.js';
 import { dec2hex } from '../utils.js';
 
 /**
@@ -17,7 +18,8 @@ class ControllerFactory {
     const ds5edge = { vendorId: 0x054c, productId: 0x0df2 };
     const vr2_left = { vendorId: 0x054c, productId: 0x0e45 };
     const vr2_right = { vendorId: 0x054c, productId: 0x0e46 };
-    return [ds4v1, ds4v2, ds5, ds5edge, vr2_left, vr2_right];
+    const ds3 = { vendorId: 0x054c, productId: 0x0268 };
+    return [ds4v1, ds4v2, ds5, ds5edge, vr2_left, vr2_right, ds3];
   }
 
 
@@ -44,6 +46,9 @@ class ControllerFactory {
       case 0x0e46: // VR2 Right
         return new VR2Controller(device, false);
 
+      case 0x0268: // DS3 / SIXAXIS
+        return new DS3Controller(device);
+
       default:
         throw new Error(`Unsupported device: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`);
     }
@@ -68,6 +73,8 @@ class ControllerFactory {
         return "VR2 Left Controller";
       case 0x0e46:
         return "VR2 Right Controller";
+      case 0x0268:
+        return "Sony DualShock 3";
       default:
         return "Unknown Device";
     }
@@ -89,7 +96,9 @@ class ControllerFactory {
           showQuickTests: true,
           showFourStepCalib: true,
           showQuickCalib: false,
-          showCalibrationHistory: false
+          showCalibrationHistory: false,
+          showRangeCalib: true,
+          showSaveReboot: true
         };
 
       case 0x0ce6: // DS5
@@ -101,7 +110,9 @@ class ControllerFactory {
           showQuickTests: true,
           showFourStepCalib: false,
           showQuickCalib: true,
-          showCalibrationHistory: true
+          showCalibrationHistory: true,
+          showRangeCalib: true,
+          showSaveReboot: true
         };
 
       case 0x0e45: // VR2 Left Controller
@@ -112,7 +123,22 @@ class ControllerFactory {
           showInfoTab: true,
           showQuickTests: false,
           showFourStepCalib: true,
-          showQuickCalib: false
+          showQuickCalib: false,
+          showRangeCalib: true,
+          showSaveReboot: true
+        };
+
+      case 0x0268: // DS3 / SIXAXIS - diagnose only, no calibration
+        return {
+          showInfo: false,
+          showFinetune: false,
+          showInfoTab: true,
+          showQuickTests: false,
+          showFourStepCalib: false,
+          showQuickCalib: false,
+          showCalibrationHistory: false,
+          showRangeCalib: false,
+          showSaveReboot: false
         };
 
       default:
@@ -123,7 +149,9 @@ class ControllerFactory {
           showQuickTests: false,
           showFourStepCalib: false,
           showQuickCalib: false,
-          showCalibrationHistory: false
+          showCalibrationHistory: false,
+          showRangeCalib: false,
+          showSaveReboot: false
         };
     }
   }

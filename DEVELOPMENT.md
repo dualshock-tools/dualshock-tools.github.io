@@ -17,7 +17,7 @@ npm install
 npm run dev:full
 ```
 
-Open `http://localhost:8080` in your browser (Chrome or Edge). WebHID works over HTTP on `localhost`. To reach the app from another device, use `npm run serve:https` and open `https://localhost:8443` (accept the self-signed certificate warning).
+Open `http://localhost:8080` in your browser (Chrome or Edge). WebHID works over HTTP on `localhost`.
 
 ## Available Scripts
 
@@ -27,7 +27,6 @@ Open `http://localhost:8080` in your browser (Chrome or Edge). WebHID works over
 | `npm run build:prod`  | Build for production (minified, optimized)                |
 | `npm run clean`       | Clean the dist directory                                  |
 | `npm run serve`       | Serve built app over HTTP at `localhost:8080` (WebHID works on localhost)   |
-| `npm run serve:https` | Serve built app over HTTPS at `localhost:8443` (needed for other devices)   |
 | `npm run start`       | Build and serve over HTTP at `localhost:8080`             |
 | `npm run dev:full`    | **Recommended**: Build, watch, and serve with auto-reload |
 | `npm run watch`       | Watch files and rebuild on changes                        |
@@ -67,22 +66,15 @@ Then open `http://localhost:8080`. The container builds the production bundle an
 
 ## Important Notes
 
-### WebHID & HTTPS
+### WebHID & Secure Contexts
 
-The WebHID API requires a secure context. `localhost` counts as secure, so the default HTTP server (`http://localhost:8080`) works for local development without any certificates. HTTPS is only needed to reach the app from another device on your network — `npm run serve:https` serves over `https://localhost:8443` using self-signed certificates located at:
-
-- `server.crt` - SSL certificate
-- `server.key` - SSL private key
+The WebHID API requires a secure context. `localhost` counts as secure, so the HTTP dev server (`http://localhost:8080`) works for local development without any certificates. Reaching the app from another device would require HTTPS — use the production site for that.
 
 ### Browser Compatibility
 
 - **Chrome/Edge**: Full WebHID support ✅
 - **Firefox**: No WebHID support ❌
 - **Safari**: No WebHID support ❌
-
-### SSL Certificate Warning
-
-When first accessing `https://localhost:8443`, your browser will show a security warning because we're using a self-signed certificate. This is normal for development - click "Advanced" and "Proceed to localhost" to continue.
 
 ## File Structure
 
@@ -122,10 +114,10 @@ The build system uses Gulp with the following steps:
 
 ### Port Already in Use
 
-If port 8443 is busy:
+If port 8080 is busy:
 
 ```bash
-PORT=8444 npm run serve:https
+HTTP_PORT=8081 npm run serve
 ```
 
 ### Build Errors
@@ -137,17 +129,8 @@ npm run clean
 npm run build
 ```
 
-### SSL Certificate Issues
-
-The certificates are pre-generated. If you need new ones:
-
-```bash
-openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
-```
-
 ### WebHID Not Working
 
 1. Use Chrome or Edge browser (Firefox and Safari don't support WebHID)
 2. Open the app via `localhost` (a secure context) — `http://localhost:8080` is fine
-3. When accessing from another device, use `npm run serve:https` and accept the SSL certificate warning
-4. Check browser console for errors
+3. Check browser console for errors

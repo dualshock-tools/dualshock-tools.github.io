@@ -4,10 +4,11 @@ import { l } from '../translations.js';
 import { la } from '../utils.js';
 import { Storage } from '../storage.js';
 
-const TEST_SEQUENCE = ['usb', 'buttons', 'imu', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
+const TEST_SEQUENCE = ['usb', 'buttons', 'trackpad', 'imu', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
   'usb': 'USB Connector',
   'buttons': 'Buttons',
+  'trackpad': 'Trackpad',
   'imu': 'IMU (Gyroscope & Accelerometer)',
   'haptic': 'Haptic Vibration',
   'adaptive': 'Adaptive Trigger',
@@ -28,6 +29,12 @@ const IMU_ACCEL_BAR_SCALE_G = 1.5;    // full-deflection scale for the accel bar
 const IMU_TEXT_INTERVAL_MS = 150;     // text readouts update slower than the bars for readability
 const IMU_AUTOPASS_DELAY_MS = 1500;   // linger after all checks turn green before auto-passing
 const IMU_AXES = ['x', 'y', 'z'];
+
+// Trackpad test tuning
+const TRACKPAD_MOVE_PASS_UNITS = 500;      // accumulated finger travel (raw units, pad is 1920 wide) that counts as "movement"
+const TRACKPAD_TRAIL_LENGTH = 150;         // trail points kept per finger for the drawing
+const TRACKPAD_AUTOPASS_DELAY_MS = 1500;   // linger after all checks turn green before auto-passing
+const TRACKPAD_FINGER_COLORS = ['#0d6efd', '#dc3545'];
 
 const BUTTONS = ['triangle', 'cross', 'circle', 'square', 'l1', 'r1', 'l2', 'r2', 'l3', 'r3', 'up', 'down', 'left', 'right', 'create', 'touchpad', 'options', 'ps', 'mute'];
 const BUTTON_INFILL_MAPPING = {
@@ -78,6 +85,7 @@ export class QuickTestModal {
     this._boundModalHidden = () => {
     // Clean up any active tests BEFORE resetting state
       this._stopButtonsTest();
+      this._stopTrackpadTest();
       this._stopImuTest();
       this._stopAdaptiveTest();
       this._stopLightsTest();
@@ -93,6 +101,7 @@ export class QuickTestModal {
     this.state = {
       usb: null,
       buttons: null,
+      trackpad: null,
       imu: null,
       haptic: null,
       adaptive: null,
@@ -112,6 +121,11 @@ export class QuickTestModal {
       imuRafId: null,
       imuLastTextRender: 0,
       imuAutoPassArmed: false,
+      trackpadMonitoring: false,
+      trackpadStats: null,
+      trackpadTrails: [[], []],
+      trackpadRafId: null,
+      trackpadAutoPassArmed: false,
       buttonPressCount: {},
       longPressTimers: {},
       longPressThreshold: 400,
@@ -190,6 +204,7 @@ export class QuickTestModal {
     const testIcons = {
       'usb': 'fas fa-plug',
       'buttons': 'fas fa-gamepad',
+      'trackpad': 'fas fa-fingerprint',
       'imu': 'fas fa-compass',
       'haptic': 'fas fa-mobile-alt',
       'adaptive': 'fas fa-hand-pointer',
@@ -283,6 +298,36 @@ export class QuickTestModal {
             </button>
           </div>
         `);
+      case 'trackpad':
+        const trackpadTestDesc = l('This test checks the trackpad\'s touch tracking, two-finger detection, and click.');
+        const trackpadInstructions = l('Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.');
+        const trackpadRestart = l('Restart');
+        const trackpadCheck = (id, label) => `
+          <div class="d-flex align-items-center me-3">
+            <span class="badge bg-secondary test-check" id="${id}"><i class="far fa-circle"></i></span>
+            <span class="ms-1">${label}</span>
+          </div>`;
+        return `
+          <p class="mb-2">${trackpadTestDesc}</p>
+          <p class="mb-2"><strong>${instructions}:</strong> ${trackpadInstructions}</p>
+          <div class="d-flex flex-wrap mb-2">
+            ${trackpadCheck('trackpad-check-move', l('Movement'))}
+            ${trackpadCheck('trackpad-check-both', l('Two fingers'))}
+            ${trackpadCheck('trackpad-check-click', l('Click'))}
+          </div>
+          <canvas id="trackpad-canvas" class="mb-2" style="width: 100%; height: 180px;"></canvas>
+          <div class="d-flex gap-2 mt-3">
+            <button type="button" class="btn btn-success" id="trackpad-pass-btn" onclick="markTestResult('trackpad', true)">
+              <i class="fas fa-check me-1"></i><span>${pass}</span>
+            </button>
+            <button type="button" class="btn btn-danger" id="trackpad-fail-btn" onclick="markTestResult('trackpad', false)">
+              <i class="fas fa-times me-1"></i><span>${fail}</span>
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="trackpad-reset-btn" onclick="resetTrackpadTest()">
+              <i class="fas fa-redo me-1"></i><span>${trackpadRestart}</span>
+            </button>
+          </div>
+        `;
       case 'imu':
         const imuTestDesc = l('This test checks that the gyroscope and accelerometer respond on all axes.');
         const imuInstructions = l('Rotate the controller a full turn around each axis until every check turns green.');
@@ -294,7 +339,7 @@ export class QuickTestModal {
           <div class="d-flex align-items-center">
             <span style="color: ${imuAxisColors[axis]};">${label}</span>
             <span class="ms-auto" ${imuValueStyle} id="imu-${sensor}-${axis}">${initial}</span>
-            <span class="badge bg-secondary ms-2 imu-check" id="imu-check-${sensor}-${axis}"><i class="far fa-circle"></i></span>
+            <span class="badge bg-secondary ms-2 test-check" id="imu-check-${sensor}-${axis}"><i class="far fa-circle"></i></span>
           </div>
           <div class="imu-bar">
             <div class="imu-bar-fill" id="imu-bar-${sensor}-${axis}" style="background: ${imuAxisColors[axis]};"></div>
@@ -303,7 +348,7 @@ export class QuickTestModal {
           <div class="d-flex align-items-center border-top mt-1 pt-1">
             ${labelHtml}
             <span class="ms-auto" ${imuValueStyle} id="${valueId}">${initial}</span>
-            <span class="badge bg-secondary ms-2 imu-check" id="${checkId}"><i class="far fa-circle"></i></span>
+            <span class="badge bg-secondary ms-2 test-check" id="${checkId}"><i class="far fa-circle"></i></span>
           </div>`;
         return `
           <p class="mb-2">${imuTestDesc}</p>
@@ -743,6 +788,9 @@ export class QuickTestModal {
         case 'buttons':
           this._startButtonsTest();
           break;
+        case 'trackpad':
+          this._startTrackpadTest();
+          break;
         case 'imu':
           this._startImuTest();
           break;
@@ -782,6 +830,9 @@ export class QuickTestModal {
         break;
       case 'buttons':
         this._stopButtonsTest();
+        break;
+      case 'trackpad':
+        this._stopTrackpadTest();
         break;
       case 'imu':
         this._stopImuTest();
@@ -1317,11 +1368,11 @@ export class QuickTestModal {
     IMU_AXES.forEach(axis => {
       this._setImuBar(`imu-bar-gyro-${axis}`, latest.gyro[axis], IMU_GYRO_BAR_SCALE_DPS);
       this._setImuBar(`imu-bar-accel-${axis}`, latest.accel[axis], IMU_ACCEL_BAR_SCALE_G);
-      this._setImuCheck(`imu-check-gyro-${axis}`, stats.gyroPeak[axis] >= IMU_GYRO_PASS_DPS);
-      this._setImuCheck(`imu-check-accel-${axis}`, stats.accelMax[axis] - stats.accelMin[axis] >= IMU_ACCEL_PASS_RANGE_G);
+      this._setCheckBadge(`imu-check-gyro-${axis}`, stats.gyroPeak[axis] >= IMU_GYRO_PASS_DPS);
+      this._setCheckBadge(`imu-check-accel-${axis}`, stats.accelMax[axis] - stats.accelMin[axis] >= IMU_ACCEL_PASS_RANGE_G);
     });
-    this._setImuCheck('imu-check-gyro-bias', this.state.imuBiasCaptured);
-    this._setImuCheck('imu-check-accel-mag', stats.magnitudeSeen);
+    this._setCheckBadge('imu-check-gyro-bias', this.state.imuBiasCaptured);
+    this._setCheckBadge('imu-check-accel-mag', stats.magnitudeSeen);
 
     this._drawImuChart('imu-gyro-chart', history, 'gyro', IMU_GYRO_PASS_DPS * 2);
     this._drawImuChart('imu-accel-chart', history, 'accel', 1.5);
@@ -1340,16 +1391,16 @@ export class QuickTestModal {
   }
 
   /**
-   * Toggle one check/pending indicator badge
+   * Toggle one check/pending indicator badge. Only touches the color and the
+   * icon, so each test's markup keeps its own layout classes.
    */
-  _setImuCheck(id, passed) {
+  _setCheckBadge(id, passed) {
     const check = document.getElementById(id);
     if (!check) return;
-    const className = passed ? 'badge bg-success ms-2 imu-check' : 'badge bg-secondary ms-2 imu-check';
-    if (check.className !== className) {
-      check.className = className;
-      check.innerHTML = passed ? '<i class="fas fa-check"></i>' : '<i class="far fa-circle"></i>';
-    }
+    if (check.classList.contains('bg-success') === passed) return;
+    check.classList.toggle('bg-success', passed);
+    check.classList.toggle('bg-secondary', !passed);
+    check.innerHTML = passed ? '<i class="fas fa-check"></i>' : '<i class="far fa-circle"></i>';
   }
 
   /**
@@ -1405,6 +1456,227 @@ export class QuickTestModal {
         }
       });
       ctx.stroke();
+    });
+  }
+
+  /**
+   * Start trackpad test
+   */
+  _startTrackpadTest() {
+    this._startIconAnimation('trackpad');
+    if (!this.state) return;
+    this.state.trackpadMonitoring = true;
+    // Don't auto-close when revisiting a test whose checks were already all
+    // green when it opened; pressing Restart re-arms the auto-pass
+    this.state.trackpadAutoPassArmed = !this.state.trackpadStats || !this._areAllTrackpadChecksGreen(this.state.trackpadStats);
+    // Keep progress if the section is collapsed and re-expanded mid-test
+    if (!this.state.trackpadStats) {
+      this._resetTrackpadStats();
+    }
+    this._startTrackpadRenderLoop();
+  }
+
+  /**
+   * Stop trackpad test
+   */
+  _stopTrackpadTest() {
+    this._stopIconAnimation('trackpad');
+    if (!this.state) return;
+    this.state.trackpadMonitoring = false;
+    if (this.state.trackpadRafId) {
+      cancelAnimationFrame(this.state.trackpadRafId);
+      this.state.trackpadRafId = null;
+    }
+    this._cancelTrackpadAutoPass();
+  }
+
+  /**
+   * Cancel a pending trackpad auto-pass countdown, if any
+   */
+  _cancelTrackpadAutoPass() {
+    const stats = this.state?.trackpadStats;
+    if (stats?.autoPassTimer) {
+      clearTimeout(stats.autoPassTimer);
+      stats.autoPassTimer = null;
+    }
+  }
+
+  /**
+   * Restart the trackpad test: clear the checks and the finger trails,
+   * and re-arm the auto-pass
+   */
+  resetTrackpadTest() {
+    if (!this.state) return;
+    this._resetTrackpadStats();
+    this.state.trackpadAutoPassArmed = true;
+  }
+
+  /**
+   * Reset trackpad activity stats and finger trails
+   */
+  _resetTrackpadStats() {
+    this._cancelTrackpadAutoPass();
+    this.state.trackpadTrails = [[], []];
+    this.state.trackpadStats = {
+      travel: 0,
+      bothFingersSeen: false,
+      clicked: false,
+      lastPoints: [null, null],
+      autoPassTimer: null,
+    };
+  }
+
+  /**
+   * Record one trackpad sample: track finger travel, two-finger contact and
+   * the click. Called per input report; rendering happens on animation frames.
+   */
+  _recordTrackpadSample(changes, touchPoints) {
+    if (!this.state.trackpadMonitoring || !this.state.trackpadStats) return;
+    const stats = this.state.trackpadStats;
+
+    if (changes.touchpad === true) {
+      stats.clicked = true;
+    }
+
+    if (Array.isArray(touchPoints)) {
+      if (touchPoints.filter(p => p.active).length >= 2) {
+        stats.bothFingersSeen = true;
+      }
+      touchPoints.slice(0, 2).forEach((point, i) => {
+        const trail = this.state.trackpadTrails[i];
+        const last = stats.lastPoints[i];
+        if (point.active) {
+          // Same finger still down: count the travel since the last sample
+          if (last && last.id === point.id) {
+            stats.travel += Math.hypot(point.x - last.x, point.y - last.y);
+          }
+          trail.push({ x: point.x, y: point.y });
+          if (trail.length > TRACKPAD_TRAIL_LENGTH) {
+            trail.shift();
+          }
+          stats.lastPoints[i] = { id: point.id, x: point.x, y: point.y };
+        } else if (last) {
+          // Finger lifted: break the trail so lines don't connect strokes
+          stats.lastPoints[i] = null;
+          trail.push(null);
+        }
+      });
+    }
+
+    this._checkTrackpadTestComplete();
+  }
+
+  /**
+   * Auto-pass the trackpad test shortly after movement, both fingers and the
+   * click have all been seen
+   */
+  _checkTrackpadTestComplete() {
+    const stats = this.state.trackpadStats;
+    if (!stats || stats.autoPassTimer || !this.state.trackpadAutoPassArmed) return;
+    if (!this._areAllTrackpadChecksGreen(stats)) return;
+
+    stats.autoPassTimer = setTimeout(() => {
+      this.markTestResult('trackpad', true);
+    }, TRACKPAD_AUTOPASS_DELAY_MS);
+  }
+
+  /**
+   * True when movement, two-finger contact and the click have all been seen
+   */
+  _areAllTrackpadChecksGreen(stats) {
+    return stats.travel >= TRACKPAD_MOVE_PASS_UNITS && stats.bothFingersSeen && stats.clicked;
+  }
+
+  /**
+   * Render the trackpad panel on animation frames while the test is active
+   */
+  _startTrackpadRenderLoop() {
+    if (this.state.trackpadRafId) return;
+    const render = () => {
+      if (!this.state?.trackpadMonitoring) {
+        if (this.state) this.state.trackpadRafId = null;
+        return;
+      }
+      this._renderTrackpadPanel();
+      this.state.trackpadRafId = requestAnimationFrame(render);
+    };
+    this.state.trackpadRafId = requestAnimationFrame(render);
+  }
+
+  /**
+   * Update the trackpad check badges and redraw the pad: finger trails,
+   * current finger positions, and a tint while the pad is clicked
+   */
+  _renderTrackpadPanel() {
+    const stats = this.state.trackpadStats;
+    if (!stats) return;
+
+    this._setCheckBadge('trackpad-check-move', stats.travel >= TRACKPAD_MOVE_PASS_UNITS);
+    this._setCheckBadge('trackpad-check-both', stats.bothFingersSeen);
+    this._setCheckBadge('trackpad-check-click', stats.clicked);
+
+    const canvas = document.getElementById('trackpad-canvas');
+    if (!canvas) return;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (!width || !height) return;
+
+    // Match the backing store to the displayed size (handles devicePixelRatio)
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    // Fit the pad into the canvas preserving its physical aspect ratio.
+    // Both pads report x up to ~1920; the DS4 pad is a little shallower.
+    const padUnitsX = 1920;
+    const padUnitsY = this.controller.getModel() === 'DS4' ? 943 : 1080;
+    const scale = Math.min(width / padUnitsX, height / padUnitsY);
+    const padW = padUnitsX * scale;
+    const padH = padUnitsY * scale;
+    const padX = (width - padW) / 2;
+    const padY = (height - padH) / 2;
+    const toCanvas = (p) => ({ x: padX + p.x * scale, y: padY + p.y * scale });
+
+    // Pad outline, tinted while the pad is physically clicked
+    ctx.fillStyle = this.controller.button_states.touchpad ? 'rgba(13, 110, 253, 0.15)' : 'rgba(0, 0, 0, 0.03)';
+    ctx.fillRect(padX, padY, padW, padH);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padX, padY, padW, padH);
+
+    this.state.trackpadTrails.forEach((trail, i) => {
+      ctx.strokeStyle = TRACKPAD_FINGER_COLORS[i];
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      let penDown = false;
+      trail.forEach(point => {
+        if (!point) {
+          penDown = false;
+          return;
+        }
+        const { x, y } = toCanvas(point);
+        if (penDown) {
+          ctx.lineTo(x, y);
+        } else {
+          ctx.moveTo(x, y);
+          penDown = true;
+        }
+      });
+      ctx.stroke();
+
+      const current = this.state.trackpadStats.lastPoints[i];
+      if (current) {
+        const { x, y } = toCanvas(current);
+        ctx.fillStyle = TRACKPAD_FINGER_COLORS[i];
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
     });
   }
 
@@ -1655,7 +1927,7 @@ export class QuickTestModal {
   /**
    * Handle controller input for test navigation and control
    */
-  handleControllerInput(changes, batteryStatus) {
+  handleControllerInput(changes, batteryStatus, touchPoints) {
     if(this.state.isTransitioning) return;
 
     // Check battery status and show/hide warning if charge is 5% or less
@@ -1681,6 +1953,11 @@ export class QuickTestModal {
     // If IMU test is active, record the sample (rendering happens on animation frames)
     if (activeTest === 'imu' && changes.imu) {
       this._recordImuSample(changes.imu);
+    }
+
+    // If trackpad test is active, record the sample (rendering happens on animation frames)
+    if (activeTest === 'trackpad') {
+      this._recordTrackpadSample(changes, touchPoints);
     }
 
     // Helper function to handle button press with transition
@@ -1969,9 +2246,9 @@ export function isQuickTestVisible() {
 /**
  * Handle controller input for the Quick Test Modal
  */
-export function quicktest_handle_controller_input(changes, batteryStatus) {
+export function quicktest_handle_controller_input(changes, batteryStatus, touchPoints) {
   if (currentQuickTestInstance && isQuickTestVisible()) {
-    currentQuickTestInstance.handleControllerInput(changes, batteryStatus);
+    currentQuickTestInstance.handleControllerInput(changes, batteryStatus, touchPoints);
   }
 }
 
@@ -2041,6 +2318,12 @@ function resetImuTest() {
   }
 }
 
+function resetTrackpadTest() {
+  if (currentQuickTestInstance) {
+    currentQuickTestInstance.resetTrackpadTest();
+  }
+}
+
 // Legacy compatibility - expose functions to window for HTML onclick handlers
 window.markTestResult = markTestResult;
 window.resetAllTests = resetAllTests;
@@ -2051,3 +2334,4 @@ window.testHeadphoneAudio = testHeadphoneAudio;
 window.replaySpeakerTest = replaySpeakerTest;
 window.replayHapticTest = replayHapticTest;
 window.resetImuTest = resetImuTest;
+window.resetTrackpadTest = resetTrackpadTest;

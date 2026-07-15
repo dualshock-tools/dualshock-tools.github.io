@@ -14,7 +14,6 @@
         "dev": "gulp dev",
         "watch": "gulp watch",
         "serve": "node dev-server.js",
-        "serve:https": "HTTPS=true node dev-server.js",
         "start": "npm run build && npm run serve",
         "dev:serve": "npm run build && concurrently \"npm run dev\" \"npm run serve\"",
         "dev:full": "npm run build && concurrently --kill-others \"npm run watch\" \"npm run serve\""

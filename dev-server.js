@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import https from 'https';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
@@ -11,13 +10,9 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const config = {
-  port: process.env.PORT || 8443,
   httpPort: process.env.HTTP_PORT || 8080,
   host: process.env.HOST || 'localhost',
-  distDir: path.join(__dirname, 'dist'),
-  certFile: path.join(__dirname, 'server.crt'),
-  keyFile: path.join(__dirname, 'server.key'),
-  useHttps: process.env.HTTPS === 'true'
+  distDir: path.join(__dirname, 'dist')
 };
 
 // MIME types
@@ -108,64 +103,24 @@ function startServer() {
     process.exit(1);
   }
   
-  if (config.useHttps) {
-    // Check if SSL certificates exist
-    if (!fs.existsSync(config.certFile) || !fs.existsSync(config.keyFile)) {
-      console.error('❌ SSL certificates not found');
-      console.log('💡 SSL certificates are required for WebHID API');
-      console.log('   Make sure server.crt and server.key exist in the project root');
-      process.exit(1);
+  const server = http.createServer(requestHandler);
+
+  server.listen(config.httpPort, config.host, () => {
+    console.log('🚀 Development server started!');
+    console.log(`📱 App running at: http://${config.host}:${config.httpPort}`);
+    console.log('💡 WebHID works here because localhost is a secure context');
+    console.log('💡 Press Ctrl+C to stop the server');
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${config.httpPort} is already in use`);
+      console.log('💡 Try using a different port: HTTP_PORT=8081 npm run serve');
+    } else {
+      console.error('❌ Server error:', err.message);
     }
-    
-    // Read SSL certificates
-    const options = {
-      key: fs.readFileSync(config.keyFile),
-      cert: fs.readFileSync(config.certFile)
-    };
-    
-    // Create HTTPS server
-    const server = https.createServer(options, requestHandler);
-    
-    server.listen(config.port, config.host, () => {
-      console.log('🚀 Development server started!');
-      console.log(`📱 App running at: https://${config.host}:${config.port}`);
-      console.log('🔒 HTTPS enabled (required for WebHID API)');
-      console.log('💡 Press Ctrl+C to stop the server');
-      console.log('');
-      console.log('📝 Note: You may need to accept the self-signed certificate in your browser');
-    });
-    
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${config.port} is already in use`);
-        console.log('💡 Try using a different port: PORT=8444 npm run serve:https');
-      } else {
-        console.error('❌ Server error:', err.message);
-      }
-      process.exit(1);
-    });
-  } else {
-    // Create HTTP server (for testing only - WebHID won't work)
-    const server = http.createServer(requestHandler);
-    
-    server.listen(config.httpPort, config.host, () => {
-      console.log('🚀 Development server started!');
-      console.log(`📱 App running at: http://${config.host}:${config.httpPort}`);
-      console.log('⚠️  HTTP mode - WebHID API will only work on localhost');
-      console.log('💡 Use "npm run serve:https" to enable WebHID support to other clients on the local network');
-      console.log('💡 Press Ctrl+C to stop the server');
-    });
-    
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Port ${config.httpPort} is already in use`);
-        console.log('💡 Try using a different port: HTTP_PORT=8081 npm run serve');
-      } else {
-        console.error('❌ Server error:', err.message);
-      }
-      process.exit(1);
-    });
-  }
+    process.exit(1);
+  });
 }
 
 // Handle graceful shutdown

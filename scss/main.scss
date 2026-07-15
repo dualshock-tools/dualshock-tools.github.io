@@ -116,6 +116,9 @@ dl.row {
 		i.fas.test-icon-imu {
 			animation: pulse 1s ease-in-out infinite !important;
 		}
+		i.fas.test-icon-trackpad {
+			animation: pulse 1s ease-in-out infinite !important;
+		}
 		i.fas.test-icon-haptic {
 			animation: shake 0.5s ease-in-out infinite !important;
 		}
@@ -169,8 +172,8 @@ dl.row {
 	animation: pulse-text 0.75s ease-in-out infinite;
 }
 
-/* IMU test check badges: bold glyphs, stable pill width */
-.imu-check {
+/* Quick test check badges (IMU, trackpad): bold glyphs, stable pill width */
+.test-check {
 	font-weight: 900;
 	font-size: 0.85em;
 	min-width: 1.8em;

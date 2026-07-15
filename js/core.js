@@ -932,7 +932,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
 
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {
-    quicktest_handle_controller_input(changes, batteryStatus);
+    quicktest_handle_controller_input(changes, batteryStatus, touchPoints);
     return;
   }
 

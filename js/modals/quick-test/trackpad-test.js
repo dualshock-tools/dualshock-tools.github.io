@@ -5,7 +5,9 @@ import { setCheckBadge } from './utils.js';
 
 // Trackpad test tuning
 const TRACKPAD_MOVE_PASS_UNITS = 500;      // accumulated finger travel (raw units, pad is 1920 wide) that counts as "movement"
-const TRACKPAD_TRAIL_LENGTH = 150;         // trail points kept per finger for the drawing
+const TRACKPAD_TRAIL_MS = 600;             // wall-clock age of the finger trails (time-based:
+                                           // report rates differ per model, e.g. the Edge
+                                           // reports about twice as fast as a regular DS5)
 const TRACKPAD_AUTOPASS_DELAY_MS = 1500;   // linger after all checks turn green before auto-passing
 const TRACKPAD_FINGER_COLORS = ['#0d6efd', '#dc3545'];
 
@@ -143,6 +145,7 @@ export class TrackpadTest {
       if (touchPoints.filter(p => p.active).length >= 2) {
         stats.bothFingersSeen = true;
       }
+      const now = performance.now();
       touchPoints.slice(0, 2).forEach((point, i) => {
         const trail = this.trails[i];
         const last = stats.lastPoints[i];
@@ -151,15 +154,16 @@ export class TrackpadTest {
           if (last && last.id === point.id) {
             stats.travel += Math.hypot(point.x - last.x, point.y - last.y);
           }
-          trail.push({ x: point.x, y: point.y });
-          if (trail.length > TRACKPAD_TRAIL_LENGTH) {
-            trail.shift();
-          }
-          stats.lastPoints[i] = { id: point.id, x: point.x, y: point.y };
+          trail.push({ x: point.x, y: point.y, t: now });
         } else if (last) {
           // Finger lifted: break the trail so lines don't connect strokes
-          stats.lastPoints[i] = null;
           trail.push(null);
+        }
+        stats.lastPoints[i] = point.active ? { id: point.id, x: point.x, y: point.y } : null;
+        // Age out old points by time so the trail length is independent of
+        // the controller's report rate (leading breaks are meaningless)
+        while (trail.length && (trail[0] === null || now - trail[0].t > TRACKPAD_TRAIL_MS)) {
+          trail.shift();
         }
       });
     }

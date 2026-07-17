@@ -4,7 +4,9 @@ import { l } from '../../translations.js';
 import { setCheckBadge } from './utils.js';
 
 // IMU test tuning
-const IMU_HISTORY_LENGTH = 512;       // samples kept for the sparkline charts (~2s at 250Hz)
+const IMU_HISTORY_MS = 2000;          // wall-clock span of the sparkline charts (time-based:
+                                      // report rates differ per model, e.g. the Edge reports
+                                      // about twice as fast as a regular DS5)
 const IMU_STILL_WINDOW = 50;          // consecutive samples that must be quiet to re-zero the gyro
 const IMU_STILL_SPREAD_DPS = 4;       // max per-axis spread within the window to count as "still"
 const IMU_GYRO_PASS_DPS = 120;        // peak rate that counts as "axis exercised"
@@ -223,8 +225,9 @@ export class ImuTest {
       stats.magnitudeSeen = true;
     }
 
-    this.dataHistory.push({ gyro, accel, magnitude });
-    if (this.dataHistory.length > IMU_HISTORY_LENGTH) {
+    const t = performance.now();
+    this.dataHistory.push({ gyro, accel, magnitude, t });
+    while (this.dataHistory.length && t - this.dataHistory[0].t > IMU_HISTORY_MS) {
       this.dataHistory.shift();
     }
 
@@ -357,13 +360,16 @@ export class ImuTest {
     ctx.lineTo(width, height / 2);
     ctx.stroke();
 
+    // Map samples to x by timestamp so the chart scrolls at the same speed
+    // regardless of the controller's report rate
+    const windowStart = performance.now() - IMU_HISTORY_MS;
     const colors = { x: '#dc3545', y: '#198754', z: '#0d6efd' };
     IMU_AXES.forEach(axis => {
       ctx.strokeStyle = colors[axis];
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       history.forEach((sample, i) => {
-        const px = (i / (IMU_HISTORY_LENGTH - 1)) * width;
+        const px = ((sample.t - windowStart) / IMU_HISTORY_MS) * width;
         const py = height / 2 - (sample[field][axis] / scale) * (height / 2);
         if (i === 0) {
           ctx.moveTo(px, py);

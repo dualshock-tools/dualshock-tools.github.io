@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DualShock Calibration GUI</title>
+<title>Controller Calibration GUI</title>
 
 <link id="bootstrap-css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -36,7 +36,7 @@
 <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="shortcut icon" href="/favicon.ico" />
-<meta name="apple-mobile-web-app-title" content="DS Tools" />
+<meta name="apple-mobile-web-app-title" content="Controller Tools" />
 
 <!-- External CSS files -->
 <link rel="stylesheet" href="css/main.css">
@@ -48,7 +48,7 @@
 
   <nav class="navbar bg-body-tertiary navbar-expand-md bg-body-tertiary">
     <div class="container-fluid">
-      <a class="navbar-brand ds-i18n" href="https://dualshock-tools.github.io">DualShock Calibration GUI</a>
+      <a class="navbar-brand ds-i18n" href="https://dualshock-tools.github.io">Controller Calibration GUI</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -83,7 +83,7 @@
             <span class="ds-i18n">Unsupported browser.</span>
           </p>
           <p class="mb-1">
-            <span class="ds-i18n">Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.</span>
+            <span class="ds-i18n">Please use a modern browser with WebHID or Gamepad API support on a PC or Mac.</span>
             <span class="ds-i18n">Firefox is supported with the WebHID extension installed.</span>
           </p>
           <p class="mb-0">
@@ -94,11 +94,17 @@
     </div>
 
     <div id="offlinebar" class="vstack p-2" style="display: none;">
-      <p class="ds-i18n">Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.</p>
-      <button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">
-        <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
-        <span class="ds-i18n">Connect</span>
-      </button>
+      <p class="ds-i18n">Connect a supported PlayStation or Xbox controller, then choose its family below.</p>
+      <div class="d-grid d-sm-flex gap-2">
+        <button id="btnconnect" type="button" class="btn btn-outline-primary flex-fill" onclick="connect()">
+          <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
+          <span class="ds-i18n">Connect PlayStation controller</span>
+        </button>
+        <button id="btnconnectxbox" type="button" class="btn btn-outline-success flex-fill" onclick="connectXbox()">
+          <span class="spinner-border spinner-border-sm" style="display: none;" id="connectxboxspinner" aria-hidden="true"></span>
+          <span class="ds-i18n">Connect Xbox controller</span>
+        </button>
+      </div>
       <br>
     </div>
 
@@ -207,6 +213,17 @@
                 <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
                   <span class="ds-i18n">Finetune stick calibration</span>
                 </button>
+                <div class="card border-success" id="xbox-calibration-card" style="display: none;">
+                  <div class="card-body">
+                    <h5 class="card-title"><i class="fab fa-xbox me-2"></i><span class="ds-i18n">Xbox calibration</span></h5>
+                    <p class="card-text mb-2 ds-i18n">This page can test sticks, triggers, buttons, circularity, and vibration. Browsers cannot write Xbox calibration values to the controller.</p>
+                    <p class="card-text small text-muted ds-i18n">Use the official Xbox Accessories app on Windows or Xbox for permanent thumbstick and trigger calibration.</p>
+                    <a class="btn btn-success w-100" href="https://apps.microsoft.com/detail/9nblggh30xj3" target="_blank" rel="noopener noreferrer">
+                      <span class="ds-i18n">Open Xbox Accessories</span>
+                      <i class="fas fa-arrow-up-right-from-square ms-2"></i>
+                    </a>
+                  </div>
+                </div>
                 <hr>
                 <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()">Save changes permanently</button>
                 <button id="restore-calibration-btn" type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="openCalibrationHistoryModal()">Restore calibration</button>

@@ -3,6 +3,7 @@
 import { l } from '../translations.js';
 import { la } from '../utils.js';
 import { Storage } from '../storage.js';
+import { createXboxControllerMarkup } from '../controllers/xbox-visual.js';
 
 const TEST_SEQUENCE = ['usb', 'buttons', 'adaptive', 'haptic', 'lights', 'speaker', 'headphone', 'microphone'];
 const TEST_NAMES = {
@@ -233,8 +234,14 @@ export class QuickTestModal {
         const buttonsTestDesc = l('This test checks all controller buttons by requiring you to press each button up to three times.');
         const buttonsInstructions = l('Press each button until they turn green.');
         const buttonsLongPress = l('Long-press [circle] to skip ahead.');
+        const xboxGuideNote = this.controller.getModel() === 'XBOX'
+          ? `<div class="alert alert-secondary mb-3">
+              <i class="fas fa-lock me-2"></i>
+              <span>${l('The Xbox/Guide button is reserved by the operating system, so browsers cannot reliably test it. It is not required to pass this test.')}</span>
+            </div>`
+          : '';
         const restart = l('Restart');
-        return addIcons(`
+        return this._addControllerButtonIcons(`
           <p>${buttonsTestDesc}</p>
           <p><strong>${instructions}:</strong> ${buttonsInstructions}</p>
           <div class="d-flex justify-content-center mb-3">
@@ -246,6 +253,7 @@ export class QuickTestModal {
             <i class="fas fa-info-circle me-2"></i>
             <span>${buttonsLongPress}</span>
           </div>
+          ${xboxGuideNote}
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="buttons-pass-btn" onclick="markTestResult('buttons', true)">
               <i class="fas fa-check me-1"></i><span>${pass}</span>
@@ -265,6 +273,7 @@ export class QuickTestModal {
         return `
           <p>${hapticTestDesc}</p>
           <p><strong>${instructions}:</strong> ${hapticInstructions}</p>
+          <div id="haptic-runtime-status" class="small text-muted" role="status" aria-live="polite"></div>
           <div class="d-flex gap-2 mt-3">
             <button type="button" class="btn btn-success" id="haptic-pass-btn" onclick="markTestResult('haptic', true)">
               <i class="fas fa-check me-1"></i><span>${pass}</span>
@@ -430,7 +439,27 @@ export class QuickTestModal {
       instruction += ' ' + l('Press [triangle] to go back.');
     }
 
-    $instructionsText.html(addIcons(instruction));
+    $instructionsText.html(this._addControllerButtonIcons(instruction));
+  }
+
+  _addControllerButtonIcons(string) {
+    if (this.controller.getModel() !== 'XBOX') {
+      return addIcons(string);
+    }
+
+    const labels = {
+      triangle: 'Y',
+      square: 'X',
+      circle: 'B',
+      cross: 'A',
+    };
+    return Object.entries(labels).reduce(
+      (result, [name, label]) => result.replaceAll(
+        `[${name}]`,
+        `<span class="badge rounded-pill text-bg-dark align-middle">${label}</span>`
+      ),
+      string
+    );
   }
 
   /**
@@ -531,6 +560,13 @@ export class QuickTestModal {
 
     // Determine which SVG to load based on controller model
     const model = this.controller.getModel();
+    if (model === 'XBOX') {
+      svgContainer.innerHTML = createXboxControllerMarkup('qt-');
+      this.svgContainer = svgContainer;
+      this._resetButtonColors();
+      return;
+    }
+
     let svgFileName;
     if (model === 'DS4') {
       svgFileName = 'dualshock-controller.svg';
@@ -610,6 +646,9 @@ export class QuickTestModal {
     if (model === 'DS4') {
       return BUTTONS.filter(button => button !== 'mute');
     }
+    if (model === 'XBOX') {
+      return BUTTONS.filter(button => !['mute', 'touchpad', 'ps'].includes(button));
+    }
     return BUTTONS;
   }
 
@@ -618,6 +657,10 @@ export class QuickTestModal {
    */
   _setSvgGroupColor(group, color) {
     if (group) {
+      if (group.classList.contains('xbox-control')) {
+        group.style.setProperty('--xbox-control-color', color);
+        return;
+      }
       const elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
       elements.forEach(el => {
         // Set up a smooth transition for fill and stroke if not already set
@@ -744,7 +787,7 @@ export class QuickTestModal {
    * Reset all button colors to light blue
    */
   _resetButtonColors() {
-    Object.keys(BUTTON_INFILL_MAPPING).forEach(button => {
+    this._getAvailableButtons().forEach(button => {
       const buttonElement = this._getQuickTestElement(BUTTON_INFILL_MAPPING[button]);
       this._setSvgGroupColor(buttonElement, 'orange');
     });
@@ -812,12 +855,36 @@ export class QuickTestModal {
    */
   async _startHapticTest() {
     this._startIconAnimation('haptic');
-    await this.controller.setVibration({ heavyLeft: 255, lightRight: 0, duration: 500 }, async () => {
-      await setTimeout(async () => {
-        await this.controller.setVibration({ heavyLeft: 0, lightRight: 255, duration: 500 });
-      }, 500);
-    });
-    setTimeout(() => { this._stopIconAnimation('haptic'); }, 1500); }
+    const status = document.getElementById('haptic-runtime-status');
+    if (status) {
+      status.className = 'small text-muted';
+      status.textContent = l('Testing the heavy vibration motor…');
+    }
+
+    try {
+      const heavyResult = await this.controller.setVibration({ heavyLeft: 255, lightRight: 255, duration: 800 });
+      if (status) status.textContent = l('Testing the light vibration motor…');
+      const lightResult = await this.controller.setVibration({ heavyLeft: 0, lightRight: 255, duration: 600 });
+      if (status) {
+        status.className = 'small text-success';
+        const backend = lightResult?.backend || heavyResult?.backend;
+        status.textContent = backend
+          ? `${l('Vibration commands completed.')} (${backend})`
+          : l('Vibration commands completed.');
+      }
+    } catch (error) {
+      console.warn('Haptic test failed:', error);
+      if (status) {
+        status.className = 'small text-danger';
+        const macHint = /Macintosh|Mac OS X/i.test(navigator.userAgent)
+          ? ` ${l('On macOS, wired Xbox rumble is browser and controller dependent; try Bluetooth if USB does not vibrate.')}`
+          : '';
+        status.textContent = `${l('The browser could not activate controller vibration. Try the latest Chrome or Edge.')}${macHint}`;
+      }
+    } finally {
+      this._stopIconAnimation('haptic');
+    }
+  }
 
   /**
    * Start adaptive trigger test

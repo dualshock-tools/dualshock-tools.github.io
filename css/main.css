@@ -12,6 +12,169 @@ dl.row dd {
   font-family: monospace;
 }
 
+/* Xbox controller diagram */
+.xbox-controller-diagram {
+  width: min(100%, 440px);
+  margin: 0 auto;
+  color: #17232c;
+  user-select: none;
+}
+
+.xbox-controller-shoulders {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr 1fr 1fr;
+  gap: 0.4rem;
+  padding: 0 10%;
+  position: relative;
+  z-index: 2;
+}
+
+.xbox-controller-body {
+  position: relative;
+  min-height: 245px;
+  margin-top: -0.25rem;
+  border: 4px solid #3399cc;
+  border-radius: 42% 42% 34% 34% / 28% 28% 52% 52%;
+  background: #7ecbff;
+  box-shadow: inset 0 -12px 0 rgba(0, 0, 0, 0.08);
+}
+
+.xbox-control {
+  --xbox-control-color: #fff;
+  display: grid;
+  place-items: center;
+  background: var(--xbox-control-color);
+  border: 2px solid #3399cc;
+  color: #17232c;
+  font-weight: 800;
+  transition: background-color 0.1s, transform 0.08s;
+}
+
+.xbox-shoulder {
+  min-height: 38px;
+  border-radius: 12px 12px 5px 5px;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+.xbox-shoulder small {
+  min-height: 0.7rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+}
+
+.xbox-system {
+  position: absolute;
+  top: 20%;
+  width: 34px;
+  height: 27px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+}
+
+.xbox-view { left: 37%; }
+.xbox-logo {
+  left: calc(50% - 22px);
+  top: 9%;
+  width: 44px;
+  height: 44px;
+  font-size: 0.55rem;
+}
+
+.xbox-control-unavailable {
+  opacity: 0.5;
+  border-style: dashed;
+  cursor: help;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(23, 35, 44, 0.12) 4px,
+    rgba(23, 35, 44, 0.12) 7px
+  );
+}
+
+.xbox-menu { right: 37%; }
+
+.xbox-stick {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border: 7px double #3399cc;
+  border-radius: 50%;
+  background-image: radial-gradient(circle at center, transparent 35%, rgba(51, 153, 204, 0.25) 37%);
+  will-change: transform;
+}
+
+.xbox-left-stick { left: 16%; top: 18%; }
+.xbox-right-stick { right: 30%; bottom: 12%; }
+
+.xbox-dpad {
+  position: absolute;
+  left: 27%;
+  bottom: 10%;
+  width: 88px;
+  height: 88px;
+}
+
+.xbox-dpad-button {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  font-size: 0.63rem;
+}
+
+.xbox-dpad-up { left: 28px; top: 0; }
+.xbox-dpad-right { right: 0; top: 28px; }
+.xbox-dpad-down { left: 28px; bottom: 0; }
+.xbox-dpad-left { left: 0; top: 28px; }
+
+.xbox-face-buttons {
+  position: absolute;
+  right: 10%;
+  top: 18%;
+  width: 112px;
+  height: 112px;
+}
+
+.xbox-face {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+.xbox-y { left: 37px; top: 0; color: #8a7100; }
+.xbox-b { right: 0; top: 37px; color: #b62d2d; }
+.xbox-a { left: 37px; bottom: 0; color: #16703d; }
+.xbox-x { left: 0; top: 37px; color: #17689d; }
+
+#quick-test-controller-svg-placeholder .xbox-controller-body {
+  min-height: 220px;
+}
+
+@media (max-width: 420px) {
+  .xbox-controller-body {
+    min-height: 220px;
+  }
+
+  .xbox-stick {
+    width: 58px;
+    height: 58px;
+  }
+
+  .xbox-dpad {
+    left: 25%;
+    transform: scale(0.82);
+  }
+
+  .xbox-face-buttons {
+    right: 7%;
+    transform: scale(0.86);
+  }
+}
+
 #left-stick-card,
 #right-stick-card {
   cursor: pointer;

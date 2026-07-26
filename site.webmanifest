@@ -1,6 +1,6 @@
 {
-  "name": "Dualshock Calibration GUI",
-  "short_name": "DS Tools",
+  "name": "Controller Calibration GUI",
+  "short_name": "Controller Tools",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

@@ -4,6 +4,8 @@ import { sleep, float_to_str, dec2hex, dec2hex32, lerp_color, initAnalyticsApi, 
 import { Storage } from './storage.js';
 import { initControllerManager } from './controller-manager.js';
 import ControllerFactory from './controllers/controller-factory.js';
+import { isXboxCompatibleGamepad } from './controllers/xbox-controller.js';
+import { createXboxControllerMarkup } from './controllers/xbox-visual.js';
 import { lang_init, l } from './translations.js';
 import { loadAllTemplates } from './template-loader.js';
 import { draw_stick_dial, CIRCULARITY_DATA_SIZE, calculateCircularityError } from './stick-renderer.js';
@@ -48,6 +50,39 @@ const ll_data = new Array(CIRCULARITY_DATA_SIZE);
 const rr_data = new Array(CIRCULARITY_DATA_SIZE);
 
 let controller = null;
+let xboxConnectionTimeout = null;
+let xboxConnectionInterval = null;
+let xboxConnectionInProgress = false;
+let xboxConnectionRequested = false;
+
+function applyDeviceUI({
+  showInfo,
+  showFinetune,
+  showInfoTab,
+  showQuickTests,
+  showFourStepCalib,
+  showQuickCalib,
+  showCalibrationHistory,
+  showRangeCalibration = true,
+  showSaveChanges = true,
+  showReset = true,
+  showXboxCalibration = false,
+  showDebugTab = true,
+}) {
+  $("#infoshowall").toggle(!!showInfo);
+  $("#ds5finetune").toggle(!!showFinetune);
+  $("#info-tab").toggle(!!showInfoTab);
+  $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
+  $("#four-step-center-calib").toggle(!!showFourStepCalib);
+  $("#quick-center-calib").toggle(!!showQuickCalib);
+  $("#quick-center-calib-group").toggle(!!showQuickCalib);
+  $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
+  $("#range-calib-group").toggle(!!showRangeCalibration);
+  $("#savechanges").toggle(!!showSaveChanges);
+  $("#resetBtn").toggle(!!showReset);
+  $("#xbox-calibration-card").toggle(!!showXboxCalibration);
+  $("#debug-tab").toggle(!!showDebugTab);
+}
 
 function gboot() {
   app.gu = crypto.randomUUID();
@@ -133,20 +168,29 @@ function gboot() {
     initializeApp();
   }
 
-  if (!("hid" in navigator)) {
+  const hasHid = "hid" in navigator;
+  const hasGamepad = "getGamepads" in navigator;
+  if (!hasHid && !hasGamepad) {
     $("#offlinebar").hide();
     $("#onlinebar").hide();
     $("#missinghid").show();
     return;
   }
 
+  $("#btnconnect").toggle(hasHid);
+  $("#btnconnectxbox").toggle(hasGamepad);
   $("#offlinebar").show();
   $("#aboutdrift").show();
   updateLastConnectedInfo();
-  navigator.hid.addEventListener("disconnect", handleDisconnectedDevice);
+  navigator.hid?.addEventListener("disconnect", handleDisconnectedDevice);
+  window.addEventListener("gamepadconnected", handleGamepadConnected);
+  window.addEventListener("gamepaddisconnected", handleGamepadDisconnected);
 }
 
 async function connect() {
+  xboxConnectionRequested = false;
+  clearXboxConnectionWait();
+  setXboxWaitingState(false);
   app.gj = crypto.randomUUID();
   initAnalyticsApi(app); // init with gu and jg
 
@@ -203,6 +247,147 @@ async function connect() {
   }
 }
 
+function getConnectedXboxGamepads() {
+  return Array.from(navigator.getGamepads?.() || []).filter(isXboxCompatibleGamepad);
+}
+
+function setXboxWaitingState(waiting) {
+  $("#btnconnectxbox").prop("disabled", waiting);
+  $("#connectxboxspinner").toggle(waiting);
+}
+
+function clearXboxConnectionWait() {
+  clearTimeout(xboxConnectionTimeout);
+  clearInterval(xboxConnectionInterval);
+  xboxConnectionTimeout = null;
+  xboxConnectionInterval = null;
+}
+
+function cancelXboxConnectionWait() {
+  if (!xboxConnectionRequested || controller?.isConnected()) return;
+  clearXboxConnectionWait();
+  xboxConnectionRequested = false;
+  setXboxWaitingState(false);
+  controller = null;
+}
+
+function showXboxConnectionPrompt() {
+  document.getElementById('popupModal')?.addEventListener(
+    'hidden.bs.modal',
+    cancelXboxConnectionWait,
+    { once: true }
+  );
+  show_popup(
+    l("Xbox controllers use the browser's Gamepad interface, which does not show a device chooser. Press A or move a stick now to let the browser expose the USB controller to this page."),
+    false,
+    l("Cancel")
+  );
+}
+
+async function connectXbox() {
+  if (!("getGamepads" in navigator)) {
+    errorAlert(l("This browser does not support the Gamepad API."));
+    return;
+  }
+
+  app.gj = crypto.randomUUID();
+  xboxConnectionRequested = true;
+  initAnalyticsApi(app);
+  la("begin_xbox");
+  reset_circularity_mode();
+  clearAllAlerts();
+
+  controller = initControllerManager({ handleNvStatusUpdate });
+  controller.setInputHandler(handleControllerInput);
+
+  const gamepads = getConnectedXboxGamepads();
+  if (gamepads.length > 1) {
+    xboxConnectionRequested = false;
+    infoAlert(l("Please connect only one controller at time."));
+    controller = null;
+    return;
+  }
+
+  if (gamepads.length === 1) {
+    await continueXboxConnection(gamepads[0]);
+    return;
+  }
+
+  clearXboxConnectionWait();
+  setXboxWaitingState(true);
+  showXboxConnectionPrompt();
+  xboxConnectionInterval = setInterval(async () => {
+    if (xboxConnectionInProgress || controller?.isConnected()) return;
+    const detectedGamepads = getConnectedXboxGamepads();
+    if (detectedGamepads.length === 1) {
+      await continueXboxConnection(detectedGamepads[0]);
+    }
+  }, 250);
+
+  xboxConnectionTimeout = setTimeout(() => {
+    clearXboxConnectionWait();
+    xboxConnectionRequested = false;
+    setXboxWaitingState(false);
+    if (!controller?.isConnected()) {
+      controller = null;
+      show_popup(l("No controller input was detected. Keep the controller connected by USB, reload the page, click Connect Xbox controller, then press A. Chrome or Edge is recommended."));
+    }
+  }, 15_000);
+}
+
+async function continueXboxConnection(gamepad) {
+  if (!xboxConnectionRequested ||
+      !isXboxCompatibleGamepad(gamepad) ||
+      controller?.isConnected() ||
+      xboxConnectionInProgress) return;
+
+  xboxConnectionInProgress = true;
+  clearXboxConnectionWait();
+  setXboxWaitingState(false);
+
+  try {
+    const controllerInstance = ControllerFactory.createGamepadControllerInstance(gamepad);
+    controller.setControllerInstance(controllerInstance);
+    const info = await controllerInstance.getInfo();
+    if (!info?.ok) {
+      throw new Error(l("Failed to connect to device"), { cause: info?.error });
+    }
+
+    applyDeviceUI(ControllerFactory.getXboxUIConfig());
+    const deviceName = gamepad.id || "Xbox Controller";
+    $("#devname").text(deviceName);
+    $("#d-bat").empty();
+    $("#offlinebar").hide();
+    $("#onlinebar").show();
+    $("#mainmenu").show();
+    $("#aboutdrift").hide();
+    $('#controller-tab').tab('show');
+
+    await init_svg_controller(controllerInstance.getModel());
+    render_info_to_dom(info.infoItems);
+
+    Storage.lastConnectedController.set({
+      deviceName,
+      timestamp: new Date().toISOString(),
+    });
+    updateLastConnectedInfo();
+
+    controller.startInput();
+    xboxConnectionRequested = false;
+    bootstrap.Modal.getInstance('#popupModal')?.hide();
+    la("connect_xbox", {
+      mapping: gamepad.mapping,
+      buttons: gamepad.buttons.length,
+      axes: gamepad.axes.length,
+    });
+  } catch (error) {
+    await disconnect();
+    throw error;
+  } finally {
+    xboxConnectionInProgress = false;
+  }
+}
+
 async function continue_connection({data, device}) {
   try {
     if (!controller || controller.isConnected()) {
@@ -217,18 +402,6 @@ async function continue_connection({data, device}) {
       infoAlert(l("The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead."));
       await disconnect();
       return;
-    }
-
-    // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory }) {
-      $("#infoshowall").toggle(!!showInfo);
-      $("#ds5finetune").toggle(!!showFinetune);
-      $("#info-tab").toggle(!!showInfoTab);
-      $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
-      $("#four-step-center-calib").toggle(!!showFourStepCalib);
-      $("#quick-center-calib").toggle(!!showQuickCalib);
-      $("#quick-center-calib-group").toggle(!!showQuickCalib);
-      $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
     }
 
     let controllerInstance = null;
@@ -384,6 +557,10 @@ async function continue_connection({data, device}) {
 
 async function disconnect() {
   la("disconnect");
+  xboxConnectionRequested = false;
+  clearXboxConnectionWait();
+  xboxConnectionInProgress = false;
+  setXboxWaitingState(false);
   if(!controller?.isConnected()) {
     controller = null;
     return;
@@ -449,8 +626,24 @@ function disconnectSync() {
 }
 
 async function handleDisconnectedDevice(e) {
+  if (controller?.getModel() === 'XBOX') return;
   la("disconnected");
   console.log("Disconnected: " + e.device.productName)
+  await disconnect();
+}
+
+async function handleGamepadConnected(event) {
+  if (!xboxConnectionRequested ||
+      !controller ||
+      controller.isConnected() ||
+      !isXboxCompatibleGamepad(event.gamepad)) return;
+  await continueXboxConnection(event.gamepad);
+}
+
+async function handleGamepadDisconnected(event) {
+  const current = controller?.currentController;
+  if (current?.getModel() !== 'XBOX' || current.gamepadIndex !== event.gamepad.index) return;
+  la("disconnected_xbox");
   await disconnect();
 }
 
@@ -509,6 +702,11 @@ function welcome_accepted() {
 
 async function init_svg_controller(model) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
+
+  if (model === 'XBOX') {
+    svgContainer.innerHTML = createXboxControllerMarkup();
+    return;
+  }
 
   // Determine which SVG to load based on controller model
   let svgFileName;
@@ -675,6 +873,16 @@ function refresh_stick_pos() {
         const ds5_r3_group = document.querySelector('g#R3');
         ds5_r3_group?.setAttribute('transform', `translate(${ds5_r3_x - ds5_r3_cx},${ds5_r3_y - ds5_r3_cy}) scale(0.70)`);
         break;
+      case "XBOX":
+        document.getElementById('L3_infill')?.style.setProperty(
+          'transform',
+          `translate(${plx * 9}px, ${ply * 9}px)`
+        );
+        document.getElementById('R3_infill')?.style.setProperty(
+          'transform',
+          `translate(${prx * 9}px, ${pry * 9}px)`
+        );
+        break;
       default:
         return; // Unsupported model, skip
     }
@@ -690,7 +898,8 @@ function refresh_stick_pos() {
 
   const ll_error = calculateCircularityError(ll_data);
   const rr_error = calculateCircularityError(rr_data);
-  const isTooSmall = (ll_error && ll_error < 5 || rr_error && rr_error < 5);
+  const isTooSmall = controller.getModel() !== 'XBOX' &&
+    (ll_error && ll_error < 5 || rr_error && rr_error < 5);
   circularityCheckIcon.style.display = isTooSmall ? 'block' : 'none';
 }
 
@@ -741,6 +950,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
   if (!changes || Object.keys(changes).length === 0) return;
 
   const pressedColor = '#1a237e'; // pleasing dark blue
+  const triggerPressedColor = '#287ffa'; // brighter at full LT/RT pressure
 
   // Update L2/R2 analog infill
   for (const trigger of ['l2', 'r2']) {
@@ -748,7 +958,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(key)) {
       const val = changes[key];
       const t = val / 255;
-      const color = lerp_color('#ffffff', pressedColor, t);
+      const color = lerp_color('#ffffff', triggerPressedColor, t);
       const svg = trigger.toUpperCase() + '_infill';
       const infill = document.getElementById(svg);
       set_svg_group_color(infill, color);
@@ -786,6 +996,10 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
 
 function set_svg_group_color(group, color) {
   if (group) {
+    if (group.classList.contains('xbox-control')) {
+      group.style.setProperty('--xbox-control-color', color);
+      return;
+    }
     const elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
     elements.forEach(el => {
       // Set up a smooth transition for fill and stroke if not already set
@@ -850,7 +1064,7 @@ function get_current_test_tab() {
 }
 
 function detectFailedRangeCalibration(changes) {
-  if (!changes.sticks || app.shownRangeCalibrationWarning) return;
+  if (!changes.sticks || app.shownRangeCalibrationWarning || controller?.getModel() === 'XBOX') return;
 
   const { left, right } = changes.sticks;
   const failedCalibration = [left, right].some(({x, y}) => Math.abs(x) + Math.abs(y) == 2);
@@ -1076,12 +1290,13 @@ function appendInfo(key, value, cat, copyable) {
   appendInfoExtra(key, value, cat, copyable);
 }
 
-function show_popup(text, is_html = false) {
+function show_popup(text, is_html = false, actionText = l("OK")) {
   if(is_html) {
     $("#popupBody").html(text);
   } else {
     $("#popupBody").text(text);
   }
+  $("#popupActionButton").text(actionText);
   bootstrap.Modal.getOrCreateInstance('#popupModal').show();
 }
 
@@ -1201,6 +1416,7 @@ function infoAlert(message, duration = 5_000) {
 // Export functions to global scope for HTML onclick handlers
 window.gboot = gboot;
 window.connect = connect;
+window.connectXbox = connectXbox;
 window.disconnect = disconnectSync;
 window.show_faq_modal = show_faq_modal;
 window.show_info_tab = show_info_tab;

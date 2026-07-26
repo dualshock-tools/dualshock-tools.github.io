@@ -175,7 +175,7 @@ function lang_translate(target_file, target_lang, target_direction) {
         }
 
         const old_title = lang_orig_text[".title"];
-        document.title = lang_cur[old_title];
+        document.title = lang_cur[old_title]?.[0] || old_title;
         if(lang_cur[".authorMsg"]) {
           $("#authorMsg").html(lang_cur[".authorMsg"]);
         }

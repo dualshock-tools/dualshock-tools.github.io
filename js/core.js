@@ -8,7 +8,7 @@ import { lang_init, l } from './translations.js';
 import { loadAllTemplates } from './template-loader.js';
 import { draw_stick_dial, CIRCULARITY_DATA_SIZE, calculateCircularityError } from './stick-renderer.js';
 import { ds5_finetune, isFinetuneVisible, finetune_handle_controller_input } from './modals/finetune-modal.js';
-import { calibrate_stick_centers, auto_calibrate_stick_centers } from './modals/calib-center-modal.js';
+import { calibrate_stick_centers, auto_calibrate_stick_centers, isCalibCenterVisible, calib_center_handle_controller_input } from './modals/calib-center-modal.js';
 import { calibrate_range, rangeCalibHandleControllerInput } from './modals/calib-range-modal.js';
 import { 
   show_quick_test_modal,
@@ -1099,6 +1099,28 @@ function isRangeCalibrationVisible() {
 function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatus }) {
   const { buttonMap } = inputConfig;
 
+  // Simple informational modals: cross or circle dismisses them, all other
+  // input is swallowed while one is up. Welcome routes through
+  // welcome_accepted() so the acceptance is recorded like a click.
+  const dismissableModals = [
+    { id: 'popupModal' },
+    { id: 'faqModal' },
+    { id: 'donateModal' },
+    { id: 'edgeModal' },
+    { id: 'welcomeModal', dismiss: welcome_accepted },
+  ];
+  const openDismissable = dismissableModals.find(({ id }) => document.getElementById(id)?.classList.contains('show'));
+  if (openDismissable) {
+    if (changes.cross === true || changes.circle === true) {
+      if (openDismissable.dismiss) {
+        openDismissable.dismiss();
+      } else {
+        bootstrap.Modal.getOrCreateInstance(`#${openDismissable.id}`).hide();
+      }
+    }
+    return;
+  }
+
   // Open Quick Test modal if options button is pressed while L1 is held down
   if (changes.options && controller.button_states.l1) {
     update_ds_button_svg({ l1: false }, buttonMap); // Clear L1
@@ -1106,10 +1128,20 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
     return;
   }
 
-  // Update range calibration modal stick visualization if visible
-  if (isRangeCalibrationVisible() && changes.sticks) {
-    collectCircularityData(changes.sticks, ll_data, rr_data);
+  // Range calibration modal: stick visualization, cross clicks Done.
+  // Consumes all input so button presses don't leak to the tab below.
+  if (isRangeCalibrationVisible()) {
+    if (changes.sticks) {
+      collectCircularityData(changes.sticks, ll_data, rr_data);
+    }
     rangeCalibHandleControllerInput(changes);
+    return;
+  }
+
+  // Center calibration modal: cross starts/continues, square switches to
+  // quick calibrate, circle cancels (where the UI allows each action)
+  if (isCalibCenterVisible()) {
+    calib_center_handle_controller_input(changes);
     return;
   }
 

@@ -1145,6 +1145,15 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
     return;
   }
 
+  // Auto center calibration: the sampling itself cannot be interrupted,
+  // but circle stops an L1+triangle sequence from continuing afterwards
+  if (document.getElementById('autoCalibCenterModal')?.classList.contains('show')) {
+    if (changes.circle === true) {
+      calibrationSequenceAborted = true;
+    }
+    return;
+  }
+
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {
     quicktest_handle_controller_input(changes, batteryStatus, touchPoints);
@@ -1535,14 +1544,23 @@ function runFinetune(onDone) {
   );
 }
 
+// Set by pressing circle during the auto center calibration; checked before
+// the L1+triangle sequence advances to the next dialog
+let calibrationSequenceAborted = false;
+
 // L1+triangle: run the calibration dialogs one after the other (center,
 // range, then finetune where supported), stopping if a step is cancelled
 function startCalibrationSequence() {
   const NEXT_DIALOG_DELAY = 400; // let the previous modal finish hiding
 
   la("calibration_sequence_start");
+  calibrationSequenceAborted = false;
   runCenterCalibration((centerOk) => {
     if (!centerOk) return;
+    if (calibrationSequenceAborted) {
+      la("calibration_sequence_aborted");
+      return;
+    }
     setTimeout(() => runRangeCalibration((rangeOk) => {
       if (!rangeOk) return;
       if (!$("#ds5finetune").is(":visible")) return;

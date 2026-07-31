@@ -310,11 +310,11 @@ export class CalibRangeModal {
   }
 
   /**
-   * Clear a canvas with white background
+   * Clear a canvas with dark background
    */
   _clearCanvas(ctx, canvas) {
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#212529';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 

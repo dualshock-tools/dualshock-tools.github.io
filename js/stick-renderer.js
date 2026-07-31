@@ -21,8 +21,8 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
 
     // Draw base circle
     ctx.lineWidth = 1;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#2b3035';// DARK/LIGHT MODE
+    ctx.strokeStyle = '#9fa2a4';// DARK/LIGHT MODE
     ctx.beginPath();
     ctx.arc(center_x, center_y, sz, 0, 2 * Math.PI);
     ctx.closePath();
@@ -74,8 +74,8 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     if (circularity_data?.filter(n => n > 0.3).length > 10) {
         const circularityError = calculateCircularityError(circularity_data);
 
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#444';
+        ctx.fillStyle = '#fff'; // DARK/LIGHT MODE
+        ctx.strokeStyle = '#444'; // DARK/LIGHT MODE
         ctx.lineWidth = 3;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -89,7 +89,7 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     }
 
     // Draw crosshairs
-    ctx.strokeStyle = '#aaaaaa';
+    ctx.strokeStyle = '#9fa2a4'; // DARK/LIGHT MODE
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(center_x-sz, center_y);
@@ -119,8 +119,8 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
         ctx.stroke();
     }
 
-    ctx.fillStyle = '#000000';
-    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#000000'; // DARK/LIGHT MODE
+    ctx.strokeStyle = '#9fa2a4'; // DARK/LIGHT MODE
 
     // Draw stick line with variable thickness
     // Calculate distance from center
@@ -159,7 +159,7 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     // Draw filled circle at stick position
     ctx.beginPath();
     ctx.arc(center_x+display_x*sz, center_y+display_y*sz, highlight ? 4 : 3, 0, 2*Math.PI);
-    ctx.fillStyle = highlight ? '#2989f7ff' : '#030b84ff';
+    ctx.fillStyle = highlight ? '#2989f7ff' : '#00FF00';
     ctx.fill();
 }
 

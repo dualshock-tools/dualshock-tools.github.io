@@ -543,19 +543,19 @@ async function init_svg_controller(model) {
   // Reset trackpad bounding box so it's recalculated for the new SVG
   trackpadBbox = undefined;
 
-  const lightBlue = '#7ecbff';
-  const midBlue = '#3399cc';
+  const lightBlue = '#7ecbff'; // DARK/LIGHT MODE
+  const midBlue = '#3399cc'; // DARK/LIGHT MODE
   const dualshock = document.getElementById('Controller');
   set_svg_group_color(dualshock, lightBlue);
 
   ['Button_outlines', 'Button_outlines_behind', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
     const group = document.getElementById(id);
-    set_svg_group_color(group, midBlue);
+    set_svg_group_color(group, midBlue); // DARK/LIGHT MODE
   });
 
   ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
     const group = document.getElementById(id);
-    set_svg_group_color(group, 'white');
+    set_svg_group_color(group, '#2b3035'); // DARK/LIGHT MODE
   });
 }
 
@@ -740,7 +740,7 @@ function update_battery_status({/* charge_level, cable_connected, is_charging, i
 function update_ds_button_svg(changes, BUTTON_MAP) {
   if (!changes || Object.keys(changes).length === 0) return;
 
-  const pressedColor = '#1a237e'; // pleasing dark blue
+  const pressedColor = '#00FF00'; // toxic green for pressed buttons
 
   // Update L2/R2 analog infill
   for (const trigger of ['l2', 'r2']) {
@@ -748,7 +748,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(key)) {
       const val = changes[key];
       const t = val / 255;
-      const color = lerp_color('#ffffff', pressedColor, t);
+      const color = lerp_color('#2b3035', pressedColor, t); // DARK/LIGHT MODE
       const svg = trigger.toUpperCase() + '_infill';
       const infill = document.getElementById(svg);
       set_svg_group_color(infill, color);
@@ -769,7 +769,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(dir)) {
       const pressed = changes[dir];
       const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
-      set_svg_group_color(group, pressed ? pressedColor : 'white');
+      set_svg_group_color(group, pressed ? pressedColor : '#2b3035');
     }
   }
 
@@ -779,7 +779,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(btn.name) && btn.svg) {
       const pressed = changes[btn.name];
       const group = document.getElementById(btn.svg + '_infill');
-      set_svg_group_color(group, pressed ? pressedColor : 'white');
+      set_svg_group_color(group, pressed ? pressedColor : '#2b3035');
     }
   }
 }

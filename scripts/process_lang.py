@@ -60,9 +60,14 @@ def process_file(filename):
 
 
 files = list(os.listdir("lang"))
+lang_dir = os.path.realpath("lang")
 
 for i in files:
-    modified, new_file = process_file("lang/" + i)
+    filepath = os.path.realpath(os.path.join("lang", i))
+    if not filepath.startswith(lang_dir + os.sep):
+        print("%s: skipping (path traversal detected)" % (i,))
+        continue
+    modified, new_file = process_file(filepath)
     if not modified:
         print("%s: not modified" % (i, ))
         continue
@@ -71,4 +76,4 @@ for i in files:
         continue
     print("%s: writing changes" % (i, ))
 
-    open("lang/" + i, "w").write(new_file)
+    open(filepath, "w").write(new_file)

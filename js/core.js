@@ -17,6 +17,7 @@ import {
 } from './modals/quick-test-modal.js';
 import { show_calibration_history_modal } from './modals/calibration-history-modal.js';
 import { FinetuneHistory } from './finetune-history.js';
+import * as theme from './theme.js'
 
 // Application State - manages app-wide state and UI
 const app = {

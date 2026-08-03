@@ -1,9 +1,10 @@
-$color-mode-type: data;
+$color-mode-type: media-query;
 
-$color_1: white;
-$font-family_1: monospace;
-$background-color_1: #0d6efd;
-$background-color_2: #0d7dfd0d;
+$color_stick-card-active_header: white;
+$font-family: monospace;
+$background-color_stick-card-active_header: #0d6efd;
+$background-color_quickTestAccordion: #0c7dfd0d;
+
 
 @keyframes shake {
 	0%,100% {
@@ -81,7 +82,7 @@ dl.row {
 		font-weight: normal;
 	}
 	dd {
-		font-family: $font-family_1;
+		font-family: $font-family;
 	}
 }
 
@@ -99,8 +100,8 @@ dl.row {
 	border: 1px solid #0d6efd !important;
 	box-shadow: 0 0 10px rgba(13, 110, 253, 0.3) !important;
 	.card-header {
-		background-color: $background-color_1 !important;
-		color: $color_1 !important;
+		background-color: $background-color_stick-card-active_header !important;
+		color: $color_stick-card-active_header !important;
 	}
 }
 
@@ -139,7 +140,7 @@ dl.row {
 	}
 	.accordion-collapse {
 		.accordion-body {
-			background-color: $background-color_2;
+			background-color: $background-color_quickTestAccordion;
 		}
 	}
 }

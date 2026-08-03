@@ -1,57 +1,57 @@
-$color_1: #969696;
-$color_2: #0d6efd;
-$background-color_1: transparent;
-$background-color_2: rgba(13, 110, 253, 0.1);
+$input_finetune_color: #969696;
+$finetuneStickCanvas_color: #0d6efd;
+$finetuneStickCanvas_background-color: transparent;
+$finetuneStickCanvas-text_background-color: rgba(13, 110, 253, 0.1);
 
 #finetuneStickCanvasLx-lbl {
 	padding: 2px 4px !important;
 	border-radius: 3px !important;
-	background-color: $background-color_1 !important;
+	background-color: $finetuneStickCanvas_background-color !important;
 }
 
 #finetuneStickCanvasLy-lbl {
 	padding: 2px 4px !important;
 	border-radius: 3px !important;
-	background-color: $background-color_1 !important;
+	background-color: $finetuneStickCanvas_background-color !important;
 }
 
 #finetuneStickCanvasRx-lbl {
 	padding: 2px 4px !important;
 	border-radius: 3px !important;
-	background-color: $background-color_1 !important;
+	background-color: $finetuneStickCanvas_background-color !important;
 }
 
 #finetuneStickCanvasRy-lbl {
 	padding: 2px 4px !important;
 	border-radius: 3px !important;
-	background-color: $background-color_1 !important;
+	background-color: $finetuneStickCanvas_background-color !important;
 }
 
 input[id^="finetune"] {
 	border: 1px solid transparent !important;
 	width: 90px !important;
 	min-width: 90px !important;
-	color: $color_1 !important;
+	color: $input_finetune_color !important;
 }
 
 #finetuneStickCanvasLx-lbl.text-primary {
-	color: $color_2 !important;
-	background-color: $background-color_2 !important;
+	color: $finetuneStickCanvas_color !important;
+	background-color: $finetuneStickCanvas-text_background-color !important;
 }
 
 #finetuneStickCanvasLy-lbl.text-primary {
-	color: $color_2 !important;
-	background-color: $background-color_2 !important;
+	color: $finetuneStickCanvas_color !important;
+	background-color: $finetuneStickCanvas-text_background-color !important;
 }
 
 #finetuneStickCanvasRx-lbl.text-primary {
-	color: $color_2 !important;
-	background-color: $background-color_2 !important;
+	color: $finetuneStickCanvas_color !important;
+	background-color: $finetuneStickCanvas-text_background-color !important;
 }
 
 #finetuneStickCanvasRy-lbl.text-primary {
-	color: $color_2 !important;
-	background-color: $background-color_2 !important;
+	color: $finetuneStickCanvas_color !important;
+	background-color: $finetuneStickCanvas-text_background-color !important;
 }
 
 .finetune-grid {

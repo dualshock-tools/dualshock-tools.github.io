@@ -48,6 +48,7 @@ const app = {
 const ll_data = new Array(CIRCULARITY_DATA_SIZE);
 const rr_data = new Array(CIRCULARITY_DATA_SIZE);
 
+
 let controller = null;
 
 function gboot() {
@@ -510,7 +511,7 @@ function welcome_accepted() {
 
 async function init_svg_controller(model) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
-
+  const colorMode = Storage.preferredTheme.get();
   // Determine which SVG to load based on controller model
   let svgFileName;
   if (model === 'DS4') {
@@ -544,19 +545,22 @@ async function init_svg_controller(model) {
   // Reset trackpad bounding box so it's recalculated for the new SVG
   trackpadBbox = undefined;
 
-  const lightBlue = '#7ecbff'; // DARK/LIGHT MODE
-  const midBlue = '#3399cc'; // DARK/LIGHT MODE
+  const infillColors = colorMode === 'dark' ? '#2b3035' : '#ffffff';
+
+  const lightBlue = '#7ecbff';
+  const midBlue = '#3399cc';
+  
   const dualshock = document.getElementById('Controller');
   set_svg_group_color(dualshock, lightBlue);
 
   ['Button_outlines', 'Button_outlines_behind', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
     const group = document.getElementById(id);
-    set_svg_group_color(group, midBlue); // DARK/LIGHT MODE
+    set_svg_group_color(group, midBlue);
   });
 
   ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
     const group = document.getElementById(id);
-    set_svg_group_color(group, '#2b3035'); // DARK/LIGHT MODE
+    set_svg_group_color(group, infillColors);
   });
 }
 
@@ -741,7 +745,9 @@ function update_battery_status({/* charge_level, cable_connected, is_charging, i
 function update_ds_button_svg(changes, BUTTON_MAP) {
   if (!changes || Object.keys(changes).length === 0) return;
 
-  const pressedColor = '#00FF00'; // toxic green for pressed buttons
+  const colorMode = Storage.preferredTheme.get();
+  const pressedColor = '#00FF00';
+  const defaultColor = colorMode === 'dark' ? '#2b3035' : '#ffffff';
 
   // Update L2/R2 analog infill
   for (const trigger of ['l2', 'r2']) {
@@ -749,7 +755,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(key)) {
       const val = changes[key];
       const t = val / 255;
-      const color = lerp_color('#2b3035', pressedColor, t); // DARK/LIGHT MODE
+      const color = lerp_color(defaultColor, pressedColor, t);
       const svg = trigger.toUpperCase() + '_infill';
       const infill = document.getElementById(svg);
       set_svg_group_color(infill, color);
@@ -770,7 +776,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(dir)) {
       const pressed = changes[dir];
       const group = document.getElementById(dir.charAt(0).toUpperCase() + dir.slice(1) + '_infill');
-      set_svg_group_color(group, pressed ? pressedColor : '#2b3035');
+      set_svg_group_color(group, pressed ? pressedColor : defaultColor);
     }
   }
 
@@ -780,7 +786,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
     if (changes.hasOwnProperty(btn.name) && btn.svg) {
       const pressed = changes[btn.name];
       const group = document.getElementById(btn.svg + '_infill');
-      set_svg_group_color(group, pressed ? pressedColor : '#2b3035');
+      set_svg_group_color(group, pressed ? pressedColor : defaultColor);
     }
   }
 }

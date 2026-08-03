@@ -1,10 +1,9 @@
-/**
- *  Light Switch @version v0.1.4
- */
+import { Storage } from './storage.js';
+
 
 (function () {
-  let lightSwitch = document.getElementById('lightSwitch');
-  if (!lightSwitch) {
+  let colorMode = document.getElementById('colorModeSwitch');
+  if (!colorMode) {
     return;
   }
 
@@ -16,10 +15,11 @@
   function darkMode() {
     document.documentElement.setAttribute('data-bs-theme', 'dark')
     // set light switch input to true
-    if (!lightSwitch.checked) {
-      lightSwitch.checked = true;
+    if (!colorMode.checked) {
+      colorMode.checked = true;
     }
-    localStorage.setItem('lightSwitch', 'dark');
+    Storage.preferredTheme.set('dark');
+    switchSvgColors();
   }
 
   /**
@@ -29,10 +29,11 @@
   function lightMode() {
     document.documentElement.setAttribute('data-bs-theme', 'light')
 
-    if (lightSwitch.checked) {
-      lightSwitch.checked = false;
+    if (colorMode.checked) {
+      colorMode.checked = false;
     }
-    localStorage.setItem('lightSwitch', 'light');
+    Storage.preferredTheme.set('light');
+    switchSvgColors();
   }
 
   /**
@@ -40,11 +41,33 @@
    * @summary: the event handler attached to the switch. calling @darkMode or @lightMode depending on the checked state.
    */
   function onToggleMode() {
-    if (lightSwitch.checked) {
+    if (!colorMode.checked) {
       lightMode();
     } else {
       darkMode();
     }
+  }
+
+  /**
+   * @function switchSvgColors
+   * @summary: switch the colors of the SVG elements based on the current theme.
+   */
+  function switchSvgColors() {
+    const defaultColor = Storage.preferredTheme.get() === 'dark' ? '#2b3035' : '#ffffff';
+    ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
+        const group = document.getElementById(id);
+          if (group) {
+            const elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');
+            elements.forEach(el => {
+              // Set up a smooth transition for fill and stroke if not already set
+              if (!el.style.transition) {
+                el.style.transition = 'fill 0.10s, stroke 0.10s';
+              }
+              el.setAttribute('fill', defaultColor);
+              el.setAttribute('stroke', defaultColor);
+            });
+          }
+      });
   }
 
   /**
@@ -60,16 +83,16 @@
   }
 
   function setup() {
-    var settings = localStorage.getItem('lightSwitch');
+    var settings = Storage.preferredTheme.get();
     if (settings == null) {
       settings = getSystemDefaultTheme();
     }
 
     if (settings == 'dark') {
-      lightSwitch.checked = true;
+      colorMode.checked = true;
     }
 
-    lightSwitch.addEventListener('change', onToggleMode);
+    colorMode.addEventListener('change', onToggleMode);
     onToggleMode();
   }
 

@@ -46,7 +46,6 @@ const paths = {
       'web-app-manifest-512x512.png',
       'site.webmanifest',
       'assets/donate.png',
-      'googlec4c2e36a49e62fa3.html',
       'images/*.*',
       'fa.min.css'
     ],

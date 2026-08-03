@@ -89,7 +89,7 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     }
 
     // Draw crosshairs
-    ctx.strokeStyle = colorMode === 'dark' ? '#9fa2a4' : '#aaaaaa'; // DARK/LIGHT MODE
+    ctx.strokeStyle = '#aaaaaa';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(center_x-sz, center_y);

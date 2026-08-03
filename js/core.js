@@ -746,7 +746,7 @@ function update_ds_button_svg(changes, BUTTON_MAP) {
   if (!changes || Object.keys(changes).length === 0) return;
 
   const colorMode = Storage.preferredTheme.get();
-  const pressedColor = '#00FF00';
+  const pressedColor = colorMode === 'dark' ? '#00FF00' : '#1a237e';
   const defaultColor = colorMode === 'dark' ? '#2b3035' : '#ffffff';
 
   // Update L2/R2 analog infill

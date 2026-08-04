@@ -57,14 +57,13 @@ export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb) {
       console.error("Failed to set forced language:", error);
     });
   } else {
-    const nlang = navigator.language.replace('-', '_').toLowerCase();
-    const ljson = available_langs[nlang];
-    if(ljson) {
-      la("lang_init", {"l": nlang});
-      lang_translate(ljson["file"], nlang, ljson["direction"]).catch(error => {
-        console.error("Failed to load initial language:", error);
-      });
-    }
+    // Default language is German (de_de)
+    const default_lang = "de_de";
+    const ljson = available_langs[default_lang];
+    la("lang_init", {"l": default_lang});
+    lang_translate(ljson["file"], default_lang, ljson["direction"]).catch(error => {
+      console.error("Failed to load default language:", error);
+    });
   }
   
   const langs = Object.keys(available_langs);

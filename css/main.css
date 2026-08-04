@@ -1,8 +1,302 @@
 /* Main styles for DualShock Calibration GUI */
 
+/* ============================================================
+   Brand theme (light) — #f4f5f3 background, green accents
+   ============================================================ */
+:root {
+  /* Brand palette */
+  --ds-surface: #f4f5f3;
+  --ds-surface-container: #ffffff;
+  --ds-surface-container-high: #f0f1ef;
+  --ds-surface-container-highest: #e6e8e4;
+  --ds-surface-variant: #eef0ec;
+  --ds-primary: #2da557;
+  --ds-primary-fixed: #3fbf68;
+  --ds-primary-container: #6bdd88;
+  --ds-on-primary: #ffffff;
+  --ds-on-surface: #1c1f1d;
+  --ds-on-surface-variant: #4f5550;
+  --ds-outline: #7a8379;
+  --ds-outline-variant: #d5dad4;
+  --ds-border: #e2e5e0;
+  --ds-error: #C0392B;
+  --ds-glass-bg: rgba(255, 255, 255, 0.75);
+  --ds-font-body: 'Open Sans', system-ui, sans-serif;
+  --ds-font-heading: 'Montserrat', system-ui, sans-serif;
+  --ds-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Map onto Bootstrap tokens */
+  --bs-body-bg: var(--ds-surface);
+  --bs-body-color: var(--ds-on-surface);
+  --bs-body-bg-rgb: 244, 245, 243;
+  --bs-body-font-family: var(--ds-font-body);
+  --bs-emphasis-color: var(--ds-on-surface);
+  --bs-emphasis-color-rgb: 28, 31, 29;
+  --bs-secondary-color: var(--ds-on-surface-variant);
+  --bs-secondary-color-rgb: 79, 85, 80;
+  --bs-tertiary-color: var(--ds-on-surface-variant);
+  --bs-tertiary-color-rgb: 79, 85, 80;
+  --bs-border-color: var(--ds-border);
+  --bs-border-color-translucent: rgba(28, 31, 29, 0.12);
+
+  /* Primary (green) */
+  --bs-primary: var(--ds-primary);
+  --bs-primary-rgb: 45, 165, 87;
+  --bs-primary-bg-subtle: rgba(45, 165, 87, 0.12);
+  --bs-primary-border-subtle: rgba(45, 165, 87, 0.3);
+  --bs-primary-text-emphasis: var(--ds-primary);
+  --bs-link-color: var(--ds-primary);
+  --bs-link-color-rgb: 45, 165, 87;
+  --bs-link-hover-color: var(--ds-primary-fixed);
+  --bs-link-hover-color-rgb: 63, 191, 104;
+
+  /* Secondary / surfaces */
+  --bs-secondary-bg: var(--ds-surface-container-high);
+  --bs-secondary-bg-rgb: 240, 241, 239;
+  --bs-tertiary-bg: var(--ds-surface-variant);
+  --bs-tertiary-bg-rgb: 238, 240, 236;
+
+  /* Components */
+  --bs-card-bg: var(--ds-surface-container);
+  --bs-card-color: var(--ds-on-surface);
+  --bs-card-border-color: var(--ds-border);
+  --bs-card-cap-bg: var(--ds-surface-variant);
+  --bs-modal-bg: var(--ds-surface-container);
+  --bs-modal-border-color: var(--ds-border);
+  --bs-modal-header-border-color: var(--ds-border);
+  --bs-modal-footer-border-color: var(--ds-border);
+  --bs-modal-backdrop-opacity: 0.5;
+  --bs-dropdown-bg: var(--ds-surface-container);
+  --bs-dropdown-color: var(--ds-on-surface);
+  --bs-dropdown-border-color: var(--ds-border);
+  --bs-dropdown-link-color: var(--ds-on-surface);
+  --bs-dropdown-link-hover-bg: var(--ds-surface-container-high);
+  --bs-dropdown-link-hover-color: var(--ds-on-surface);
+  --bs-dropdown-link-active-bg: var(--ds-primary);
+  --bs-dropdown-link-active-color: #ffffff;
+  --bs-accordion-bg: var(--ds-surface-container);
+  --bs-accordion-color: var(--ds-on-surface);
+  --bs-accordion-border-color: var(--ds-border);
+  --bs-accordion-btn-bg: var(--ds-surface-container);
+  --bs-accordion-btn-color: var(--ds-on-surface);
+  --bs-accordion-active-bg: rgba(45, 165, 87, 0.08);
+  --bs-accordion-active-color: var(--ds-primary);
+  --bs-form-control-bg: var(--ds-surface-container);
+  --bs-form-control-color: var(--ds-on-surface);
+  --bs-form-control-border-color: var(--ds-outline-variant);
+  --bs-form-select-bg: var(--ds-surface-container);
+  --bs-form-select-color: var(--ds-on-surface);
+  --bs-form-select-border-color: var(--ds-outline-variant);
+  --bs-tooltip-bg: var(--ds-on-surface);
+  --bs-tooltip-color: var(--ds-surface-container);
+  --bs-popover-bg: var(--ds-surface-container);
+  --bs-popover-border-color: var(--ds-border);
+}
+
+/* Whole page background */
+html,
+body {
+  background-color: var(--ds-surface);
+}
+
+/* Primary buttons: solid brand green with white text (all states incl. focus/disabled) */
+.btn-primary {
+  --bs-btn-color: #ffffff;
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-bg: var(--ds-primary);
+  --bs-btn-border-color: var(--ds-primary);
+  --bs-btn-hover-bg: var(--ds-primary-fixed);
+  --bs-btn-hover-border-color: var(--ds-primary-fixed);
+  --bs-btn-active-bg: var(--ds-primary);
+  --bs-btn-active-border-color: var(--ds-primary);
+  --bs-btn-focus-shadow-rgb: 45, 165, 87;
+  --bs-btn-disabled-color: #ffffff;
+  --bs-btn-disabled-bg: #9cbfa8;
+  --bs-btn-disabled-border-color: #9cbfa8;
+}
+
+/* Outline primary buttons: brand green (text, hover/active, focus, disabled) */
+.btn-outline-primary {
+  --bs-btn-color: var(--ds-primary);
+  --bs-btn-border-color: var(--ds-primary);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--ds-primary);
+  --bs-btn-hover-border-color: var(--ds-primary);
+  --bs-btn-focus-shadow-rgb: 45, 165, 87;
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--ds-primary);
+  --bs-btn-active-border-color: var(--ds-primary);
+  --bs-btn-disabled-color: var(--ds-primary);
+  --bs-btn-disabled-bg: transparent;
+  --bs-btn-disabled-border-color: var(--ds-primary);
+}
+
+/* Info alerts: green-tinted instead of blue */
+.alert-info {
+  --bs-alert-bg: rgba(45, 165, 87, 0.1);
+  --bs-alert-border-color: rgba(45, 165, 87, 0.3);
+  --bs-alert-color: #1e7a41;
+}
+
+/* Active list-group items (wizard steps, e.g. stick center calibration): green */
+.list-group-item.active,
+.list-group-item-action.active {
+  color: #ffffff;
+  background-color: var(--ds-primary);
+  border-color: var(--ds-primary);
+}
+
+/* Headings + chrome use the display font */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+.navbar-brand, .card-header, .modal-title, .accordion-header,
+.ds-panel-header {
+  font-family: var(--ds-font-heading);
+}
+
+/* Data / labels use the mono font */
+dl.row dd,
+pre,
+#lx-lbl, #ly-lbl, #rx-lbl, #ry-lbl {
+  font-family: var(--ds-font-mono);
+}
+
+/* Glass panel used by the main widget + status bar (mockup look) */
+.glass-panel {
+  background: var(--ds-glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--ds-border);
+  border-radius: 0.5rem;
+}
+
+/* Card styling matching the mockup panels */
+.card.ds-panel {
+  border: 1px solid var(--ds-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.card-header.ds-panel-header {
+  background-color: var(--ds-surface-variant);
+  border-bottom: 1px solid var(--ds-border);
+  color: var(--ds-on-surface-variant);
+  font-family: var(--ds-font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.card-header.ds-panel-header i,
+.card-header.ds-panel-header svg {
+  color: var(--ds-primary);
+}
+
+/* Status bar (onlinebar) */
+.status-bar .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--ds-primary);
+  box-shadow: 0 0 8px rgba(107, 221, 136, 0.6);
+  flex: 0 0 auto;
+}
+
+/* Controller SVG visualization sizing */
+#controller-svg-placeholder {
+  display: flex;
+  justify-content: center;
+}
+
+#controller-svg-placeholder svg {
+  filter: drop-shadow(0 0 8px rgba(107, 221, 136, 0.2));
+}
+
+/* Display mode toggle (Normal / 10x zoom / Check circularity): center label content */
+#controller-content .btn-group.mb-3 {
+  width: 100%;
+}
+
+#controller-content .btn-group.mb-3 .btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Brand-green overrides for inline-styled banners (missinghid / aboutdrift) */
+#missinghid .container > div[style],
+#aboutdrift .container > div[style] {
+  border-color: var(--ds-primary) !important;
+  color: var(--ds-primary) !important;
+}
+
+/* Navbar logo */
+.navbar-logo a {
+  display: block;
+  cursor: pointer;
+}
+
+.navbar-logo img {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
+/* Fixed navbar height */
+.navbar {
+  height: 74px;
+  background-color: var(--ds-surface);
+  z-index: 1030;
+}
+
+/* Main content spacing between navbar and footer */
+.main-content {
+  padding-top: 1.5rem;
+  padding-bottom: 4rem;
+}
+
+/* Footer datatype logo */
+.footer-datatype-logo {
+  height: 18px;
+  width: auto;
+  vertical-align: -3px;
+  margin-left: 2px;
+}
+
+/* Footer — dark, uniform text */
+.ds-footer {
+  background-color: #151817;
+  color: #bdcabb;
+  border-top: 1px solid #2A2E2B;
+}
+
+.ds-footer .footer-text {
+  font-size: 0.875rem;
+  color: #bdcabb;
+}
+
+.ds-footer a,
+.ds-footer .ds-footer-link {
+  color: #bdcabb;
+}
+
+.ds-footer a:hover,
+.ds-footer .ds-footer-link:hover {
+  color: #ffffff;
+}
+
+.ds-footer ul li a svg {
+  fill: currentColor;
+}
+
+/* ============================================================
+   Original styles below
+   ============================================================ */
+
 /* Add padding to body to prevent content from being hidden behind fixed footer */
 body {
-  padding-bottom: 80px;
+  padding-bottom: 120px;
 }
 
 dl.row dt {
@@ -19,12 +313,12 @@ dl.row dd {
 }
 
 .stick-card-active {
-  border: 1px solid #0d6efd !important;
-  box-shadow: 0 0 10px rgba(13, 110, 253, 0.3) !important;
+  border: 1px solid var(--bs-primary) !important;
+  box-shadow: 0 0 10px rgba(107, 221, 136, 0.3) !important;
 }
 
 .stick-card-active .card-header {
-  background-color: #0d6efd !important;
+  background-color: var(--bs-primary) !important;
   color: white !important;
 }
 
@@ -47,8 +341,8 @@ dl.row dd {
 }
 
 @keyframes glow {
-  0%, 100% { text-shadow: 0 0 5px rgba(13, 110, 253, 0.5); }
-  50% { text-shadow: 0 0 15px rgba(13, 110, 253, 0.8), 0 0 25px rgba(13, 110, 253, 0.6); }
+  0%, 100% { text-shadow: 0 0 5px rgba(107, 221, 136, 0.5); }
+  50% { text-shadow: 0 0 15px rgba(107, 221, 136, 0.8), 0 0 25px rgba(107, 221, 136, 0.6); }
 }
 
 /* Animation classes for different test types - only animate when accordion is expanded */
@@ -91,7 +385,7 @@ dl.row dd {
 
 /* Quick Test accordion body tint */
 #quickTestAccordion .accordion-collapse .accordion-body {
-  background-color: rgba(13, 125, 253, 0.05);
+  background-color: rgba(107, 221, 136, 0.05);
 }
 
 /* Skip button hover behavior */

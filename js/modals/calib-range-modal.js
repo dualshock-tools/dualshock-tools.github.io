@@ -314,7 +314,7 @@ export class CalibRangeModal {
    */
   _clearCanvas(ctx, canvas) {
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#1d2020';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 

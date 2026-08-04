@@ -21,8 +21,8 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
 
     // Draw base circle
     ctx.lineWidth = 1;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#1d2020';
+    ctx.strokeStyle = '#2A2E2B';
     ctx.beginPath();
     ctx.arc(center_x, center_y, sz, 0, 2 * Math.PI);
     ctx.closePath();
@@ -89,7 +89,7 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     }
 
     // Draw crosshairs
-    ctx.strokeStyle = '#aaaaaa';
+    ctx.strokeStyle = '#3e4a3e';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(center_x-sz, center_y);
@@ -112,15 +112,15 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
         display_y = transformed.y;
 
         // Draw light gray circle at 50% radius to show border of zoomed center
-        ctx.strokeStyle = '#d3d3d3'; // light gray
+        ctx.strokeStyle = '#3e4a3e'; // outline variant
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(center_x, center_y, sz * 0.5, 0, 2 * Math.PI);
         ctx.stroke();
     }
 
-    ctx.fillStyle = '#000000';
-    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#e1e3e2';
+    ctx.strokeStyle = '#e1e3e2';
 
     // Draw stick line with variable thickness
     // Calculate distance from center
@@ -159,7 +159,7 @@ export function draw_stick_dial(ctx, center_x, center_y, sz, stick_x, stick_y, o
     // Draw filled circle at stick position
     ctx.beginPath();
     ctx.arc(center_x+display_x*sz, center_y+display_y*sz, highlight ? 4 : 3, 0, 2*Math.PI);
-    ctx.fillStyle = highlight ? '#2989f7ff' : '#030b84ff';
+    ctx.fillStyle = highlight ? '#87faa2' : '#6bdd88';
     ctx.fill();
 }
 

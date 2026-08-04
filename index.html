@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DualShock Calibration GUI</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
 <link id="bootstrap-css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
@@ -46,20 +50,23 @@
 <body>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-  <nav class="navbar bg-body-tertiary navbar-expand-md bg-body-tertiary">
-    <div class="container-fluid">
-      <a class="navbar-brand ds-i18n" href="https://dualshock-tools.github.io">DualShock Calibration GUI</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse container-fluid justify-content-end" id="navbarNavDropdown">
-
-        <ul class="navbar-nav">
+  <nav class="navbar navbar-expand-lg sticky-top p-0 px-4 px-lg-5 border-bottom">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <!-- Left: logo -->
+      <div class="navbar-logo">
+        <a href="https://www.proreparatur.com/de" target="_blank" rel="noopener">
+          <img src="images/proreparatur-logo.png" alt="PROreparatur Logo">
+        </a>
+      </div>
+      <!-- Center: brand title -->
+      <span class="navbar-brand ds-i18n mb-0">DualShock Calibration GUI</span>
+      <!-- Right: FAQ + language -->
+      <div class="d-flex align-items-center">
+        <ul class="navbar-nav flex-row align-items-center gap-3">
           <li class="nav-item">
-            <a class="nav-link ds-i18n" href="#" onclick="show_faq_modal();">Frequently Asked Questions</a>
+            <a class="nav-link ds-i18n" href="#" onclick="show_faq_modal();">FAQ</a>
           </li>
-          <li class="nav-item dropdown" id="navbarNavAltMarkup">
+          <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" id="langMenuButton" role="button" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">
               <svg class="bi text-secondary" width="1.5em" height="1.5em" ><use xlink:href="#lang"/></svg>&nbsp;<span id="curLang">English</span>
             </a>
@@ -68,11 +75,10 @@
           </li>
         </ul>
       </div>
-
     </div>
   </nav>
 
-  <div class="container p-2">
+  <div class="container main-content">
 
     <!-- Unsupported Browser Warning -->
     <div id="missinghid" style="bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
@@ -93,25 +99,25 @@
       </div>
     </div>
 
-    <div id="offlinebar" class="vstack p-2" style="display: none;">
-      <p class="ds-i18n">Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.</p>
-      <button id="btnconnect" type="button" class="btn btn-outline-primary" onclick="connect()">
+    <div id="offlinebar" class="glass-panel text-center px-3 py-4 mb-3" style="display: none;">
+      <p class="mb-3 ds-i18n">Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.</p>
+      <button id="btnconnect" type="button" class="btn btn-primary px-4" onclick="connect()">
         <span class="spinner-border spinner-border-sm" style="display: none;" id="connectspinner" aria-hidden="true"></span>
         <span class="ds-i18n">Connect</span>
       </button>
-      <br>
     </div>
 
-    <div id="onlinebar" class="vstack p-2" style="display: none;">
-      <div class="row">
-        <div class="col-sm-9 hstack">
-          <p><b class="ds-i18n">Connected to:</b></p>&nbsp;<p id="devname"></p>
+    <div id="onlinebar" class="glass-panel status-bar px-3 py-2 mb-3" style="display: none;">
+      <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2">
+        <div class="hstack gap-2">
+          <span class="status-dot" aria-hidden="true"></span>
+          <p class="mb-0"><b class="ds-i18n">Connected to:</b>&nbsp;<span id="devname" class="text-primary"></span></p>
         </div>
-        <div class="col-sm-3">
-          <p id="d-bat" style="text-align: right;"></p>
+        <div class="hstack gap-3 ms-auto">
+          <span id="d-bat"></span>
+          <button type="button" class="btn btn-outline-secondary btn-sm ds-i18n" onclick="disconnect()">Disconnect</button>
         </div>
       </div>
-      <button type="button" class="btn btn-outline-secondary ds-i18n" onclick="disconnect()">Disconnect</button><br>
     </div>
 
     <div id="mainmenu" class="container" style="display: none;">
@@ -141,79 +147,94 @@
       <div class="tab-content" id="mainTabsContent">
         <div class="tab-pane show active" id="controller-content" role="tabpanel" aria-labelledby="controller-tab">
           <!-- Main page content (controller info, calibration, joystick info) -->
-          <div class="row">
-            <div class="col-md-6 col-sm-12">
-              <div class="card text-bg-light" >
-                <div class="card-header"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></div>
-                <dl class="row px-3 py-2" id="fwinfo"></dl>
+          <div class="row g-3">
+            <!-- Left panel: Controller Info + calibration actions -->
+            <div class="col-lg-4 col-md-12 d-flex flex-column gap-3">
+              <div class="card ds-panel">
+                <div class="card-header ds-panel-header">
+                  <i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span>
+                </div>
+                <dl class="row px-3 py-2 mb-0" id="fwinfo"></dl>
                 <span id="infoshowall" class="pb-4 px-4 row">
                   <button class="btn btn-outline-secondary" onclick="show_info_tab()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
                 </span>
               </div>
-              <br>
 
-              <div class="d-flex justify-content-end" id="quick-tests-div">
-                <button type="button" class="btn btn-outline-primary ds-btn mb-3" onclick="show_quick_test_modal()" id="quick-test-btn">
-                  <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
-                  <span id="quick-test-text" class="ds-i18n">Quick Test</span>
-                </button>
-              </div>
-
-              <div class="text-center mx-3" id="controller-svg-container">
-                <!-- DualSense 5 Controller SVG loaded from template -->
-                <div id="controller-svg-placeholder"></div>
+              <div class="card ds-panel">
+                <div class="card-header ds-panel-header">
+                  <i class="fas fa-tools"></i>&nbsp;&nbsp;<span class="ds-i18n">Calibration</span>
+                </div>
+                <div class="vstack gap-2 p-3">
+                  <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_stick_centers()" id="four-step-center-calib" style="display: none;">
+                    <span class="ds-i18n">Calibrate stick center</span>
+                  </button>
+                  <div class="btn-group w-100" role="group" style="display: none;" id="quick-center-calib-group">
+                    <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedCenterCalibration()" id="quick-center-calib">
+                      <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                      <span class="ds-i18n">Calibrate stick center</span>
+                    </button>
+                    <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                      <span class="visually-hidden">Toggle dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('quick', event)">
+                        <i class="fas fa-check me-2" id="check-quick" style="display: none;"></i><span class="ds-i18n">Use quick calibration</span>
+                      </a></li>
+                      <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('four-step', event)">
+                        <i class="fas fa-check me-2" id="check-four-step"></i><span class="ds-i18n">Use four-step calibration</span>
+                      </a></li>
+                    </ul>
+                  </div>
+                  <div class="btn-group w-100" role="group" id="range-calib-group">
+                    <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedRangeCalibration()" id="range-calib">
+                      <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                      <span class="ds-i18n">Calibrate stick range</span>
+                    </button>
+                    <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
+                      <span class="visually-hidden">Toggle dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('normal', event)">
+                        <i class="fas fa-check me-2" id="check-range-normal"></i><span class="ds-i18n">Use normal mode</span>
+                      </a></li>
+                      <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('expert', event)">
+                        <i class="fas fa-check me-2" id="check-range-expert" style="display: none;"></i><span class="ds-i18n">Use expert mode</span>
+                      </a></li>
+                    </ul>
+                  </div>
+                  <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
+                    <span class="ds-i18n">Finetune stick calibration</span>
+                  </button>
+                  <hr class="my-1">
+                  <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()">Save changes permanently</button>
+                  <button id="restore-calibration-btn" type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="openCalibrationHistoryModal()">Restore calibration</button>
+                  <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>
+                  <hr class="my-1">
+                  <div class="w-100" id="quick-tests-div">
+                    <button type="button" class="btn btn-outline-primary ds-btn w-100" onclick="show_quick_test_modal()" id="quick-test-btn">
+                      <i class="fas fa-vial" id="quick-test-icon"></i>&nbsp;&nbsp;
+                      <span id="quick-test-text" class="ds-i18n">Quick Test</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="col-md-6 col-sm-12" style="min-width: 330px;">
-              <div class="vstack gap-2 p-2">
-                <button type="button" class="btn btn-primary ds-btn" onclick="calibrate_stick_centers()" id="four-step-center-calib" style="display: none;">
-                  <span class="ds-i18n">Calibrate stick center</span>
-                </button>
-                <div class="btn-group w-100" role="group" style="display: none;" id="quick-center-calib-group">
-                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedCenterCalibration()" id="quick-center-calib">
-                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                    <span class="ds-i18n">Calibrate stick center</span>
-                  </button>
-                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
-                    <span class="visually-hidden">Toggle dropdown</span>
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('quick', event)">
-                      <i class="fas fa-check me-2" id="check-quick" style="display: none;"></i><span class="ds-i18n">Use quick calibration</span>
-                    </a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setCenterCalibrationMethod('four-step', event)">
-                      <i class="fas fa-check me-2" id="check-four-step"></i><span class="ds-i18n">Use four-step calibration</span>
-                    </a></li>
-                  </ul>
+            <!-- Center panel: controller SVG visualizer -->
+            <div class="col-lg-8 col-md-6" id="controller-svg-container">
+              <div class="card ds-panel h-100">
+                <div class="card-body d-flex align-items-center justify-content-center p-3">
+                  <!-- DualSense 5 Controller SVG loaded from template -->
+                  <div id="controller-svg-placeholder" class="w-100"></div>
                 </div>
-                <div class="btn-group w-100" role="group" id="range-calib-group">
-                  <button type="button" class="btn btn-primary ds-btn flex-grow-1" onclick="executeSelectedRangeCalibration()" id="range-calib">
-                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                    <span class="ds-i18n">Calibrate stick range</span>
-                  </button>
-                  <button type="button" class="btn btn-primary ds-btn dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="flex: 0 0 35px;">
-                    <span class="visually-hidden">Toggle dropdown</span>
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('normal', event)">
-                      <i class="fas fa-check me-2" id="check-range-normal"></i><span class="ds-i18n">Use normal mode</span>
-                    </a></li>
-                    <li><a class="dropdown-item" href="#" onclick="setRangeCalibrationMethod('expert', event)">
-                      <i class="fas fa-check me-2" id="check-range-expert" style="display: none;"></i><span class="ds-i18n">Use expert mode</span>
-                    </a></li>
-                  </ul>
-                </div>
-                <button type="button" class="btn btn-primary ds-btn" onclick="ds5_finetune()" id="ds5finetune">
-                  <span class="ds-i18n">Finetune stick calibration</span>
-                </button>
-                <hr>
-                <button id="savechanges" type="button" class="btn btn-success ds-btn ds-i18n" onclick="flash_all_changes()">Save changes permanently</button>
-                <button id="restore-calibration-btn" type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="openCalibrationHistoryModal()">Restore calibration</button>
-                <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>
+              </div>
+            </div>
 
-                <div class="card text-bg-light" >
-                  <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
+            <!-- Right panel: Joystick Info -->
+            <div class="col-lg-4 col-md-6" style="min-width: 330px;">
+              <div class="card ds-panel h-100">
+                <div class="card-header ds-panel-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
+                <div class="card-body">
                   <div class="vstack px-2">
                     <center>
                       <div style="position: relative; display: inline-block;">
@@ -228,7 +249,7 @@
                     </center>
                   </div>
                   <div class="px-2">
-                    <div class="hstack">
+                    <div class="hstack justify-content-around">
                       <div class="vstack" style="text-align: center;">
                         <span>LX:</span>
                         <pre id="lx-lbl" style="min-width: 80px;"></pre>
@@ -253,7 +274,7 @@
 
                   <div class="px-2">
                     <center>
-                      <div class="btn-group mb-3" role="group" aria-label="Display mode options">
+                      <div class="btn-group mb-3 flex-column gap-1" role="group" aria-label="Display mode options">
                         <input type="radio" class="btn-check" name="displayMode" id="normalMode" value="normal" checked>
                         <label class="btn btn-outline-secondary btn-sm ds-i18n" for="normalMode">Normal</label>
 
@@ -367,7 +388,7 @@
   </div>
 
   <!-- About drift and this utility -->
-  <div id="aboutdrift" style="position: fixed; bottom: 6em; left: 0; right: 0; z-index: 0; display: none;">
+  <div id="aboutdrift" style="position: relative; left: 0; right: 0; z-index: 0; display: none;">
     <div class="container">
       <div class="mb-4" style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
         <p class="mb-2">
@@ -396,16 +417,18 @@
   </div>
 
   <!-- Fixed Footer -->
-  <footer class="fixed-bottom bg-body-tertiary border-top">
+  <footer class="fixed-bottom ds-footer">
     <div class="container">
-      <div class="d-flex flex-column flex-sm-row justify-content-between py-3" id="footbody">
-        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.27</a> (2026-08-01) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+      <div class="d-flex flex-column align-items-center gap-1 py-3 text-center" id="footbody">
+        <p class="mb-0 footer-text">Copyright © 2026 - PROreparatur.com</p>
+        <p class="mb-0 footer-text">Crafted with <span class="text-danger">❤️</span> by <img src="images/datatype.png" alt="DataType Logo" class="footer-datatype-logo"></p>
+        <p class="mb-0 footer-text"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.27</a> (2026-08-01) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
-        <ul class="list-unstyled d-flex mb-0">
-          <li class="ms-3"><a class="text-dark" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>
-          <li class="ms-3"><a class="text-dark" href="https://discord.gg/w2P7Rrs2Yp" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#discord"/></svg></a></li>
-          <li class="ms-3"><a class="text-dark" href="https://github.com/dualshock-tools/" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#github"/></svg></a></li>
-          <li class="ms-3"><a class="text-dark" href="https://the.al/ds_history/"><svg class="bi" width="24" height="24"><use xlink:href="#time-back"/></svg></a></li>
+        <ul class="list-unstyled d-flex mb-0 gap-3 mt-1">
+          <li><a class="ds-footer-link" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="18" height="18"><use xlink:href="#mail"/></svg></a></li>
+          <li><a class="ds-footer-link" href="https://discord.gg/w2P7Rrs2Yp" target="_blank"><svg class="bi" width="18" height="18"><use xlink:href="#discord"/></svg></a></li>
+          <li><a class="ds-footer-link" href="https://github.com/dualshock-tools/" target="_blank"><svg class="bi" width="18" height="18"><use xlink:href="#github"/></svg></a></li>
+          <li><a class="ds-footer-link" href="https://the.al/ds_history/"><svg class="bi" width="18" height="18"><use xlink:href="#time-back"/></svg></a></li>
         </ul>
       </div>
     </div>

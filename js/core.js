@@ -314,8 +314,8 @@ async function continue_connection({data, device}) {
     Storage.lastConnectedController.set(lastConnectedInfo);
     updateLastConnectedInfo();
 
-    // Initialize SVG controller based on model
-    await init_svg_controller(model);
+    // Initialize SVG controller based on model (pass controller color for special schemes)
+    await init_svg_controller(model, lastConnectedInfo.color);
 
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
@@ -507,7 +507,7 @@ function welcome_accepted() {
   $("#welcomeModal").modal("hide");
 }
 
-async function init_svg_controller(model) {
+async function init_svg_controller(model, controllerColor) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
 
   // Determine which SVG to load based on controller model
@@ -543,20 +543,30 @@ async function init_svg_controller(model) {
   // Reset trackpad bounding box so it's recalculated for the new SVG
   trackpadBbox = undefined;
 
-  const lightBlue = '#7ecbff';
-  const midBlue = '#3399cc';
+  // White controllers: white body, black outlines and black sticks.
+  // `?forceWhite` in the URL forces the scheme for testing without a white controller.
+  const isWhiteController = (window.location.search.includes('forceWhite') || controllerColor === l('White'));
+
   const dualshock = document.getElementById('Controller');
-  set_svg_group_color(dualshock, lightBlue);
+  set_svg_group_color(dualshock, isWhiteController ? '#ffffff' : '#6bdd88');
 
   ['Button_outlines', 'Button_outlines_behind', 'L3_outline', 'R3_outline', 'Trackpad_outline'].forEach(id => {
     const group = document.getElementById(id);
-    set_svg_group_color(group, midBlue);
+    set_svg_group_color(group, isWhiteController ? '#000000' : '#2da557');
   });
 
   ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
     const group = document.getElementById(id);
     set_svg_group_color(group, 'white');
   });
+
+  if (isWhiteController) {
+    // The sticks (L3/R3) are black on white controllers
+    ['L3_infill', 'R3_infill'].forEach(id => {
+      const group = document.getElementById(id);
+      set_svg_group_color(group, '#000000');
+    });
+  }
 }
 
 /**
@@ -740,7 +750,7 @@ function update_battery_status({/* charge_level, cable_connected, is_charging, i
 function update_ds_button_svg(changes, BUTTON_MAP) {
   if (!changes || Object.keys(changes).length === 0) return;
 
-  const pressedColor = '#1a237e'; // pleasing dark blue
+  const pressedColor = '#003917'; // pleasing dark green
 
   // Update L2/R2 analog infill
   for (const trigger of ['l2', 'r2']) {
@@ -829,9 +839,9 @@ function update_touchpad_circles(points) {
     circle.setAttribute('cx', cx);
     circle.setAttribute('cy', cy);
     circle.setAttribute('r', pointRadius);
-    circle.setAttribute('fill', idx === 0 ? '#2196f3' : '#e91e63');
+    circle.setAttribute('fill', idx === 0 ? '#6bdd88' : '#ffb2bc');
     circle.setAttribute('fill-opacity', '0.5');
-    circle.setAttribute('stroke', '#3399cc');
+    circle.setAttribute('stroke', '#2da557');
     circle.setAttribute('stroke-width', '4');
     trackpad.appendChild(circle);
   });

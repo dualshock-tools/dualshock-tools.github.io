@@ -336,7 +336,7 @@ export class QuickTestModal {
           <div class="mb-3" id="mic-level-container" style="display: none;">
             <label class="form-label">${microphoneLevel}</label>
             <div class="progress">
-              <div class="progress-bar bg-info" role="progressbar" id="mic-level-bar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              <div class="progress-bar bg-success" role="progressbar" id="mic-level-bar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
           </div>
           <div class="d-flex gap-2 mt-3">
@@ -570,8 +570,8 @@ export class QuickTestModal {
     // Store reference to the SVG container for scoped queries
     this.svgContainer = svgContainer;
 
-    const lightBlue = '#7ecbff';
-    const midBlue = '#3399cc';
+    const lightBlue = '#6bdd88';
+    const midBlue = '#2da557';
     const dualshock = this._getQuickTestElement('qt-Controller');
     this._setSvgGroupColor(dualshock, lightBlue);
 
@@ -759,7 +759,7 @@ export class QuickTestModal {
 
     if (buttonElement) {
       const checkOnce = ['create', 'touchpad', 'options', 'l3', 'ps', 'mute', 'r3'].includes(button);
-      const colors = checkOnce ? ['orange'] : ['orange', '#a5c9fcff', '#287ffaff'];
+      const colors = checkOnce ? ['orange'] : ['orange', '#a5f7bc', '#2da557'];
       const color = colors[count] || '#16c016ff';
       this._setSvgGroupColor(buttonElement, color);
     }
@@ -1213,7 +1213,7 @@ export class QuickTestModal {
         summaryText += ` ${skipped} ${l("skipped")}.`;
       }
       $summary.text(summaryText);
-      $summary.attr('class', totalProcessed === numTests ? 'text-success' : 'text-info');
+      $summary.attr('class', totalProcessed === numTests ? 'text-success' : 'text-primary');
     }
   }
 
@@ -1379,8 +1379,8 @@ export class QuickTestModal {
     const buttonElement = this._getQuickTestElement(BUTTON_INFILL_MAPPING[button]);
     if (buttonElement) {
       if (isPressed) {
-        // Show dark blue infill while pressed
-        this._setSvgGroupColor(buttonElement, 'rgba(0, 0, 120, 1)');
+        // Show dark green infill while pressed
+        this._setSvgGroupColor(buttonElement, 'rgba(0, 57, 23, 1)');
       } else {
         // Restore color based on press count when released
         this._updateButtonColor(button);

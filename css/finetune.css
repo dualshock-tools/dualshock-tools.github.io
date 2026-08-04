@@ -15,7 +15,7 @@ input[id^="finetune"] {
   border: 1px solid transparent !important;
   width: 90px !important;
   min-width: 90px !important;
-  color: #969696 !important;
+  color: #4f5550 !important;
 }
 
 /* Styling for highlighted coordinate labels */
@@ -23,8 +23,8 @@ input[id^="finetune"] {
 #finetuneStickCanvasLy-lbl.text-primary,
 #finetuneStickCanvasRx-lbl.text-primary,
 #finetuneStickCanvasRy-lbl.text-primary {
-  color: #0d6efd !important;
-  background-color: rgba(13, 110, 253, 0.1) !important;
+  color: #2da557 !important;
+  background-color: rgba(45, 165, 87, 0.1) !important;
 }
 
 /* CSS Grid layout for finetune inputs around canvas */

@@ -218,6 +218,7 @@ function ds5_color(serialNumber) {
     'Z6': 'The Last of Us',
     'ZA': 'God of War 20th Anniversary',
     'ZB': 'Icon Blue Limited Edition',
+    'ZD': 'Marathon Limited Edition',
   };
 
   const colorCode = serialNumber.slice(4, 6);

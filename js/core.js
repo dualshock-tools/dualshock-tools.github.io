@@ -538,7 +538,10 @@ async function init_svg_controller(model) {
     svgContent = await response.text();
   }
 
-  svgContainer.innerHTML = svgContent;
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+  svgContainer.innerHTML = '';
+  svgContainer.appendChild(document.importNode(svgDoc.documentElement, true));
 
   // Reset trackpad bounding box so it's recalculated for the new SVG
   trackpadBbox = undefined;

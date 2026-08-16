@@ -4,6 +4,7 @@ import DS4Controller from './ds4-controller.js';
 import DS5Controller from './ds5-controller.js';
 import DS5EdgeController from './ds5-edge-controller.js';
 import VR2Controller from './vr2-controller.js';
+import XboxController from './xbox-controller.js';
 import { dec2hex } from '../utils.js';
 
 /**
@@ -47,6 +48,10 @@ class ControllerFactory {
       default:
         throw new Error(`Unsupported device: ${dec2hex(device.vendorId)}:${dec2hex(device.productId)}`);
     }
+  }
+
+  static createGamepadControllerInstance(gamepad) {
+    return new XboxController(gamepad);
   }
 
   /**
@@ -126,6 +131,23 @@ class ControllerFactory {
           showCalibrationHistory: false
         };
     }
+  }
+
+  static getXboxUIConfig() {
+    return {
+      showInfo: true,
+      showFinetune: false,
+      showInfoTab: true,
+      showQuickTests: true,
+      showFourStepCalib: false,
+      showQuickCalib: false,
+      showCalibrationHistory: false,
+      showRangeCalibration: false,
+      showSaveChanges: false,
+      showReset: false,
+      showXboxCalibration: true,
+      showDebugTab: false,
+    };
   }
 }
 

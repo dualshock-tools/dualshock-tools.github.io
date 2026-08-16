@@ -1,6 +1,13 @@
-# DualShock Calibration GUI
+# Controller Calibration GUI
 
-A web-based calibration tool for PlayStation DualShock 4, DualSense, and DualSense Edge controllers using the WebHID API.
+A web-based controller diagnostics and calibration tool. PlayStation DualShock 4,
+DualSense, and DualSense Edge controllers use WebHID for testing and device
+calibration. Xbox controllers use the standard Gamepad API for live diagnostics
+of sticks, triggers, D-pad, and buttons.
+
+The browser Gamepad API does not expose Xbox firmware calibration commands.
+Permanent Xbox thumbstick and trigger calibration is therefore completed in
+Microsoft's official Xbox Accessories app after diagnosing the controller here.
 
 The live version of this project is available at [https://dualshock-tools.github.io](https://dualshock-tools.github.io).
 
@@ -8,9 +15,12 @@ No installation is required: simply open the website in a WebHID-compatible brow
 
 ## Features
 
-- Controller connection via WebHID API
+- PlayStation connection via WebHID
+- Xbox Wireless Controller and Elite Series 2 detection via the Gamepad API
 - Stick calibration and range calibration
-- Input testing and visualization
+- Live stick, trigger, D-pad, and button testing and visualization
+- Xbox circularity and center diagnostics
+- Haptic vibration testing for supported PlayStation controllers
 - Battery status display
 - Multi-language support (20+ languages)
 - Progressive Web App capabilities
@@ -25,9 +35,9 @@ See the [Docker guide](DOCKER.md) for installation and usage instructions.
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
-- Modern browser with WebHID support (Chrome/Edge)
+- Modern browser with WebHID and Gamepad API support (Chrome/Edge recommended)
 
 ### Getting Started
 
@@ -79,9 +89,15 @@ This will:
 
 ### Important Notes
 
-- **HTTPS Required**: The WebHID API requires HTTPS. The development server uses self-signed certificates.
+- **HTTPS Required**: WebHID and some browser controller features require a secure context. The development server uses self-signed certificates.
 - **Browser Security**: You may need to accept the self-signed certificate warning in your browser.
-- **Controller Support**: Only works in browsers with WebHID support (Chrome, Edge, Opera).
+- **Xbox calibration**: Browser diagnostics are supported, but permanent
+  calibration is intentionally handed off to the Xbox Accessories app because
+  the Gamepad API does not expose firmware calibration writes. Xbox vibration
+  testing is omitted because wired rumble is not reliable across browsers and
+  operating systems.
+- **Controller Support**: PlayStation calibration requires WebHID. Xbox testing
+  requires the Gamepad API and a controller exposed as Xbox/XInput by the browser.
 
 ### Project Structure
 

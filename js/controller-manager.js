@@ -143,7 +143,15 @@ class ControllerManager {
   */
   setInputReportHandler(handler) {
     if (!this.currentController) return;
-    this.currentController.device.oninputreport = handler;
+    this.currentController.setInputReportHandler(handler);
+  }
+
+  /**
+   * Start the input stream for the active transport.
+   */
+  startInput() {
+    if (!this.currentController) return;
+    this.currentController.startInput(this.getInputHandler());
   }
 
   /**
@@ -440,20 +448,51 @@ class ControllerManager {
    * @param {Function} doneCb - Callback function called when vibration ends (optional)
    */
   async setVibration({heavyLeft, lightRight, duration = 0}, doneCb = ({success}) => {}) {
-    try {
-      await this.currentController.setVibration(heavyLeft, lightRight);
+    const controller = this.currentController;
+    if (!controller) return { success: false };
 
-      // If duration is specified, automatically turn off vibration after the duration
-      if (duration > 0) {
-        setTimeout(async () => {
-          if(!this.currentController) return doneCb({success: true});
-          await this.currentController.setVibration(0, 0); // Turn off vibration
-          doneCb({success: true});
-        }, duration);
+    try {
+      if (controller.handlesVibrationDuration?.()) {
+        const result = await controller.setVibration(heavyLeft, lightRight, duration);
+        if (result?.success === false) {
+          throw new Error(result.message || 'Vibration is not available');
+        }
+        doneCb({ success: true });
+        return result;
       }
+
+      const result = await controller.setVibration(heavyLeft, lightRight);
+      if (result?.success === false) {
+        throw new Error(result.message || 'Vibration is not available');
+      }
+
+      // HID controllers keep vibrating until another output report stops them.
+      if (duration > 0) {
+        return await new Promise((resolve, reject) => {
+          setTimeout(async () => {
+            if (this.currentController !== controller) {
+              doneCb({ success: true });
+              resolve({ success: true });
+              return;
+            }
+
+            try {
+              await controller.setVibration(0, 0);
+              doneCb({ success: true });
+              resolve({ success: true });
+            } catch (error) {
+              doneCb({ success: false });
+              reject(error);
+            }
+          }, duration);
+        });
+      }
+
+      doneCb({ success: true });
+      return result;
     } catch (error) {
       if(!this.currentController) return; // the controller was unplugged
-      if(duration) doneCb({ success: false});
+      doneCb({ success: false});
       throw new Error(l("Failed to set vibration"), { cause: error });
     }
   }
@@ -563,28 +602,90 @@ class ControllerManager {
   }
 
   /**
+   * Record a W3C Standard Gamepad snapshot using the same state shape as HID
+   * controllers so the rest of the UI stays transport-agnostic.
+   */
+  _recordGamepadStates(gamepad, inputConfig) {
+    const changes = {};
+    const { axes, triggerButtons, buttonMap } = inputConfig;
+    const normalizeAxis = (index) => {
+      const value = gamepad.axes[index] ?? 0;
+      return Math.round(value * 1000) / 1000;
+    };
+
+    const newSticks = {
+      left: {
+        x: normalizeAxis(axes.leftX),
+        y: normalizeAxis(axes.leftY),
+      },
+      right: {
+        x: normalizeAxis(axes.rightX),
+        y: normalizeAxis(axes.rightY),
+      },
+    };
+
+    if (this._sticksChanged(this.button_states.sticks, newSticks)) {
+      this.button_states.sticks = newSticks;
+      changes.sticks = newSticks;
+    }
+
+    [
+      ['l2', triggerButtons.left],
+      ['r2', triggerButtons.right],
+    ].forEach(([name, buttonIndex]) => {
+      const value = Math.round((gamepad.buttons[buttonIndex]?.value || 0) * 255);
+      const key = `${name}_analog`;
+      if (value !== this.button_states[key]) {
+        this.button_states[key] = value;
+        changes[key] = value;
+      }
+    });
+
+    for (const button of buttonMap) {
+      const gamepadButton = gamepad.buttons[button.button];
+      if (!gamepadButton) continue;
+      const pressed = gamepadButton.pressed || gamepadButton.value > 0.5;
+      if (this.button_states[button.name] !== pressed) {
+        this.button_states[button.name] = pressed;
+        changes[button.name] = pressed;
+      }
+    }
+
+    return changes;
+  }
+
+  /**
   * Process controller input data and call callback if set
   * This is the first part of the split process_controller_input function
   * @param {Object} inputData - The input data from the controller
   * @returns {Object} Changes object containing processed input data
   */
   processControllerInput(inputData) {
-    const { data } = inputData;
-
     const inputConfig = this.currentController.getInputConfig();
-    const { buttonMap, dpadByte, l2AnalogByte, r2AnalogByte } = inputConfig;
-    const { touchpadOffset } = inputConfig;
+    const { buttonMap } = inputConfig;
+    let changes;
 
-    // Process button states using the device-specific configuration
-    const changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte);
+    if (inputConfig.type === 'gamepad') {
+      changes = this._recordGamepadStates(inputData.gamepad, inputConfig);
+    } else {
+      const { data } = inputData;
+      const { dpadByte, l2AnalogByte, r2AnalogByte } = inputConfig;
+      changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte);
+    }
 
     // Parse and store touch points if touchpad data is available
-    if (touchpadOffset) {
-      this.touchPoints = this._parseTouchPoints(data, touchpadOffset);
+    if (inputConfig.touchpadOffset && inputData.data) {
+      this.touchPoints = this._parseTouchPoints(inputData.data, inputConfig.touchpadOffset);
     }
 
     // Parse and store battery status
-    this.batteryStatus = this._parseBatteryStatus(data);
+    this.batteryStatus = this._parseBatteryStatus(inputData.data);
+
+    if (inputConfig.type === 'gamepad' &&
+        Object.keys(changes).length === 0 &&
+        !this.batteryStatus.changed) {
+      return;
+    }
 
     const result = {
       changes,
@@ -628,6 +729,11 @@ class ControllerManager {
   */
   _parseBatteryStatus(data) {
     const batteryInfo = this.currentController.parseBatteryStatus(data);
+    if (batteryInfo.unavailable) {
+      const changed = this._lastBatteryText !== "";
+      this._lastBatteryText = "";
+      return { bat_txt: "", changed, ...batteryInfo };
+    }
     const bat_txt = this._batteryPercentToText(batteryInfo);
 
     const changed = bat_txt !== this._lastBatteryText;

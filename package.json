@@ -1,7 +1,7 @@
 {
-    "name": "dualshock-calibration-gui",
+    "name": "controller-calibration-gui",
     "version": "1.0.0",
-    "description": "A web-based calibration tool for PlayStation DualShock 4, DualSense, and DualSense Edge controllers",
+    "description": "A web-based testing and calibration tool for PlayStation and Xbox controllers",
     "main": "index.html",
     "type": "module",
     "scripts": {
@@ -14,7 +14,8 @@
         "serve:https": "HTTPS=true node dev-server.js",
         "start": "npm run build && npm run serve",
         "dev:serve": "npm run build && concurrently \"npm run dev\" \"npm run serve\"",
-        "dev:full": "npm run build && concurrently --kill-others \"npm run watch\" \"npm run serve\""
+        "dev:full": "npm run build && concurrently --kill-others \"npm run watch\" \"npm run serve\"",
+        "test": "node --test tests/*.test.js"
     },
     "devDependencies": {
         "rollup": "^4.9.0",
@@ -47,9 +48,12 @@
     "keywords": [
         "dualshock",
         "dualsense",
+        "xbox",
+        "xinput",
         "controller",
         "calibration",
-        "webHID"
+        "webHID",
+        "gamepad"
     ],
     "author": "",
     "license": "MIT"

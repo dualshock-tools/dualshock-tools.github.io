@@ -44,7 +44,23 @@ class BaseController {
   * @param {Function} handler Input report handler function
   */
   setInputReportHandler(handler) {
-    this.device.oninputreport = handler;
+    if (this.device) {
+      this.device.oninputreport = handler;
+    }
+  }
+
+  /**
+   * Start streaming input. HID controllers use their inputreport event while
+   * other transports (such as the Gamepad API) can override this method.
+   */
+  startInput(handler) {
+    this.setInputReportHandler(handler);
+  }
+
+  stopInput() {
+    if (this.device) {
+      this.device.oninputreport = null;
+    }
   }
 
   /**
@@ -158,7 +174,11 @@ class BaseController {
     return { success: true, message: "This controller does not support adaptive triggers" };
   }
 
-  async setVibration(heavyLeft = 0, lightRight = 0) {
+  handlesVibrationDuration() {
+    return false;
+  }
+
+  async setVibration(heavyLeft = 0, lightRight = 0, duration = 0) {
     // Default no-op implementation for controllers that don't support vibration
     return { success: true, message: "This controller does not support vibration" };
   }

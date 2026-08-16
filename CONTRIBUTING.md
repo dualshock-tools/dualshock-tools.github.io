@@ -17,6 +17,15 @@ Review time grows quickly with PR size. As a rough guideline:
 
 These are not strict limits, but they illustrate why smaller PRs are strongly preferred.
 
+## Keep Pull Requests functional
+
+As an extension of keeping PRs self-contained, each PR should leave the project in a **working and usable state**.
+
+Even when a feature is being developed across multiple PRs, an individual PR should not intentionally leave the website broken or unusable in anticipation of a follow-up PR.
+If possible, structure the changes so that each step is functional on its own.
+
+This is especially important for a project that is actively used by many people: stability should be preserved throughout the development process, not only once the entire feature is complete.
+
 ## Separate logical changes
 
 Avoid mixing unrelated changes such as refactoring, bug fixes, UI changes, and new features in the same PR.

@@ -210,6 +210,9 @@ function ds5_color(serialNumber) {
     '10': 'Chroma Teal',
     '11': 'Chroma Indigo',
     '12': 'Chroma Pearl',
+    '13': 'HyperPop Techno Red',
+    '14': 'HyperPop Remix Green',
+    '15': 'HyperPop Rhythm Blue',
     '30': '30th Anniversary',
     'Z1': 'God of War Ragnarok',
     'Z2': 'Spider-Man 2',
@@ -218,6 +221,10 @@ function ds5_color(serialNumber) {
     'Z6': 'The Last of Us',
     'ZA': 'God of War 20th Anniversary',
     'ZB': 'Icon Blue Limited Edition',
+    'ZC': 'Ghost of Yōtei Limited Edition',
+    'ZD': 'Marathon Limited Edition',
+    'ZE': 'Genshin Impact Limited Edition',
+    'ZF': '007 First Light Limited Edition',
   };
 
   const colorCode = serialNumber.slice(4, 6);

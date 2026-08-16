@@ -21,6 +21,10 @@ A pre-built Docker image is available for running DualShock Tools without instal
 
 See the [Docker guide](DOCKER.md) for installation and usage instructions.
 
+## Contributing
+
+Interested in contributing? Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting changes and pull requests.
+
 ## Development
 
 ### Prerequisites

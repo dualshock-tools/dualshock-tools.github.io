@@ -547,6 +547,12 @@ async function init_svg_controller(model) {
 
   svgContainer.innerHTML = svgContent;
 
+  // Set the ID on the SVG element for later queries
+  const svg = svgContainer.querySelector('svg');
+  if (svg) {
+    svg.id = 'controller-svg';
+  }
+
   // Reset trackpad bounding box so it's recalculated for the new SVG
   trackpadBbox = undefined;
 

@@ -156,7 +156,7 @@ function styles() {
     global.cssFilename = 'app.css';
   }
 
-  return stream.pipe(sass().on('error', sass.logError)).pipe(gulp.dest(paths.dist));
+  return stream.pipe(gulp.dest(paths.dist));
 }
 
 // Bundle templates and SVG assets into HTML for production

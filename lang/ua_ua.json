@@ -369,5 +369,17 @@
     "This test will activate the controller's vibration motors, first the heavy one, and then the light one.": "",
     "This test will monitor the controller's microphone input levels.": "",
     "This test will play a tone through the controller's built-in speaker.": "",
-    "": ""
+    "": "",
+    "Accelerometer": "",
+    "At rest the accelerometer measures gravity: with the controller flat on a table, the Y axis points straight up and reads about +1 g while X and Z stay near 0.": "",
+    "Bias": "",
+    "Gyroscope": "",
+    "Pitch": "",
+    "Roll": "",
+    "Rotate the controller a full turn around each axis until every check turns green.": "",
+    "This test checks that the gyroscope and accelerometer respond on all axes.": "",
+    "Total": "",
+    "Yaw": "",
+    "at rest": "",
+    "auto-zeroed at rest": ""
 }

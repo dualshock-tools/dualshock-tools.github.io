@@ -369,5 +369,17 @@
     "Yes. Simply do another calibration, and click the green button to save permanently.": "",
     "You should save your changes, or reboot the controller to revert back to the previous state.": "",
     "serial number": "",
-    "": ""
+    "": "",
+    "Accelerometer": "",
+    "At rest the accelerometer measures gravity: with the controller flat on a table, the Y axis points straight up and reads about +1 g while X and Z stay near 0.": "",
+    "Bias": "",
+    "Gyroscope": "",
+    "Pitch": "",
+    "Roll": "",
+    "Rotate the controller a full turn around each axis until every check turns green.": "",
+    "This test checks that the gyroscope and accelerometer respond on all axes.": "",
+    "Total": "",
+    "Yaw": "",
+    "at rest": "",
+    "auto-zeroed at rest": ""
 }

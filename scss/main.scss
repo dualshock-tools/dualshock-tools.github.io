@@ -113,6 +113,12 @@ dl.row {
 		i.fas.test-icon-buttons {
 			animation: bounce 0.6s ease-in-out infinite !important;
 		}
+		i.fas.test-icon-imu {
+			animation: pulse 1s ease-in-out infinite !important;
+		}
+		i.fas.test-icon-trackpad {
+			animation: pulse 1s ease-in-out infinite !important;
+		}
 		i.fas.test-icon-haptic {
 			animation: shake 0.5s ease-in-out infinite !important;
 		}
@@ -164,4 +170,38 @@ dl.row {
 
 .pulsing-text {
 	animation: pulse-text 0.75s ease-in-out infinite;
+}
+
+/* Quick test check badges (IMU, trackpad): bold glyphs, stable pill width */
+.test-check {
+	font-weight: 900;
+	font-size: 0.85em;
+	min-width: 1.8em;
+}
+
+/* IMU test center-zero bar meters */
+.imu-bar {
+	position: relative;
+	height: 4px;
+	margin-bottom: 4px;
+	background: rgba(0, 0, 0, 0.08);
+	border-radius: 3px;
+
+	&::before {
+		/* center (zero) marker */
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: -2px;
+		bottom: -2px;
+		width: 1px;
+		background: rgba(0, 0, 0, 0.3);
+	}
+}
+
+.imu-bar-fill {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	border-radius: 3px;
 }

@@ -369,5 +369,21 @@
     "When calibrating, there is no risk. However, if your controller disconnects during the split second that you save a calibration, then you have a chance of bricking your controller. Make sure your battery has enough charge and is plugged into the controller, and the USB cable is securely connected. This prevents your controller from being bricked if the USB cable accidentally disconnects.": "",
     "Which controllers does DualShock Calibration GUI support?": "",
     "Yes. Simply do another calibration, and click the green button to save permanently.": "",
-    "": ""
+    "": "",
+    "Accelerometer": "",
+    "At rest the accelerometer measures gravity: with the controller flat on a table, the Y axis points straight up and reads about +1 g while X and Z stay near 0.": "",
+    "Bias": "",
+    "Gyroscope": "",
+    "Pitch": "",
+    "Roll": "",
+    "Rotate the controller a full turn around each axis until every check turns green.": "",
+    "This test checks that the gyroscope and accelerometer respond on all axes.": "",
+    "Total": "",
+    "Yaw": "",
+    "at rest": "",
+    "auto-zeroed at rest": "",
+    "Click": "",
+    "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "",
+    "Movement": "",
+    "Two fingers": ""
 }

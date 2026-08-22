@@ -14,6 +14,22 @@ class DS5EdgeController extends DS5Controller {
     this.finetuneMaxValue = 4095; // 12-bit max value for DS5 Edge
   }
 
+  getInputConfig() {
+    const ds5Map = super.getInputConfig();
+
+    // DS5 Edge has extra buttons
+    return {
+      ...ds5Map,
+      buttonMap: [
+        ...ds5Map.buttonMap,
+        { name: 'fn_left', byte: 9, mask: 0x10, svg: 'Fn_left' },
+        { name: 'fn_right', byte: 9, mask: 0x20, svg: 'Fn_right' },
+        { name: 'paddle_left', byte: 9, mask: 0x40, svg: 'Paddle_left' },
+        { name: 'paddle_right', byte: 9, mask: 0x80, svg: 'Paddle_right' },
+      ],
+    }
+  }
+
   async getInfo() {
     // DS5 Edge uses the same info structure as DS5 but with is_edge=true
     const result = await this._getInfo(true);
@@ -31,6 +47,14 @@ class DS5EdgeController extends DS5Controller {
     }
 
     return result;
+  }
+
+  parseDeviceSpecificInputs(data) {
+    const triggerLevel = data.getUint8(49);
+    return {
+      l2_stop_slider: (triggerLevel >> 4) & 3,  // bits 4-5
+      r2_stop_slider: triggerLevel >> 6,        // bits 6-7
+    };
   }
 
   async flash(progressCallback = null) {

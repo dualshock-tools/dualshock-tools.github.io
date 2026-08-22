@@ -136,19 +136,21 @@ async function scripts() {
 function styles() {
   let stream = gulp.src(paths.src.scss)
     .pipe(gulpif(!isProduction, sourcemaps.init()))
-    .pipe(concat('app.css'));
+    .pipe(concat('app.scss'))
+    .pipe(sass().on('error', sass.logError));
 
   if (isProduction) {
-    stream = stream.pipe(cleanCSS({
-      level: 2
-    }));
-    
-    // Add hash to filename in production
-    stream = stream.pipe(rename(function(path) {
-      const hash = crypto.createHash('md5').update(Date.now().toString()).digest('hex').substring(0, 8);
-      path.basename = `app-${hash}`;
-      global.cssFilename = `${path.basename}.css`;
-    }));
+    stream = stream
+      .pipe(cleanCSS({ level: 2 }))
+      .pipe(rename(function (path) {
+        const hash = crypto.createHash('md5')
+          .update(Date.now().toString())
+          .digest('hex')
+          .substring(0, 8);
+
+        path.basename = `app-${hash}`;
+        global.cssFilename = `${path.basename}.css`;
+      }));
   } else {
     stream = stream.pipe(sourcemaps.write());
     global.cssFilename = 'app.css';

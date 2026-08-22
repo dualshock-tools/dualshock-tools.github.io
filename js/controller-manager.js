@@ -559,6 +559,15 @@ class ControllerManager {
       }
     }
 
+    // Handle the Edge controller's specific inputs
+    const deviceSpecificInputs = this.currentController.parseDeviceSpecificInputs(data);
+    Object.entries(deviceSpecificInputs).forEach(([key, value]) => {
+      if(value !== this.button_states[key]) {
+        this.button_states[key] = value;
+        changes[key] = value;
+      }
+    })
+
     return changes;
   }
 

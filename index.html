@@ -25,6 +25,8 @@
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
         crossorigin="anonymous"></script>
 
+
+
 <meta http-equiv="Permissions-Policy" content="interest-cohort=()">
 <script type="module" src="js/core.js"></script>
 
@@ -41,8 +43,6 @@
 <!-- External CSS files -->
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/finetune.css">
-
-</head>
 <body>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
@@ -85,11 +85,8 @@
     <!-- Unsupported Browser Warning -->
     <div id="missinghid" style="bottom: 80px; left: 0; right: 0; z-index: 1030; padding: 12px 20px; display: none;">
       <div class="container">
-        <div style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
-          <p class="mb-1">
-            <i class="fas fa-hand"></i>&nbsp;&nbsp;
-            <span class="ds-i18n">Unsupported browser.</span>
-          </p>
+        <div class="alert alert-warning" role="alert">
+          <h4 class="alert-heading"><i class="fas fa-hand"></i>&nbsp;&nbsp; Unsupported browser.</h4>
           <p class="mb-1">
             <span class="ds-i18n">Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.</span>
             <span class="ds-i18n">Firefox is supported with the WebHID extension installed.</span>
@@ -379,20 +376,19 @@
   <!-- About drift and this utility -->
   <div id="aboutdrift" style="position: fixed; bottom: 6em; left: 0; right: 0; z-index: 0; display: none;">
     <div class="container">
-      <div class="mb-4" style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
-        <p class="mb-2">
-          <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
+      <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading"><i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp; Important notice</h4>
+        <p>
           <span class="ds-i18n">This utility cannot fix stick drift.</span>
         </p>
         <p class="mb-2">
           <span class="ds-i18n">Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.</span>
-          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span></p>
+          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span>
+        </p>
         <p class="mb-0">
-          <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;
           <span class="ds-i18n">Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.</span>
         </p>
       </div>
-
       <div id="lastConnected" class="gap-2">
         <span class="text-muted"><i class="fas fa-history"></i>&nbsp;&nbsp;<span class="ds-i18n">Last connected</span>:</span>
         <span id="lastConnectedInfo"></span>

@@ -360,5 +360,9 @@
     "When calibrating, there is no risk. However, if your controller disconnects during the split second that you save a calibration, then you have a chance of bricking your controller. Make sure your battery has enough charge and is plugged into the controller, and the USB cable is securely connected. This prevents your controller from being bricked if the USB cable accidentally disconnects.": "Ao calibrar, não há risco. No entanto, se o seu controle se desconectar na fração de segundo em que você salva uma calibração, haverá o risco de 'brickar' o seu controle. Certifique-se de que a bateria tenha carga suficiente e esteja conectada ao controle, e que o cabo USB esteja firmemente conectado. Isso evita que o seu controle seja 'brickado' caso o cabo USB se desconecte acidentalmente.",
     "Which controllers does DualShock Calibration GUI support?": "Quais controles a GUI de Calibração DualShock suporta?",
     "Yes. Simply do another calibration, and click the green button to save permanently.": "Sim. Simplesmente faça outra calibração e clique no botão verde para salvar permanentemente.",
+    "Blow gently into the controller's microphone. You should see the audio level indicator respond.": "",
+    "This test will activate the controller's vibration motors, first the heavy one, and then the light one.": "",
+    "This test will monitor the controller's microphone input levels.": "",
+    "This test will play a tone through the controller's built-in speaker.": "",
     "": ""
 }

@@ -379,20 +379,19 @@
   <!-- About drift and this utility -->
   <div id="aboutdrift" style="position: fixed; bottom: 6em; left: 0; right: 0; z-index: 0; display: none;">
     <div class="container">
-      <div class="mb-4" style="border: 2px solid #0d6efd; border-radius: 8px; color: #0d6efd; padding: 12px; background-color: white;">
-        <p class="mb-2">
-          <i class="fas fa-hand-point-up"></i>&nbsp;&nbsp;
+      <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading"><i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp; Important notice</h4>
+        <p>
           <span class="ds-i18n">This utility cannot fix stick drift.</span>
         </p>
         <p class="mb-2">
           <span class="ds-i18n">Drift is caused by mechanical parts in the joystick being worn out, and they need to be replaced to fix the drift.</span>
-          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span></p>
+          <span class="ds-i18n">After they have been replaced, this utility can be used to calibrate the controller to work with the new joysticks.</span>
+        </p>
         <p class="mb-0">
-          <i class="fas fa-regular fa-triangle-exclamation"></i>&nbsp;&nbsp;
           <span class="ds-i18n">Calibrating without replacing the joysticks may help temporarily, but it may also make the problem worse, with no way to undo it.</span>
         </p>
       </div>
-
       <div id="lastConnected" class="gap-2">
         <span class="text-muted"><i class="fas fa-history"></i>&nbsp;&nbsp;<span class="ds-i18n">Last connected</span>:</span>
         <span id="lastConnectedInfo"></span>

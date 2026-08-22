@@ -31,6 +31,20 @@ class ControllerManager {
       }
     };
 
+    // IMU state for gyro and accelerometer
+    this.imuState = {
+      gyro: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      accel: {
+        x: 0,
+        y: 0,
+        z: 0
+      }
+    };
+
     // Touch points for touchpad input
     this.touchPoints = [];
 
@@ -499,10 +513,33 @@ class ControllerManager {
   }
 
   /**
+  * Helper function to check if IMU (gyro/accel) values have changed
+  */
+  _imuChanged(current, newValues) {
+    return current.gyro.x !== newValues.gyro.x || current.gyro.y !== newValues.gyro.y || current.gyro.z !== newValues.gyro.z ||
+    current.accel.x !== newValues.accel.x || current.accel.y !== newValues.accel.y || current.accel.z !== newValues.accel.z;
+  }
+
+  /**
+  * Parse IMU (gyro and accelerometer) state changes
+  * @param {DataView} data - Input data view
+  * @param {number} imuOffset - Offset to IMU data
+  * @returns {Object|null} IMU changes or null if no changes
+  */
+  _parseImuState(data, imuOffset) {
+    const newIMU = this._parseIMUData(data, imuOffset);
+    if (this._imuChanged(this.imuState, newIMU)) {
+      this.imuState = newIMU;
+      return newIMU;
+    }
+    return null;
+  }
+
+  /**
   * Generic button processing for DS4/DS5
   * Records button states and returns changes
   */
-  _recordButtonStates(data, BUTTON_MAP, dpad_byte, l2_analog_byte, r2_analog_byte) {
+  _recordButtonStates(data, BUTTON_MAP, dpadByte, l2AnalogByte, r2AnalogByte) {
     const changes = {};
 
     // Stick positions (always at bytes 0-3)
@@ -522,8 +559,8 @@ class ControllerManager {
 
     // L2/R2 analog values
     [
-      ['l2', l2_analog_byte],
-      ['r2', r2_analog_byte]
+      ['l2', l2AnalogByte],
+      ['r2', r2AnalogByte]
     ].forEach(([name, byte]) => {
       const val = data.getUint8(byte);
       const key = name + '_analog';
@@ -534,7 +571,7 @@ class ControllerManager {
     });
 
     // Dpad is a 4-bit hat value
-    const hat = data.getUint8(dpad_byte) & 0x0F;
+    const hat = data.getUint8(dpadByte) & 0x0F;
     const dpad_map = {
       up:    (hat === 0 || hat === 1 || hat === 7),
       right: (hat === 1 || hat === 2 || hat === 3),
@@ -581,11 +618,17 @@ class ControllerManager {
     const { data } = inputData;
 
     const inputConfig = this.currentController.getInputConfig();
-    const { buttonMap, dpadByte, l2AnalogByte, r2AnalogByte } = inputConfig;
+    const { buttonMap, dpadByte, l2AnalogByte, r2AnalogByte, imuOffset } = inputConfig;
     const { touchpadOffset } = inputConfig;
 
     // Process button states using the device-specific configuration
     const changes = this._recordButtonStates(data, buttonMap, dpadByte, l2AnalogByte, r2AnalogByte);
+
+    // Record IMU state if available
+    const imuChanges = this._parseImuState(data, imuOffset);
+    if (imuChanges) {
+      changes.imu = imuChanges;
+    }
 
     // Parse and store touch points if touchpad data is available
     if (touchpadOffset) {
@@ -643,6 +686,35 @@ class ControllerManager {
     this._lastBatteryText = bat_txt;
 
     return { bat_txt, changed, ...batteryInfo };
+  }
+
+  /**
+  * Parse IMU (gyro and accelerometer) data from input data
+  * @param {DataView} data - Input data view
+  * @param {number} imuOffset - Offset to IMU data
+  * @returns {Object} IMU data with gyro and accel values
+  */
+  _parseIMUData(data, imuOffset) {
+    // Nominal, uncalibrated sensitivities. In both DS4 and DS5 input reports
+    // the gyroscope (pitch, yaw, roll) comes first, followed by the accelerometer.
+    const GYRO_SENSITIVITY_LSB_PER_DPS = 14.31;
+    const ACCEL_SENSITIVITY_LSB_PER_G = 8192.0;
+
+    const [gyroX, gyroY, gyroZ] = [0, 2, 4]
+      .map(i => data.getInt16(imuOffset + i, true))
+      .map(v => v / GYRO_SENSITIVITY_LSB_PER_DPS);  // degrees per second
+    const [accelX, accelY, accelZ] = [6, 8, 10]
+      .map(i => data.getInt16(imuOffset + i, true))
+      .map(v => v / ACCEL_SENSITIVITY_LSB_PER_G);   // g (should total ~1g at rest)
+
+    return {
+      gyro: {
+        x: gyroX, y: gyroY, z: gyroZ
+      },
+      accel: {
+        x: accelX, y: accelY, z: accelZ
+      }
+    };
   }
 
   /**

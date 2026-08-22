@@ -553,7 +553,8 @@ class DS5Controller extends BaseController {
     if(a == 0x05) return "BDM-030";
     if(a == 0x06) return "BDM-040";
     if(a == 0x07 || a == 0x08) return "BDM-050";
-    // TODO 0x09..0x10?
+    if(a == 0x09) return "BDM-060R";
+    // TODO 0x10?
     if(a == 0x11) return "BDM-060M";
     // TODO 0x12?
     if(a == 0x13) return "BDM-060X";

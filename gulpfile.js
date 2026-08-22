@@ -18,6 +18,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { glob } from 'glob';
 
+import * as dartSass from 'sass';
+import gulpSass from 'gulp-sass';
+const sass = gulpSass(dartSass);
+
 // Get command line arguments
 const argv = yargs(hideBin(process.argv)).argv;
 const isProduction = argv.production || process.env.NODE_ENV === 'production';
@@ -29,7 +33,7 @@ const paths = {
       entry: 'js/core.js',
       all: 'js/**/*.js'
     },
-    css: ['css/main.css', 'css/finetune.css'],
+    scss: ['scss/main.scss', 'scss/finetune.scss'],
     html: {
       main: 'index.html',
       templates: 'templates/**/*.html'
@@ -130,23 +134,25 @@ async function scripts() {
 
 // CSS processing
 function styles() {
-  let stream = gulp.src(paths.src.css)
+  let stream = gulp.src(paths.src.scss)
     .pipe(gulpif(!isProduction, sourcemaps.init()))
-    .pipe(concat('app.css'));
+    .pipe(concat('app.scss'))
+    .pipe(sass().on('error', sass.logError));
 
   if (isProduction) {
-    stream = stream.pipe(cleanCSS({
-      level: 2
-    }));
-    
-    // Add hash to filename in production
-    stream = stream.pipe(rename(function(path) {
-      const hash = crypto.createHash('md5').update(Date.now().toString()).digest('hex').substring(0, 8);
-      path.basename = `app-${hash}`;
-      global.cssFilename = `${path.basename}.css`;
-    }));
+    stream = stream
+      .pipe(cleanCSS({ level: 2 }))
+      .pipe(rename(function (path) {
+        const hash = crypto.createHash('md5')
+          .update(Date.now().toString())
+          .digest('hex')
+          .substring(0, 8);
+
+        path.basename = `app-${hash}`;
+        global.cssFilename = `${path.basename}.css`;
+      }));
   } else {
-    stream = stream.pipe(sourcemaps.write('.'));
+    stream = stream.pipe(sourcemaps.write());
     global.cssFilename = 'app.css';
   }
 
@@ -294,7 +300,7 @@ function assets() {
 // Watch task
 function watch() {
   gulp.watch(paths.src.js.all, scripts);
-  gulp.watch(paths.src.css, styles);
+  gulp.watch(paths.src.scss, styles);
   gulp.watch([paths.src.html.main, paths.src.html.templates], gulp.series(html, templates));
   gulp.watch(paths.src.lang, languages);
   gulp.watch([...paths.src.assets, paths.src.svg], assets);

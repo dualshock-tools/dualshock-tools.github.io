@@ -75,7 +75,12 @@ WHITELIST_UNUSED = {
     "The Last of Us",
     "Volcanic Red",
     "White",
-    "God of War 20th Anniversary"
+    "God of War 20th Anniversary",
+    "Icon Blue Limited Edition",
+    "Ghost of Yōtei Limited Edition",
+    "Marathon Limited Edition",
+    "Genshin Impact Limited Edition",
+    "007 First Light Limited Edition",
 
     "Sony DualSense",
     "Sony DualSense Edge",

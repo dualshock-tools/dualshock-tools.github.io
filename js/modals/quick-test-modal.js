@@ -259,7 +259,7 @@ export class QuickTestModal {
           </div>
         `);
       case 'haptic':
-        const hapticTestDesc = l('This test will activate the controller\'s vibration motors, first the heavy one, and then the light one.');
+        const hapticTestDesc = l("This test will activate the controller's vibration motors, first the heavy one, and then the light one.");
         const hapticInstructions = l('Feel for vibration in the controller.');
         const hapticRepeat = l('Repeat');
         return `
@@ -308,7 +308,7 @@ export class QuickTestModal {
           </div>
         `;
       case 'speaker':
-        const speakerTestDesc = l('This test will play a tone through the controller\'s built-in speaker.');
+        const speakerTestDesc = l("This test will play a tone through the controller's built-in speaker.");
         const speakerInstructions = l('Listen for a tone from the controller speaker.');
         const repeat = l('Repeat');
         return `
@@ -327,8 +327,8 @@ export class QuickTestModal {
           </div>
         `;
       case 'microphone':
-        const microphoneTestDesc = l('This test will monitor the controller\'s microphone input levels.');
-        const microphoneInstructions = l('Blow gently into the controller\'s microphone. You should see the audio level indicator respond.');
+        const microphoneTestDesc = l("This test will monitor the controller's microphone input levels.");
+        const microphoneInstructions = l("Blow gently into the controller's microphone. You should see the audio level indicator respond.");
         const microphoneLevel = l('Microphone Level:');
         return `
           <p>${microphoneTestDesc}</p>

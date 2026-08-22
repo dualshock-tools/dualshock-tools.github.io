@@ -3,6 +3,7 @@
 import { sleep, float_to_str } from '../utils.js';
 import { l } from '../translations.js';
 import { CIRCULARITY_DATA_SIZE, draw_stick_dial } from '../stick-renderer.js';
+import { Storage } from '../storage.js';
 
 const SECONDS_UNTIL_UNLOCK = 15;
 
@@ -310,11 +311,11 @@ export class CalibRangeModal {
   }
 
   /**
-   * Clear a canvas with white background
+   * Clear a canvas
    */
   _clearCanvas(ctx, canvas) {
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = Storage.preferredTheme.get() === 'dark' ? '#212529' : '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 

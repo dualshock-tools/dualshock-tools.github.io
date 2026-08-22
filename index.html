@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -68,7 +68,15 @@
           </li>
         </ul>
       </div>
-
+      <div>
+      <li class="nav-item align-items-center d-flex" >
+        <i class="fas fa-sun"></i>
+        <div class="ms-2 form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch" id="colorModeSwitch" />
+        </div>
+        <i class="fas fa-moon"></i>
+      </li>
+      </div>
     </div>
   </nav>
 
@@ -143,12 +151,14 @@
           <!-- Main page content (controller info, calibration, joystick info) -->
           <div class="row">
             <div class="col-md-6 col-sm-12">
-              <div class="card text-bg-light" >
+              <div class="card">
                 <div class="card-header"><i class="fas fa-gamepad"></i>&nbsp;&nbsp;<span class="ds-i18n">Controller Info</span></div>
-                <dl class="row px-3 py-2" id="fwinfo"></dl>
-                <span id="infoshowall" class="pb-4 px-4 row">
-                  <button class="btn btn-outline-secondary" onclick="show_info_tab()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
-                </span>
+                <div class="card-body">
+                  <dl class="row px-3 py-2" id="fwinfo"></dl>
+                  <span id="infoshowall" class="pb-4 px-4 row">
+                    <button class="btn btn-outline-secondary" onclick="show_info_tab()"><i class="fas fa-plus me-1"></i> <span class="ds-i18n">Show all</span></button>
+                  </span>
+                  </div>
               </div>
               <br>
 
@@ -212,7 +222,7 @@
                 <button id="restore-calibration-btn" type="button" class="btn btn-secondary ds-btn ds-i18n" onclick="openCalibrationHistoryModal()">Restore calibration</button>
                 <button type="button" class="btn btn-danger ds-btn ds-i18n" onclick="reboot_controller()" id="resetBtn">Reboot controller</button>
 
-                <div class="card text-bg-light" >
+                <div class="card" >
                   <div class="card-header"><i class="fas fa-crosshairs"></i>&nbsp;&nbsp;<span class="ds-i18n">Joystick Info</span></div>
                   <div class="vstack px-2">
                     <center>
@@ -329,7 +339,7 @@
 
             <div class="row">
               <div class="col-md-6 col-sm-12">
-                <div class="card text-bg-light" >
+                <div class="card">
                   <div class="card-header"><i class="fas fa-bug"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug Info</span></div>
                   <div class="vstack p-2">
                     <div class="hstack"><p class="ds-i18n">NVS Status</p><p class="ms-auto ds-i18n" id="d-nvstatus">Unknown</p></div>
@@ -339,7 +349,7 @@
               </div>
 
               <div class="col-md-6 col-sm-12">
-                <div class="card text-bg-light" >
+                <div class="card">
                   <div class="card-header"><i class="fas fa-skull-crossbones"></i>&nbsp;&nbsp;<span class="ds-i18n">Debug buttons</span></div>
                   <div class="vstack gap-2 p-2">
                     <div class="hstack gap-2">
@@ -399,7 +409,7 @@
   <footer class="fixed-bottom bg-body-tertiary border-top">
     <div class="container">
       <div class="d-flex flex-column flex-sm-row justify-content-between py-3" id="footbody">
-        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.26</a> (2026-07-12) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
+        <p class="mb-0"><a target="_blank" href="https://github.com/dualshock-tools/dualshock-tools.github.io/commits/main/"><span class="ds-i18n">Version</span> 2.30</a> (2026-08-22) - <a href="#" class="ds-i18n" onclick="show_donate_modal();">Support this project</a>&nbsp;<span id="authorMsg"></span></p>
 
         <ul class="list-unstyled d-flex mb-0">
           <li class="ms-3"><a class="text-dark" href="mailto:ds4@the.al" target="_blank"><svg class="bi" width="24" height="24"><use xlink:href="#mail"/></svg></a></li>

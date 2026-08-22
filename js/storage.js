@@ -12,6 +12,7 @@ export const Storage = {
     FINETUNE_CENTER_STEP_SIZE: 'finetuneCenterStepSize',
     FINETUNE_CIRCULARITY_STEP_SIZE: 'finetuneCircularityStepSize',
     FINETUNE_HISTORY: 'finetuneHistory',
+    PREFERRED_THEME: 'preferredTheme',
   },
 
   getChangesStorageKey(serialNumber) {
@@ -242,4 +243,18 @@ export const Storage = {
       Storage.removeItem(Storage.STORAGE_KEYS.FINETUNE_HISTORY);
     },
   },
+
+  preferredTheme: {
+    set(theme) {
+      Storage.setString(Storage.STORAGE_KEYS.PREFERRED_THEME, theme);
+    },
+
+    get() {
+      return Storage.getString(Storage.STORAGE_KEYS.PREFERRED_THEME);
+    },
+
+    clear() {
+      Storage.removeItem(Storage.STORAGE_KEYS.PREFERRED_THEME);
+    }
+  }
 };

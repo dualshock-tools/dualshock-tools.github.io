@@ -2,6 +2,10 @@
 
 A web-based calibration tool for PlayStation DualShock 4, DualSense, and DualSense Edge controllers using the WebHID API.
 
+The live version of this project is available at [https://dualshock-tools.github.io](https://dualshock-tools.github.io).
+
+No installation is required: simply open the website in a WebHID-compatible browser.
+
 ## Features
 
 - Controller connection via WebHID API
@@ -10,6 +14,16 @@ A web-based calibration tool for PlayStation DualShock 4, DualSense, and DualSen
 - Battery status display
 - Multi-language support (20+ languages)
 - Progressive Web App capabilities
+
+## Docker
+
+A pre-built Docker image is available for running DualShock Tools without installing any dependencies.
+
+See the [Docker guide](DOCKER.md) for installation and usage instructions.
+
+## Contributing
+
+Interested in contributing? Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting changes and pull requests.
 
 ## Development
 

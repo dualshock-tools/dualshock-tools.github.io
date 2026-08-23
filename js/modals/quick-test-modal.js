@@ -311,7 +311,7 @@ export class QuickTestModal {
           <div class="row g-2 mb-2">
             <div class="col-md-6">
               <label class="form-label mb-1"><strong>${l('Gyroscope')}</strong> <span class="text-muted">(°/s)</span></label>
-              <div class="font-monospace small bg-light border rounded p-2">
+              <div class="font-monospace small bg-body-tertiary border rounded p-2">
                 ${imuAxisRow('x', l('Pitch'), 'gyro', '+0.0')}
                 ${imuAxisRow('y', l('Yaw'), 'gyro', '+0.0')}
                 ${imuAxisRow('z', l('Roll'), 'gyro', '+0.0')}
@@ -321,7 +321,7 @@ export class QuickTestModal {
             </div>
             <div class="col-md-6">
               <label class="form-label mb-1"><strong>${l('Accelerometer')}</strong> <span class="text-muted">(g)</span></label>
-              <div class="font-monospace small bg-light border rounded p-2">
+              <div class="font-monospace small bg-body-tertiary border rounded p-2">
                 ${imuAxisRow('x', 'X', 'accel', '+0.00')}
                 ${imuAxisRow('y', 'Y', 'accel', '+0.00')}
                 ${imuAxisRow('z', 'Z', 'accel', '+0.00')}
@@ -1383,7 +1383,7 @@ export class QuickTestModal {
     scale *= 1.05;
 
     // Zero line
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, height / 2);

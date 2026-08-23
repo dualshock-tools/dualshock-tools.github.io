@@ -1643,9 +1643,9 @@ export class QuickTestModal {
     const toCanvas = (p) => ({ x: padX + p.x * scale, y: padY + p.y * scale });
 
     // Pad outline, tinted while the pad is physically clicked
-    ctx.fillStyle = this.controller.button_states.touchpad ? 'rgba(13, 110, 253, 0.15)' : 'rgba(0, 0, 0, 0.03)';
+    ctx.fillStyle = this.controller.button_states.touchpad ? 'rgba(13, 110, 253, 0.25)' : 'rgba(128, 128, 128, 0.12)';
     ctx.fillRect(padX, padY, padW, padH);
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.6)';
     ctx.lineWidth = 1;
     ctx.strokeRect(padX, padY, padW, padH);
 

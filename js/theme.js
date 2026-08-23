@@ -48,7 +48,6 @@ import { Storage } from './storage.js';
     }
   }
 
-  
   /**
    * @function switchSvgColors
    * @summary: switch the colors of the SVG elements based on the current theme.

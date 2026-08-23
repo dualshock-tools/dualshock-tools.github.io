@@ -176,12 +176,12 @@ dl.row {
 	min-width: 1.8em;
 }
 
-/* IMU test center-zero bar meters */
+/* IMU test center-zero bar meters (Bootstrap vars follow data-bs-theme) */
 .imu-bar {
 	position: relative;
 	height: 4px;
 	margin-bottom: 4px;
-	background: rgba(0, 0, 0, 0.08);
+	background: var(--bs-border-color);
 	border-radius: 3px;
 
 	&::before {
@@ -192,7 +192,7 @@ dl.row {
 		top: -2px;
 		bottom: -2px;
 		width: 1px;
-		background: rgba(0, 0, 0, 0.3);
+		background: var(--bs-secondary-color);
 	}
 }
 

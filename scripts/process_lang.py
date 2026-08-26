@@ -8,6 +8,12 @@
 #
 # Quick note: run it from the "root" directory of the project: it searches for
 # ./lang/ so the correct command should be `python3 scripts/process_lang.py`.
+#
+# Lines can be pasted straight from the JavaScript source, e.g.
+#   'This test checks the trackpad\'s touch tracking.'
+# Surrounding quotes are stripped and JavaScript escapes (\', \", \\, \n, \xNN, ...)
+# are decoded, so the key stored in the language files is the runtime value of
+# the string, which is what l() looks up and what check_translations.py reports.
 
 data = {
     "remove": [
@@ -20,7 +26,20 @@ data = {
 
 ## ---
 
-import os, json
+import os, sys, json
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from check_translations import unescape_js_string
+
+def normalize_entry(text):
+    """Turn a pasted string (optionally quoted like a JS literal) into the runtime key."""
+    text = text.strip()
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'`":
+        text = text[1:-1]
+    return unescape_js_string(text)
+
+data["remove"] = [normalize_entry(i) for i in data["remove"]]
+data["add"] = [normalize_entry(i) for i in data["add"]]
 
 def process_file(filename):
     x = json.loads(open(filename, "r").read())

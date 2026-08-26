@@ -9,6 +9,7 @@ This script analyzes the DualShock Tools codebase to find translation strings an
 - Scans HTML files for elements with the `ds-i18n` class
 - Scans JavaScript files for strings passed to the `l()` function
 - Handles both `l()` and `this.l()` function calls
+- Parses full JavaScript string literals, so strings with escaped quotes (e.g. `l('the controller\'s touchpad')`) or apostrophes inside double quotes are captured whole and compared using their runtime (unescaped) value
 - Strips simple HTML formatting tags (`<b>`, `<i>`, `<em>`, `<strong>`, `<span>`)
 - Decodes HTML entities and normalizes whitespace
 - **Automatically ignores commented-out code:**

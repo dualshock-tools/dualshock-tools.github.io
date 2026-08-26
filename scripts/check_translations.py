@@ -50,6 +50,7 @@ EXCLUDE_PATTERNS = [
     r'^[\w-]+\.[\w-]+$',  # CSS compound selectors like circle.ds-touch
     r'^path,rect,circle',  # SVG element lists
     r'^\\x[0-9a-fA-F]+$',  # Hex escape sequences
+    r'^[\x00-\x1f]+$',  # Decoded control characters (e.g. '\x00' padding)
 ]
 
 # Whitelist of strings that are in language files but should be ignored by unused check
@@ -113,6 +114,54 @@ def should_exclude_string(text):
         if re.match(pattern, text):
             return True
     return False
+
+# Matches a complete JavaScript string literal, honoring backslash escapes and
+# requiring the closing quote to match the opening one. This lets strings such as
+# l('the controller\'s touchpad') or l("the controller's touchpad") be captured
+# in full instead of being cut off (or skipped) at the embedded quote.
+# Groups 1/2/3 hold the raw body for double-, single- and backtick-quoted literals.
+JS_STRING_LITERAL = (
+    r'(?:"((?:[^"\\\n]|\\.)*)"'
+    r"|'((?:[^'\\\n]|\\.)*)'"
+    r'|`((?:[^`\\]|\\[\s\S])*)`)'
+)
+
+# l("string"), l('string'), l(`string`) and this.l(...)
+# Use word boundary \b to ensure 'l' is not part of a larger word (e.g., .html)
+L_CALL_PATTERN = r'(?:this\.)?\bl\s*\(\s*' + JS_STRING_LITERAL + r'\s*\)'
+
+# ${l('string')} inside template literals
+TEMPLATE_L_CALL_PATTERN = r'\$\{l\s*\(\s*' + JS_STRING_LITERAL + r'\s*\)\}'
+
+_SIMPLE_JS_ESCAPES = {
+    'n': '\n', 't': '\t', 'r': '\r', 'b': '\b', 'f': '\f', 'v': '\v', '0': '\0',
+}
+
+def unescape_js_string(raw):
+    """Decode backslash escapes in a raw JavaScript string body.
+
+    The translation key is the value the string has at runtime, so \\' becomes ',
+    \\" becomes ", \\\\ becomes \\, and \\xNN / \\uNNNN become the corresponding characters.
+    """
+    def replace(match):
+        esc = match.group(1)
+        if esc[0] == 'x':
+            return chr(int(esc[1:], 16))
+        if esc[0] == 'u':
+            return chr(int(esc[1:].strip('{}'), 16))
+        if esc == '\n':
+            return ''  # line continuation
+        return _SIMPLE_JS_ESCAPES.get(esc, esc)  # \' \" \` \\ and unknown escapes → the char itself
+
+    return re.sub(r'\\(x[0-9a-fA-F]{2}|u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|\n|.)', replace, raw, flags=re.DOTALL)
+
+def js_string_from_match(match, first_group=1):
+    """Return the unescaped string from whichever quote-style group matched."""
+    for group in range(first_group, first_group + 3):
+        raw = match.group(group)
+        if raw is not None:
+            return unescape_js_string(raw)
+    return None
 
 def find_html_files():
     """Find all HTML files in the project."""
@@ -193,10 +242,9 @@ def extract_l_function_strings(js_files):
     """
     strings = {}  # Changed to dict to track locations
 
-    # Pattern to match l("string") or l('string') or this.l("string") or this.l('string')
-    # Handles both single and double quotes
-    # Use word boundary \b to ensure 'l' is not part of a larger word (e.g., .html)
-    pattern = r'(?:this\.)?\bl\s*\(\s*["\'`]([^"\'`]+)["\'`]\s*\)'
+    # Pattern to match l("string") or l('string') or this.l("string") or this.l('string'),
+    # including strings that contain escaped quotes such as l('the controller\'s touchpad')
+    pattern = L_CALL_PATTERN
 
     for js_file in js_files:
         try:
@@ -212,7 +260,7 @@ def extract_l_function_strings(js_files):
                 # Find all matches
                 matches = re.finditer(pattern, content)
                 for match in matches:
-                    text = match.group(1)
+                    text = js_string_from_match(match)
                     if text:
                         # Calculate line and column number
                         line_num = content[:match.start()].count('\n') + 1
@@ -244,8 +292,9 @@ def extract_html_strings_from_js(js_files):
     # This handles HTML within JavaScript strings (both single and double quotes)
     pattern = r'<(\w+)[^>]*class=["\'`][^"\'`]*ds-i18n[^"\'`]*["\'`][^>]*>(.*?)</\1>'
 
-    # Pattern to match template literal function calls like ${l('string')} or ${l("string")}
-    template_literal_pattern = r'\$\{l\s*\(\s*["\'`]([^"\'`]+)["\'`]\s*\)\}'
+    # Pattern to match template literal function calls like ${l('string')} or ${l("string")},
+    # including strings that contain escaped quotes
+    template_literal_pattern = TEMPLATE_L_CALL_PATTERN
 
     for js_file in js_files:
         try:
@@ -279,7 +328,7 @@ def extract_html_strings_from_js(js_files):
                         # Extract any template literal function calls like ${l('string')}
                         template_matches = re.finditer(template_literal_pattern, text)
                         for template_match in template_matches:
-                            extracted_string = template_match.group(1)
+                            extracted_string = js_string_from_match(template_match)
                             if extracted_string:
                                 # Calculate line and column number using original content
                                 line_num = original_content[:match.start()].count('\n') + 1

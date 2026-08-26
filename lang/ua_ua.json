@@ -381,8 +381,11 @@
     "Yaw": "Рискання",
     "at rest": "у стані спокою",
     "auto-zeroed at rest": "автоматично обнулено у стані спокою",
+    "<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>": "",
     "Click": "",
+    "Click \"Test Speaker\" to listen for the tone through the headphones": "",
     "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "",
     "Movement": "",
+    "This test checks the trackpad's touch tracking, two-finger detection, and click.": "",
     "": ""
 }

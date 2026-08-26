@@ -4,6 +4,8 @@ This script analyzes the DualShock Tools codebase to find translation strings an
 
 ## Features
 
+To apply the results automatically, run `python3 scripts/process_lang.py --auto` (add `--dry-run` to only print what would change): missing strings are added to every language file with an empty translation and unused (non-whitelisted) strings are removed.
+
 ### 1. **Source Code Analysis**
 
 - Scans HTML files for elements with the `ds-i18n` class

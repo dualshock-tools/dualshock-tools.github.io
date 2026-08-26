@@ -54,7 +54,7 @@ import { Storage } from './storage.js';
    */
   function switchSvgColors() {
     const defaultColor = Storage.preferredTheme.get() === 'dark' ? '#2b3035' : '#ffffff';
-    ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill'].forEach(id => {
+    ['Controller_infills', 'Button_infills', 'L3_infill', 'R3_infill', 'Trackpad_infill', 'L1_infill', 'R1_infill'].forEach(id => {
         const group = document.getElementById(id);
           if (group) {
             const elements = group.querySelectorAll('path,rect,circle,ellipse,line,polyline,polygon');

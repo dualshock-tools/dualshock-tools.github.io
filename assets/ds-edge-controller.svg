@@ -26,7 +26,8 @@
       }
 
       .st3 {
-        fill: #fff;
+        /* Body fill follows the Bootstrap theme (white in light mode, dark in dark mode) */
+        fill: var(--bs-body-bg, #fff);
       }
 
       .st4 {

@@ -381,11 +381,11 @@
     "Yaw": "Рискання",
     "at rest": "у стані спокою",
     "auto-zeroed at rest": "автоматично обнулено у стані спокою",
-    "<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>": "",
-    "Click": "",
-    "Click \"Test Speaker\" to listen for the tone through the headphones": "",
-    "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "",
-    "Movement": "",
-    "This test checks the trackpad's touch tracking, two-finger detection, and click.": "",
+    "<p>Support for PS VR2 controllers is <b>minimal and highly experimental</b>.</p><p>I currently don't own these controllers, so I cannot verify the calibration process myself.</p><p>If you'd like to help improve full support, you can contribute with a donation or even send the controllers for testing.</p><p>Feel free to contact me on Discord (the_al) or by email at ds4@the.al .</p><br><p>Thank you for your support!</p>": "<p>Підтримка контролерів PS VR2 є <b>мінімальною та суто експериментальною</b>.</p><p>Наразі я не маю цих контролерів, тому не можу самостійно перевірити процес калібрування.</p><p>Якщо ви хочете допомогти покращити повноцінну підтримку, ви можете зробити пожертву або навіть надіслати контролери для тестування.</p><p>Зв’яжіться зі мною в Discord (the_al) або електронною поштою: ds4@the.al.</p><br><p>Дякую за вашу підтримку!</p>",
+    "Click": "Клацання",
+    "Click \"Test Speaker\" to listen for the tone through the headphones": "Натисніть «Перевірити динамік», щоб прослухати сигнал у навушниках",
+    "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "Проведіть одним пальцем по трекпаду нижче, одночасно торкніться його двома пальцями та натискайте на нього, доки всі індикатори не стануть зеленими.",
+    "Movement": "Рух",
+    "This test checks the trackpad's touch tracking, two-finger detection, and click.": "Цей тест перевіряє відстеження дотиків до трекпада, розпізнавання дотику двома пальцями та натискання.",
     "": ""
 }

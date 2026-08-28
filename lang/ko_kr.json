@@ -247,6 +247,7 @@
     "Click": "",
     "Click \"Test Speaker\" to listen for the tone through the headphones": "",
     "Controller does not support adaptive trigger control": "",
+    "Copy": "",
     "Current": "",
     "Delete": "",
     "Delete all calibration history for this controller? This cannot be undone.": "",
@@ -316,6 +317,7 @@
     "Quick Test": "",
     "Quick calibrate": "",
     "Range calibration appears to have failed. Please try again and make sure you rotate the sticks.": "",
+    "Raw input report": "",
     "Repeat": "",
     "Restart": "",
     "Restore": "",
@@ -357,6 +359,7 @@
     "This video from V2.16 shows how to use the finetuning menu.": "",
     "Through": "",
     "Total": "",
+    "Touch and click are shown in different colors:": "",
     "Two fingers": "",
     "USB Connector": "",
     "Unsupported browser.": "",
@@ -381,6 +384,7 @@
     "Your device might not be a genuine Sony controller. If it is not a clone then please report this issue.": "",
     "at rest": "",
     "auto-zeroed at rest": "",
+    "click": "",
     "failed": "",
     "hide": "",
     "passed": "",
@@ -388,5 +392,6 @@
     "skipped": "",
     "tests completed": "",
     "to increase the non-circularity.": "",
+    "touch": "",
     "": ""
 }

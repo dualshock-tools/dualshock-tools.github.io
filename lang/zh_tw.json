@@ -368,6 +368,7 @@
     "Blow gently into the controller's microphone. You should see the audio level indicator respond.": "",
     "Click": "",
     "Click \"Test Speaker\" to listen for the tone through the headphones": "",
+    "Copy": "",
     "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "",
     "Genshin Impact Limited Edition": "",
     "Ghost of Yōtei Limited Edition": "",
@@ -376,6 +377,7 @@
     "Marathon Limited Edition": "",
     "Movement": "",
     "Pitch": "",
+    "Raw input report": "",
     "Roll": "",
     "Rotate the controller a full turn around each axis until every check turns green.": "",
     "This test checks that the gyroscope and accelerometer respond on all axes.": "",
@@ -384,9 +386,12 @@
     "This test will monitor the controller's microphone input levels.": "",
     "This test will play a tone through the controller's built-in speaker.": "",
     "Total": "",
+    "Touch and click are shown in different colors:": "",
     "Two fingers": "",
     "Yaw": "",
     "at rest": "",
     "auto-zeroed at rest": "",
+    "click": "",
+    "touch": "",
     "": ""
 }

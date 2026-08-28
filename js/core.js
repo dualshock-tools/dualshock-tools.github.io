@@ -555,7 +555,7 @@ function init_vr2_button_panel(svgContainer) {
     .join('');
 
   svgContainer.innerHTML = `
-    <div class="card text-bg-light mt-3">
+    <div class="card mt-3">
       <div class="card-header"><i class="fas fa-hand-pointer"></i>&nbsp;&nbsp;<span>${l('Buttons')}</span></div>
       <div class="card-body">
         <p class="text-muted mb-2">
@@ -628,7 +628,7 @@ function start_vr2_raw_monitor() {
         const isCounter = COUNTER_BYTES.includes(i);
         const hot = !isCounter && now - changedAt[i] < HIGHLIGHT_MS;
         const value = isCounter ? '<span class="text-muted">··</span>' : v.toString(16).padStart(2, '0');
-        cells.push(`<span style="display:inline-block; min-width:2.6em; text-align:center;${hot ? ' background:#ffe08a; border-radius:3px;' : ''}"><span class="text-muted" style="font-size:0.7em;">${i}</span><br>${value}</span>`);
+        cells.push(`<span class="vr2-raw-cell${hot ? ' vr2-raw-hot' : ''}"><span class="text-muted" style="font-size:0.7em;">${i}</span><br>${value}</span>`);
       }
       el.innerHTML = cells.join('');
     }

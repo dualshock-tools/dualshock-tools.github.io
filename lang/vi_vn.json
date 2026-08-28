@@ -312,6 +312,7 @@
     "Clear All": "",
     "Click": "",
     "Click \"Test Speaker\" to listen for the tone through the headphones": "",
+    "Copy": "",
     "Current": "",
     "Delete": "",
     "Delete all calibration history for this controller? This cannot be undone.": "",
@@ -346,6 +347,7 @@
     "PlayStation Virtual Reality 2": "",
     "Please connect a DualShock 4, a DualSense, DualSense Edge or VR2 controller to your computer and press Connect.": "",
     "Please use a web browser with WebHID support (e.g. Google Chrome or Microsoft Edge) on a PC or Mac.": "",
+    "Raw input report": "",
     "Restore": "",
     "Restore calibration": "",
     "Roll": "",
@@ -368,6 +370,7 @@
     "This utility cannot fix stick drift.": "",
     "This video from V2.16 shows how to use the finetuning menu.": "",
     "Total": "",
+    "Touch and click are shown in different colors:": "",
     "Two fingers": "",
     "Unsupported browser.": "",
     "Use expert mode": "",
@@ -387,6 +390,8 @@
     "You should save your changes, or reboot the controller to revert back to the previous state.": "",
     "at rest": "",
     "auto-zeroed at rest": "",
+    "click": "",
     "serial number": "",
+    "touch": "",
     "": ""
 }

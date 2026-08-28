@@ -338,6 +338,7 @@
     "Can I restore a previous calibration?": "",
     "Click": "",
     "Click \"Test Speaker\" to listen for the tone through the headphones": "",
+    "Copy": "",
     "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "",
     "Finetuning is only available for DualSense and DualSense Edge.": "",
     "Genshin Impact Limited Edition": "",
@@ -361,6 +362,7 @@
     "Option 2": "",
     "Pitch": "",
     "PlayStation Virtual Reality 2": "",
+    "Raw input report": "",
     "Roll": "",
     "Rotate the controller a full turn around each axis until every check turns green.": "",
     "Saving calibration is locked by default on DualSense Edge joystick modules. A hardware mod is required to save the calibration permanently. The calibration is saved on the modules themselves, so you have to perform the mod twice: once for each module. You would need to bridge two points on the PCB with enamelled wire. There are multiple methods, I personally recommend using either of these two locations to solder the wire to. See images below. Ensure the wire is thin enough so that the shell is closed properly. Make sure you don't short the wire to ground through the letters near the bottom joint.": "",
@@ -377,6 +379,7 @@
     "This test will play a tone through the controller's built-in speaker.": "",
     "This video from V2.16 shows how to use the finetuning menu.": "",
     "Total": "",
+    "Touch and click are shown in different colors:": "",
     "Two fingers": "",
     "We recommend a circularity between 7% and 9%. The reason for this is to mimic a stock controllers calibration. However, symmetrical overshoot is more important and if you need to deviate from this range to achieve better symmetry, that is fine too.": "",
     "What are the risks of using the calibration?": "",
@@ -388,5 +391,7 @@
     "Yes. Simply do another calibration, and click the green button to save permanently.": "",
     "at rest": "",
     "auto-zeroed at rest": "",
+    "click": "",
+    "touch": "",
     "": ""
 }

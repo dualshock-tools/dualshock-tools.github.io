@@ -388,5 +388,10 @@
     "Movement": "Movimento",
     "This test checks the trackpad's touch tracking, two-finger detection, and click.": "Questo test controlla il touch del trackpad, riconoscimento delle due dita e click.",
     "Two fingers": "Due dita",
+    "Copy": "",
+    "Raw input report": "",
+    "Touch and click are shown in different colors:": "",
+    "click": "",
+    "touch": "",
     "": ""
 }

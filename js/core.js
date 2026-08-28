@@ -226,7 +226,8 @@ async function continue_connection({data, device}) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
-      $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
+      // d-none beats the element's d-flex (both !important); a plain .hide() would not
+      $("#quick-tests-div").toggleClass("d-none", !showQuickTests);
       $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-center-calib").toggle(!!showQuickCalib);
       $("#quick-center-calib-group").toggle(!!showQuickCalib);
@@ -555,10 +556,10 @@ function init_vr2_button_panel(svgContainer) {
     .join('');
 
   svgContainer.innerHTML = `
-    <div class="card mt-3">
+    <div class="card text-start mt-3">
       <div class="card-header"><i class="fas fa-hand-pointer"></i>&nbsp;&nbsp;<span>${l('Buttons')}</span></div>
       <div class="card-body">
-        <p class="text-muted mb-2">
+        <p class="text-muted mb-3">
           ${l('Touch and click are shown in different colors:')}
           <span class="vr2-btn badge rounded-pill touched">${l('touch')}</span>
           <span class="vr2-btn badge rounded-pill pressed">${l('click')}</span>
@@ -659,7 +660,11 @@ function update_vr2_button_panel(changes) {
 
 async function init_svg_controller(model) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
-const colorMode = Storage.preferredTheme.get();
+  const colorMode = Storage.preferredTheme.get();
+
+  // The container insets the controller drawing with side margins; the VR2
+  // panel is a card and should line up with the Controller Info card above
+  $('#controller-svg-container').toggleClass('mx-3', model !== 'VR2');
 
   // No SVG art for VR2 controllers; show the button panel and bail out
   // before the asset fetch (fetching an undefined filename would get the

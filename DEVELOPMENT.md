@@ -17,7 +17,7 @@ npm install
 npm run dev:full
 ```
 
-Open `https://localhost:8443` in your browser (accept the SSL certificate warning).
+Open `http://localhost:8080` in your browser (Chrome or Edge). WebHID works over HTTP on `localhost`. To reach the app from another device, use `npm run serve:https` and open `https://localhost:8443` (accept the self-signed certificate warning).
 
 ## Available Scripts
 
@@ -26,9 +26,9 @@ Open `https://localhost:8443` in your browser (accept the SSL certificate warnin
 | `npm run build`       | Build for development (with source maps)                  |
 | `npm run build:prod`  | Build for production (minified, optimized)                |
 | `npm run clean`       | Clean the dist directory                                  |
-| `npm run serve:https` | Serve built app over HTTPS (required for WebHID)          |
-| `npm run serve`       | Serve built app over HTTP (WebHID won't work)             |
-| `npm run start`       | Build and serve over HTTPS                                |
+| `npm run serve`       | Serve built app over HTTP at `localhost:8080` (WebHID works on localhost)   |
+| `npm run serve:https` | Serve built app over HTTPS at `localhost:8443` (needed for other devices)   |
+| `npm run start`       | Build and serve over HTTP at `localhost:8080`             |
 | `npm run dev:full`    | **Recommended**: Build, watch, and serve with auto-reload |
 | `npm run watch`       | Watch files and rebuild on changes                        |
 
@@ -44,7 +44,7 @@ This starts the complete development environment:
 
 - Builds the application
 - Watches for file changes
-- Serves over HTTPS at `https://localhost:8443`
+- Serves over HTTP at `http://localhost:8080`
 - Automatically rebuilds when you save files
 
 ### For Testing Built Version
@@ -55,11 +55,21 @@ npm run start
 
 This builds once and serves the result.
 
+### Docker
+
+To build and run without installing Node:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8080`. The container builds the production bundle and serves it over HTTP; WebHID still works because the browser sees `localhost`, which is a secure context. (Docker on Windows/macOS is fine here — the controller talks to the browser, not the container.)
+
 ## Important Notes
 
-### HTTPS Requirement
+### WebHID & HTTPS
 
-The WebHID API requires HTTPS. The development server uses self-signed certificates located at:
+The WebHID API requires a secure context. `localhost` counts as secure, so the default HTTP server (`http://localhost:8080`) works for local development without any certificates. HTTPS is only needed to reach the app from another device on your network — `npm run serve:https` serves over `https://localhost:8443` using self-signed certificates located at:
 
 - `server.crt` - SSL certificate
 - `server.key` - SSL private key
@@ -137,7 +147,7 @@ openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -days 365 
 
 ### WebHID Not Working
 
-1. Make sure you're using HTTPS (`npm run serve:https`)
-2. Use Chrome or Edge browser
-3. Accept the SSL certificate warning
+1. Use Chrome or Edge browser (Firefox and Safari don't support WebHID)
+2. Open the app via `localhost` (a secure context) — `http://localhost:8080` is fine
+3. When accessing from another device, use `npm run serve:https` and accept the SSL certificate warning
 4. Check browser console for errors

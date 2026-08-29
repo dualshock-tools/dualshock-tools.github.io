@@ -55,15 +55,28 @@ If you use [nvm](https://github.com/nvm-sh/nvm), run `nvm install && nvm use` in
    npm run start
    ```
 
-   The app will be available at `https://localhost:8443`
+   The app will be available at `http://localhost:8080`. WebHID works here because
+   `localhost` is treated as a secure context. To access the app from another device
+   on your network, use `npm run serve:https` instead (`https://localhost:8443`) — WebHID
+   requires HTTPS for non-localhost origins.
+
+### Docker
+
+Alternatively, build and run without installing Node:
+
+```bash
+docker compose up --build
+```
+
+The app is then available at `http://localhost:8080`.
 
 ### Development Scripts
 
 - `npm run build` - Build the application for development
 - `npm run build:prod` - Build the application for production
 - `npm run clean` - Clean the dist directory
-- `npm run serve:https` - Serve the built app over HTTPS (required for WebHID)
-- `npm run serve` - Serve the built app over HTTP (WebHID won't work)
+- `npm run serve` - Serve the built app over HTTP at `http://localhost:8080` (WebHID works on localhost)
+- `npm run serve:https` - Serve the built app over HTTPS at `https://localhost:8443` (required for WebHID from other devices)
 - `npm run start` - Build and serve the app
 - `npm run dev:full` - Build, watch for changes, and serve with auto-reload
 - `npm run watch` - Watch for file changes and rebuild
@@ -80,12 +93,12 @@ This will:
 
 1. Build the application
 2. Start watching for file changes
-3. Serve the app over HTTPS at `https://localhost:8443`
+3. Serve the app over HTTP at `http://localhost:8080`
 4. Automatically rebuild when files change
 
 ### Important Notes
 
-- **HTTPS Required**: The WebHID API requires HTTPS. The development server uses self-signed certificates.
+- **WebHID & HTTPS**: WebHID requires a secure context. `localhost` counts as secure, so the default HTTP server (`http://localhost:8080`) works for local development. To reach the app from another device you need HTTPS — use `npm run serve:https`, which serves over `https://localhost:8443` with self-signed certificates.
 - **Browser Security**: You may need to accept the self-signed certificate warning in your browser.
 - **Controller Support**: Only works in browsers with WebHID support (Chrome, Edge, Opera).
 

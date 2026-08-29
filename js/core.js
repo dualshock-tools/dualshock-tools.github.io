@@ -197,6 +197,18 @@ async function connect() {
 
     la("connect", {"p": device.productId, "v": device.vendorId});
     device.oninputreport = continue_connection; // continue below
+
+    // The DS3 stays silent until it is set operational (a read of feature
+    // report 0xF2) and then woken with the PS button; only then does it send
+    // input reports and trigger continue_connection.
+    if (device.productId === 0x0268) {
+      try {
+        await device.receiveFeatureReport(0xf2);
+      } catch (e) {
+        console.warn('DS3: 0xF2 operational read failed:', e);
+      }
+      infoAlert(l("Press the PS button on the DualShock 3 to continue."));
+    }
   } catch(error) {
     $("#btnconnect").prop("disabled", false);
     $("#connectspinner").hide();
@@ -212,9 +224,11 @@ async function continue_connection({data, device}) {
       return;
     }
 
-    // Detect if the controller is connected via USB
+    // Detect if the controller is connected via USB. The DS3 is USB-only in
+    // this tool and has a different report length, so it is exempt from the
+    // 63-byte check (which distinguishes USB from Bluetooth on DS4/DS5).
     const reportLen = data.byteLength;
-    if(reportLen != 63) {
+    if(device.productId !== 0x0268 && reportLen != 63) {
       // throw new Error(l("Please connect the device using a USB cable."));
       infoAlert(l("The device is connected via Bluetooth. Disconnect and reconnect using a USB cable instead."));
       await disconnect();
@@ -222,7 +236,7 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory }) {
+    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory, showRangeCalib, showSaveReboot }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
@@ -232,6 +246,8 @@ async function continue_connection({data, device}) {
       $("#quick-center-calib").toggle(!!showQuickCalib);
       $("#quick-center-calib-group").toggle(!!showQuickCalib);
       $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
+      $("#range-calib-group").toggle(!!showRangeCalib);
+      $("#savechanges").toggle(!!showSaveReboot);
     }
 
     let controllerInstance = null;
@@ -275,7 +291,7 @@ async function continue_connection({data, device}) {
     $("#offlinebar").hide();
     $("#onlinebar").show();
     $("#mainmenu").show();
-    $("#resetBtn").show();
+    $("#resetBtn").toggle(!!ui.showSaveReboot);
     $("#aboutdrift").hide();
 
     $("#d-nvstatus").text = l("Unknown");
@@ -581,23 +597,21 @@ function init_vr2_button_panel(svgContainer) {
     </div>
   `;
 
-  start_vr2_raw_monitor();
+  start_raw_report_monitor({ hexId: 'vr2-raw-hex', copyId: 'vr2-raw-copy', counterBytes: [6, 11] });
 }
 
-// Live raw-report hex view for the VR2 panel: bytes that changed within the
-// last few hundred ms are highlighted, making it easy to identify which
-// byte/bit a physical control maps to
-function start_vr2_raw_monitor() {
+// Live raw-report hex view: bytes that changed within the last few hundred ms
+// are highlighted, making it easy to identify which byte/bit a physical
+// control maps to. Known counter bytes are shown muted so they don't drown
+// out the interesting ones. Shared by the VR2 and DS3 button panels.
+function start_raw_report_monitor({ hexId, copyId, counterBytes = [] }) {
   const MAX_BYTES = 128;
   const HIGHLIGHT_MS = 400;
-  // Known counter bytes on the VR2 (always incrementing): shown muted with
-  // no highlight. Byte 12 also counts, but slowly enough to stay readable.
-  const COUNTER_BYTES = [6, 11];
   const prev = new Array(MAX_BYTES).fill(-1);
   const changedAt = new Array(MAX_BYTES).fill(0);
 
   // Copy the latest report as hex text for sharing/analysis
-  document.getElementById('vr2-raw-copy')?.addEventListener('click', (event) => {
+  document.getElementById(copyId)?.addEventListener('click', (event) => {
     event.preventDefault();
     const data = controller?.lastRawInput;
     if (!data) return;
@@ -613,7 +627,7 @@ function start_vr2_raw_monitor() {
   });
 
   const render = () => {
-    const el = document.getElementById('vr2-raw-hex');
+    const el = document.getElementById(hexId);
     if (!el || !controller) return; // Panel removed or disconnected; stop the loop
 
     const data = controller.lastRawInput;
@@ -626,7 +640,7 @@ function start_vr2_raw_monitor() {
           prev[i] = v;
           changedAt[i] = now;
         }
-        const isCounter = COUNTER_BYTES.includes(i);
+        const isCounter = counterBytes.includes(i);
         const hot = !isCounter && now - changedAt[i] < HIGHLIGHT_MS;
         const value = isCounter ? '<span class="text-muted">··</span>' : v.toString(16).padStart(2, '0');
         cells.push(`<span class="vr2-raw-cell${hot ? ' vr2-raw-hot' : ''}"><span class="text-muted" style="font-size:0.7em;">${i}</span><br>${value}</span>`);
@@ -678,6 +692,8 @@ async function init_svg_controller(model) {
   const svgFileName = (() => {
     switch(model) {
       case 'DS4':
+        return 'dualshock-controller.svg';
+      case 'DS3': // DS3 shares the DualShock 4 controller artwork
         return 'dualshock-controller.svg';
       case 'DS5':
         return 'dualsense-controller.svg';

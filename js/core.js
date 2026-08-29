@@ -233,7 +233,7 @@ async function continue_connection({data, device}) {
     }
 
     // Helper to apply basic UI visibility based on device type
-    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory }) {
+    function applyDeviceUI({ showInfo, showFinetune, showInfoTab, showQuickTests, showFourStepCalib, showQuickCalib, showCalibrationHistory, showShortcutsTab }) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
@@ -243,6 +243,7 @@ async function continue_connection({data, device}) {
       $("#quick-center-calib").toggle(!!showQuickCalib);
       $("#quick-center-calib-group").toggle(!!showQuickCalib);
       $("#restore-calibration-btn").toggle(!!showCalibrationHistory);
+      $("#shortcuts-tab").toggle(!!showShortcutsTab);
     }
 
     let controllerInstance = null;
@@ -1168,8 +1169,10 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
         finetune_handle_controller_input(changes);
       } else {
         // L1 combos: square/circle step through the display modes, triangle
-        // starts the full calibration sequence, cross saves pending changes
-        if (controller.button_states.l1) {
+        // starts the full calibration sequence, cross saves pending changes.
+        // Not on VR2: a left Sense controller carries L1 together with square
+        // and triangle, so the combos would misfire during normal use.
+        if (controller.button_states.l1 && controller.getModel() !== 'VR2') {
           if (changes.square === true) {
             stepDisplayMode(-1);
           } else if (changes.circle === true) {

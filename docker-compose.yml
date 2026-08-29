@@ -1,0 +1,6 @@
+services:
+  app:
+    build: .
+    ports:
+      # Host port is configurable: PORT=9090 docker compose up
+      - "${PORT:-8080}:80"

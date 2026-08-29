@@ -1,8 +1,15 @@
 # Development Guide
 
+## Requirements
+
+- **Node.js v20 or higher** (v26 recommended). The build toolchain (Gulp 5, Rollup 4, yargs-parser) requires Node 20+; older versions fail with a WASM allocation crash or a `yargs-parser` version error. With [nvm](https://github.com/nvm-sh/nvm), run `nvm install && nvm use` to pick up the pinned version from `.nvmrc`.
+
 ## Quick Start
 
 ```bash
+# Use the pinned Node version (requires nvm)
+nvm install && nvm use
+
 # Install dependencies
 npm install
 

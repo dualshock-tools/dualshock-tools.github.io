@@ -101,7 +101,7 @@ This will:
 ### Project Structure
 
 - `js/` - Source JavaScript files
-- `css/` - Source CSS files
+- `scss/` - Source SCSS files
 - `templates/` - HTML template files
 - `lang/` - Translation files
 - `assets/` - SVG assets
@@ -112,7 +112,7 @@ This will:
 The project uses Gulp for building:
 
 - JavaScript bundling with Rollup
-- CSS concatenation and minification
+- SCSS concatenation and minification
 - HTML processing and minification
 - Asset optimization
 - Development vs production builds

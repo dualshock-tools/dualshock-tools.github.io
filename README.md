@@ -101,7 +101,7 @@ This will:
 ### Project Structure
 
 - `js/` - Source JavaScript files
-- `scss/` - Source CSS files
+- `scss/` - Source SCSS files
 - `templates/` - HTML template files
 - `lang/` - Translation files
 - `assets/` - SVG assets

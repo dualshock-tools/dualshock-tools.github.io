@@ -206,12 +206,17 @@ async function connect() {
 }
 
 async function continue_connection({data, device}) {
-  try {
-    if (!controller || controller.isConnected()) {
-      device.oninputreport = null;  // this function is called repeatedly if not cleared
-      return;
-    }
+  // Re-entry guard, outside the try below: input reports keep arriving while
+  // the async setup runs (seconds for a clone, whose getInfo probe is slow).
+  // A re-entrant call must return without running the finally, which would
+  // otherwise hide the connect spinner before the first call has revealed the
+  // main screen.
+  if (!controller || controller.isConnected()) {
+    device.oninputreport = null;  // this function is called repeatedly if not cleared
+    return;
+  }
 
+  try {
     // Detect if the controller is connected via USB
     const reportLen = data.byteLength;
     if(reportLen != 63) {
@@ -226,7 +231,8 @@ async function continue_connection({data, device}) {
       $("#infoshowall").toggle(!!showInfo);
       $("#ds5finetune").toggle(!!showFinetune);
       $("#info-tab").toggle(!!showInfoTab);
-      $("#quick-tests-div").css("visibility", showQuickTests ? "visible" : "hidden");
+      // d-none beats the element's d-flex (both !important); a plain .hide() would not
+      $("#quick-tests-div").toggleClass("d-none", !showQuickTests);
       $("#four-step-center-calib").toggle(!!showFourStepCalib);
       $("#quick-center-calib").toggle(!!showQuickCalib);
       $("#quick-center-calib-group").toggle(!!showQuickCalib);
@@ -235,6 +241,7 @@ async function continue_connection({data, device}) {
 
     let controllerInstance = null;
     let info = null;
+    let isClone = false;
 
     try {
       // Create controller instance using factory
@@ -242,9 +249,12 @@ async function continue_connection({data, device}) {
       controller.setControllerInstance(controllerInstance);
 
       info = await controllerInstance.getInfo();
+      isClone = (info?.disable_bits & 1) !== 0;
 
-      // Initialize output state for DS5 controllers
-      if (controllerInstance.initializeCurrentOutputState) {
+      // Initialize output state (lights/rumble defaults). Skip for clones:
+      // they don't handle the output report and the send would hang until
+      // the USB timeout, and their calibration is disabled anyway.
+      if (!isClone && controllerInstance.initializeCurrentOutputState) {
         await controllerInstance.initializeCurrentOutputState();
       }
     } catch (error) {
@@ -295,11 +305,23 @@ async function continue_connection({data, device}) {
 
     const model = controllerInstance.getModel();
 
+    // Serial number is best-effort: clones don't answer the report it reads
+    // (skip them to avoid the timeout), and a missing serial must not abort
+    // the whole connection.
+    let serialNumber = null;
+    if (!isClone) {
+      try {
+        serialNumber = await controllerInstance.getSerialNumber();
+      } catch (e) {
+        console.warn('Could not read serial number:', e);
+      }
+    }
+
     // Save controller info to local storage
     const lastConnectedInfo = {
       deviceName: deviceName,
       timestamp: new Date().toISOString(),
-      serialNumber: await controllerInstance.getSerialNumber(),
+      serialNumber: serialNumber,
     };
 
     // Extract info from infoItems
@@ -321,6 +343,10 @@ async function continue_connection({data, device}) {
     if (model === "DS5_Edge") {
       update_stop_sliders(controller.button_states);
     }
+
+    // Redraw the stick diagrams now that the stick count is known; the
+    // earlier draw during connect() defaulted to two sticks
+    refresh_stick_pos();
 
     // Edge-specific: pending reboot check (from nv)
     if (model == "DS5_Edge" && info?.pending_reboot) {
@@ -512,9 +538,163 @@ function welcome_accepted() {
   $("#welcomeModal").modal("hide");
 }
 
+// One panel pill per physical control: `press` is the click bit and `touch`
+// the capacitive bit merged into the same pill (touch = light blue, click =
+// dark blue)
+const VR2_PANEL_CONTROLS_LEFT = [
+  { id: 'triangle', label: 'Triangle', press: 'triangle', touch: 'touchTriangle' },
+  { id: 'square', label: 'Square', press: 'square', touch: 'touchSquare' },
+  { id: 'grip', label: 'L1 (grip)', press: 'l1', touch: 'touchGrip' },
+  { id: 'trigger', label: 'L2 (trigger)', press: 'l2', touch: 'touchTrigger' },
+  { id: 'stick', label: 'L3 (stick)', press: 'l3', touch: 'touchStick' },
+  { id: 'create', label: 'Create', press: 'create' },
+];
+
+const VR2_PANEL_CONTROLS_RIGHT = [
+  { id: 'circle', label: 'Circle', press: 'circle', touch: 'touchCircle' },
+  { id: 'cross', label: 'Cross', press: 'cross', touch: 'touchCross' },
+  { id: 'grip', label: 'R1 (grip)', press: 'r1', touch: 'touchGrip' },
+  { id: 'trigger', label: 'R2 (trigger)', press: 'r2', touch: 'touchTrigger' },
+  { id: 'stick', label: 'R3 (stick)', press: 'r3', touch: 'touchStick' },
+  { id: 'options', label: 'Options', press: 'options' },
+  { id: 'ps', label: 'PS', press: 'ps' },
+];
+
+let vr2PanelControls = null;
+
+// VR2 controllers have no SVG art; show a live button-press panel instead
+function init_vr2_button_panel(svgContainer) {
+  const isLeft = controller.currentController.isLeft;
+  vr2PanelControls = isLeft ? VR2_PANEL_CONTROLS_LEFT : VR2_PANEL_CONTROLS_RIGHT;
+
+  // The trigger pill sits next to the analog travel bar; all other pills
+  // go into the wrapping button row
+  const badge = ({ id, label }) => `<span class="vr2-btn badge rounded-pill" id="vr2-btn-${id}">${label}</span>`;
+  const trigger = vr2PanelControls.find(control => control.id === 'trigger');
+  const badges = vr2PanelControls
+    .filter(control => control.id !== 'trigger')
+    .map(badge)
+    .join('');
+
+  svgContainer.innerHTML = `
+    <div class="card text-start mt-3">
+      <div class="card-header"><i class="fas fa-hand-pointer"></i>&nbsp;&nbsp;<span>${l('Buttons')}</span></div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          ${l('Touch and click are shown in different colors:')}
+          <span class="vr2-btn badge rounded-pill touched">${l('touch')}</span>
+          <span class="vr2-btn badge rounded-pill pressed">${l('click')}</span>
+        </p>
+        <div class="d-flex flex-wrap gap-2 mb-3" id="vr2-buttons">${badges}</div>
+        <div class="d-flex align-items-center gap-2">
+          ${badge(trigger)}
+          <div class="progress flex-grow-1" style="height: 12px;">
+            <div class="progress-bar" id="vr2-trigger-bar" style="width: 0%"></div>
+          </div>
+        </div>
+        <details class="mt-3">
+          <summary class="text-muted">${l('Raw input report')}
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2 py-0" id="vr2-raw-copy">${l('Copy')}</button>
+          </summary>
+          <div class="font-monospace small mt-2" id="vr2-raw-hex"></div>
+        </details>
+      </div>
+    </div>
+  `;
+
+  start_vr2_raw_monitor();
+}
+
+// Live raw-report hex view for the VR2 panel: bytes that changed within the
+// last few hundred ms are highlighted, making it easy to identify which
+// byte/bit a physical control maps to
+function start_vr2_raw_monitor() {
+  const MAX_BYTES = 128;
+  const HIGHLIGHT_MS = 400;
+  // Known counter bytes on the VR2 (always incrementing): shown muted with
+  // no highlight. Byte 12 also counts, but slowly enough to stay readable.
+  const COUNTER_BYTES = [6, 11];
+  const prev = new Array(MAX_BYTES).fill(-1);
+  const changedAt = new Array(MAX_BYTES).fill(0);
+
+  // Copy the latest report as hex text for sharing/analysis
+  document.getElementById('vr2-raw-copy')?.addEventListener('click', (event) => {
+    event.preventDefault();
+    const data = controller?.lastRawInput;
+    if (!data) return;
+    const lines = [];
+    for (let row = 0; row < data.byteLength; row += 16) {
+      const bytes = [];
+      for (let i = row; i < Math.min(row + 16, data.byteLength); i++) {
+        bytes.push(data.getUint8(i).toString(16).padStart(2, '0'));
+      }
+      lines.push(`${String(row).padStart(2, ' ')}: ${bytes.join(' ')}`);
+    }
+    navigator.clipboard.writeText(lines.join('\n'));
+  });
+
+  const render = () => {
+    const el = document.getElementById('vr2-raw-hex');
+    if (!el || !controller) return; // Panel removed or disconnected; stop the loop
+
+    const data = controller.lastRawInput;
+    if (data) {
+      const now = performance.now();
+      const cells = [];
+      for (let i = 0; i < Math.min(MAX_BYTES, data.byteLength); i++) {
+        const v = data.getUint8(i);
+        if (v !== prev[i]) {
+          prev[i] = v;
+          changedAt[i] = now;
+        }
+        const isCounter = COUNTER_BYTES.includes(i);
+        const hot = !isCounter && now - changedAt[i] < HIGHLIGHT_MS;
+        const value = isCounter ? '<span class="text-muted">··</span>' : v.toString(16).padStart(2, '0');
+        cells.push(`<span class="vr2-raw-cell${hot ? ' vr2-raw-hot' : ''}"><span class="text-muted" style="font-size:0.7em;">${i}</span><br>${value}</span>`);
+      }
+      el.innerHTML = cells.join('');
+    }
+    requestAnimationFrame(render);
+  };
+  requestAnimationFrame(render);
+}
+
+// Reflect VR2 button presses and trigger travel in the button panel
+function update_vr2_button_panel(changes) {
+  if (!vr2PanelControls) return;
+
+  // Pills reflect the full current state: click wins over touch
+  const states = controller.button_states;
+  vr2PanelControls.forEach(({ id, press, touch }) => {
+    const pill = document.getElementById(`vr2-btn-${id}`);
+    if (!pill) return;
+    const isPressed = !!states[press];
+    pill.classList.toggle('pressed', isPressed);
+    pill.classList.toggle('touched', !isPressed && !!(touch && states[touch]));
+  });
+
+  const analog = changes.l2_analog ?? changes.r2_analog;
+  if (analog !== undefined) {
+    $('#vr2-trigger-bar').css('width', `${Math.round(analog / 255 * 100)}%`);
+  }
+}
+
 async function init_svg_controller(model) {
   const svgContainer = document.getElementById('controller-svg-placeholder');
   const colorMode = Storage.preferredTheme.get();
+
+  // The container insets the controller drawing with side margins; the VR2
+  // panel is a card and should line up with the Controller Info card above
+  $('#controller-svg-container').toggleClass('mx-3', model !== 'VR2');
+
+  // No SVG art for VR2 controllers; show the button panel and bail out
+  // before the asset fetch (fetching an undefined filename would get the
+  // dev server's SPA fallback: index.html nested inside the placeholder)
+  if (model === 'VR2') {
+    init_vr2_button_panel(svgContainer);
+    return;
+  }
+
   // Determine which SVG to load based on controller model
   const svgFileName = (() => {
     switch(model) {
@@ -524,10 +704,6 @@ async function init_svg_controller(model) {
         return 'dualsense-controller.svg';
       case 'DS5_Edge':
         return 'ds-edge-controller.svg';
-      case 'VR2':
-        // Disable SVG controller for VR2
-        svgContainer.innerHTML = '';
-        return;
       default:
         throw new Error(`Unknown controller model: ${model}`);
     }
@@ -932,7 +1108,7 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
 
   // Handle Quick Test Modal input (can be open from any tab)
   if (isQuickTestVisible()) {
-    quicktest_handle_controller_input(changes, batteryStatus);
+    quicktest_handle_controller_input(changes, batteryStatus, touchPoints);
     return;
   }
 
@@ -944,7 +1120,11 @@ function handleControllerInput({ changes, inputConfig, touchPoints, batteryStatu
         finetune_handle_controller_input(changes);
       } else {
         update_stick_graphics(changes);
-        update_ds_button_svg(changes, buttonMap);
+        if (controller.getModel() === 'VR2') {
+          update_vr2_button_panel(changes);
+        } else {
+          update_ds_button_svg(changes, buttonMap);
+        }
         update_touchpad_circles(touchPoints);
         update_stop_sliders(changes);
         detectFailedRangeCalibration(changes);

@@ -50,6 +50,7 @@ EXCLUDE_PATTERNS = [
     r'^[\w-]+\.[\w-]+$',  # CSS compound selectors like circle.ds-touch
     r'^path,rect,circle',  # SVG element lists
     r'^\\x[0-9a-fA-F]+$',  # Hex escape sequences
+    r'^[\x00-\x1f]+$',  # Decoded control characters (e.g. '\x00' padding)
 ]
 
 # Whitelist of strings that are in language files but should be ignored by unused check
@@ -113,6 +114,54 @@ def should_exclude_string(text):
         if re.match(pattern, text):
             return True
     return False
+
+# Matches a complete JavaScript string literal, honoring backslash escapes and
+# requiring the closing quote to match the opening one. This lets strings such as
+# l('the controller\'s touchpad') or l("the controller's touchpad") be captured
+# in full instead of being cut off (or skipped) at the embedded quote.
+# Groups 1/2/3 hold the raw body for double-, single- and backtick-quoted literals.
+JS_STRING_LITERAL = (
+    r'(?:"((?:[^"\\\n]|\\.)*)"'
+    r"|'((?:[^'\\\n]|\\.)*)'"
+    r'|`((?:[^`\\]|\\[\s\S])*)`)'
+)
+
+# l("string"), l('string'), l(`string`) and this.l(...)
+# Use word boundary \b to ensure 'l' is not part of a larger word (e.g., .html)
+L_CALL_PATTERN = r'(?:this\.)?\bl\s*\(\s*' + JS_STRING_LITERAL + r'\s*\)'
+
+# ${l('string')} inside template literals
+TEMPLATE_L_CALL_PATTERN = r'\$\{l\s*\(\s*' + JS_STRING_LITERAL + r'\s*\)\}'
+
+_SIMPLE_JS_ESCAPES = {
+    'n': '\n', 't': '\t', 'r': '\r', 'b': '\b', 'f': '\f', 'v': '\v', '0': '\0',
+}
+
+def unescape_js_string(raw):
+    """Decode backslash escapes in a raw JavaScript string body.
+
+    The translation key is the value the string has at runtime, so \\' becomes ',
+    \\" becomes ", \\\\ becomes \\, and \\xNN / \\uNNNN become the corresponding characters.
+    """
+    def replace(match):
+        esc = match.group(1)
+        if esc[0] == 'x':
+            return chr(int(esc[1:], 16))
+        if esc[0] == 'u':
+            return chr(int(esc[1:].strip('{}'), 16))
+        if esc == '\n':
+            return ''  # line continuation
+        return _SIMPLE_JS_ESCAPES.get(esc, esc)  # \' \" \` \\ and unknown escapes → the char itself
+
+    return re.sub(r'\\(x[0-9a-fA-F]{2}|u\{[0-9a-fA-F]+\}|u[0-9a-fA-F]{4}|\n|.)', replace, raw, flags=re.DOTALL)
+
+def js_string_from_match(match, first_group=1):
+    """Return the unescaped string from whichever quote-style group matched."""
+    for group in range(first_group, first_group + 3):
+        raw = match.group(group)
+        if raw is not None:
+            return unescape_js_string(raw)
+    return None
 
 def find_html_files():
     """Find all HTML files in the project."""
@@ -193,10 +242,9 @@ def extract_l_function_strings(js_files):
     """
     strings = {}  # Changed to dict to track locations
 
-    # Pattern to match l("string") or l('string') or this.l("string") or this.l('string')
-    # Handles both single and double quotes
-    # Use word boundary \b to ensure 'l' is not part of a larger word (e.g., .html)
-    pattern = r'(?:this\.)?\bl\s*\(\s*["\'`]([^"\'`]+)["\'`]\s*\)'
+    # Pattern to match l("string") or l('string') or this.l("string") or this.l('string'),
+    # including strings that contain escaped quotes such as l('the controller\'s touchpad')
+    pattern = L_CALL_PATTERN
 
     for js_file in js_files:
         try:
@@ -212,7 +260,7 @@ def extract_l_function_strings(js_files):
                 # Find all matches
                 matches = re.finditer(pattern, content)
                 for match in matches:
-                    text = match.group(1)
+                    text = js_string_from_match(match)
                     if text:
                         # Calculate line and column number
                         line_num = content[:match.start()].count('\n') + 1
@@ -244,8 +292,9 @@ def extract_html_strings_from_js(js_files):
     # This handles HTML within JavaScript strings (both single and double quotes)
     pattern = r'<(\w+)[^>]*class=["\'`][^"\'`]*ds-i18n[^"\'`]*["\'`][^>]*>(.*?)</\1>'
 
-    # Pattern to match template literal function calls like ${l('string')} or ${l("string")}
-    template_literal_pattern = r'\$\{l\s*\(\s*["\'`]([^"\'`]+)["\'`]\s*\)\}'
+    # Pattern to match template literal function calls like ${l('string')} or ${l("string")},
+    # including strings that contain escaped quotes
+    template_literal_pattern = TEMPLATE_L_CALL_PATTERN
 
     for js_file in js_files:
         try:
@@ -279,7 +328,7 @@ def extract_html_strings_from_js(js_files):
                         # Extract any template literal function calls like ${l('string')}
                         template_matches = re.finditer(template_literal_pattern, text)
                         for template_match in template_matches:
-                            extracted_string = template_match.group(1)
+                            extracted_string = js_string_from_match(template_match)
                             if extracted_string:
                                 # Calculate line and column number using original content
                                 line_num = original_content[:match.start()].count('\n') + 1
@@ -353,80 +402,71 @@ def load_translation_keys():
 
     return all_keys, keys_by_language
 
-def main():
-    if not JSON_OUTPUT:
-        print("=" * 80)
-        print("Translation String Checker")
-        print("=" * 80)
-        print()
+def analyze(log=None):
+    """Scan the source files and language files and compare them.
+
+    Args:
+        log: optional callable used to print progress messages (nothing is printed when None)
+
+    Returns:
+        dict with the scan results, including:
+            - used_strings: set of translatable strings found in code
+            - used_strings_with_locations: dict string → list of {file, line, col}
+            - excluded_strings: strings skipped as non-translatable
+            - translation_keys: set of keys found in the language files (special keys removed)
+            - keys_by_language: dict language code → set of keys (special keys removed)
+            - missing_translations: strings used in code but absent from the language files
+            - missing_by_language: dict string → sorted list of languages missing it
+            - unused_translations: keys no longer used in code (whitelist excluded)
+    """
+    log = log or (lambda *args, **kwargs: None)
 
     # Find all source files
-    if not JSON_OUTPUT:
-        print("Scanning source files...")
+    log("Scanning source files...")
     html_files = find_html_files()
     js_files = find_js_files()
-
-    if not JSON_OUTPUT:
-        print(f"Found {len(html_files)} HTML files")
-        print(f"Found {len(js_files)} JavaScript files")
-        print()
+    log(f"Found {len(html_files)} HTML files")
+    log(f"Found {len(js_files)} JavaScript files")
+    log()
 
     # Extract strings from source files
-    if not JSON_OUTPUT:
-        print("Extracting translation strings from source files...")
+    log("Extracting translation strings from source files...")
     ds_i18n_strings = extract_ds_i18n_strings(html_files)
     l_function_strings = extract_l_function_strings(js_files)
     html_in_js_strings = extract_html_strings_from_js(js_files)
-
-    if not JSON_OUTPUT:
-        print(f"Found {len(ds_i18n_strings)} strings with ds-i18n class in HTML files")
-        print(f"Found {len(l_function_strings)} strings in l() function calls")
-        print(f"Found {len(html_in_js_strings)} strings with ds-i18n class in JavaScript files")
-        print()
+    log(f"Found {len(ds_i18n_strings)} strings with ds-i18n class in HTML files")
+    log(f"Found {len(l_function_strings)} strings in l() function calls")
+    log(f"Found {len(html_in_js_strings)} strings with ds-i18n class in JavaScript files")
+    log()
 
     # Combine all used strings and filter out excluded patterns
     # Merge the three dictionaries, combining location lists for duplicate strings
     all_used_strings_with_locations = {}
-    for text, locations in ds_i18n_strings.items():
-        all_used_strings_with_locations[text] = locations.copy()
-    for text, locations in l_function_strings.items():
-        if text in all_used_strings_with_locations:
-            all_used_strings_with_locations[text].extend(locations)
-        else:
-            all_used_strings_with_locations[text] = locations.copy()
-    for text, locations in html_in_js_strings.items():
-        if text in all_used_strings_with_locations:
-            all_used_strings_with_locations[text].extend(locations)
-        else:
-            all_used_strings_with_locations[text] = locations.copy()
+    for source in (ds_i18n_strings, l_function_strings, html_in_js_strings):
+        for text, locations in source.items():
+            all_used_strings_with_locations.setdefault(text, []).extend(locations)
 
     excluded_strings = {s for s in all_used_strings_with_locations.keys() if should_exclude_string(s)}
     used_strings_with_locations = {k: v for k, v in all_used_strings_with_locations.items() if k not in excluded_strings}
     used_strings = set(used_strings_with_locations.keys())
 
-    if not JSON_OUTPUT and excluded_strings:
-        print(f"Excluded {len(excluded_strings)} non-translatable strings (CSS selectors, etc.)")
+    if excluded_strings:
+        log(f"Excluded {len(excluded_strings)} non-translatable strings (CSS selectors, etc.)")
         if VERBOSE:
             for s in sorted(excluded_strings):
-                print(f"  - \"{s}\"")
-        print()
+                log(f"  - \"{s}\"")
+        log()
 
     # Load translation keys
-    if not JSON_OUTPUT:
-        print("Loading translation keys from language files...")
+    log("Loading translation keys from language files...")
     translation_keys, keys_by_language = load_translation_keys()
-    if not JSON_OUTPUT:
-        print(f"Found {len(translation_keys)} keys in translation files")
-        print(f"Found {len(keys_by_language)} language files")
-        print()
+    log(f"Found {len(translation_keys)} keys in translation files")
+    log(f"Found {len(keys_by_language)} language files")
+    log()
 
     # Remove special keys from comparison
     translation_keys_for_comparison = translation_keys - SPECIAL_KEYS
-
-    # Remove special keys from each language's key set
-    keys_by_language_filtered = {}
-    for lang_code, keys in keys_by_language.items():
-        keys_by_language_filtered[lang_code] = keys - SPECIAL_KEYS
+    keys_by_language_filtered = {lang_code: keys - SPECIAL_KEYS for lang_code, keys in keys_by_language.items()}
 
     # Find missing translations (used in code but not in translation files)
     missing_translations = used_strings - translation_keys_for_comparison
@@ -434,15 +474,41 @@ def main():
     # For each missing translation, find which languages are missing it
     missing_by_language = {}
     for string in missing_translations:
-        missing_langs = []
-        for lang_code, keys in keys_by_language_filtered.items():
-            if string not in keys:
-                missing_langs.append(lang_code)
-        missing_by_language[string] = sorted(missing_langs)
+        missing_by_language[string] = sorted(
+            lang_code for lang_code, keys in keys_by_language_filtered.items() if string not in keys
+        )
 
     # Find unused translations (in translation files but not used in code)
     # Exclude whitelisted strings from unused check
     unused_translations = (translation_keys_for_comparison - used_strings) - WHITELIST_UNUSED
+
+    return {
+        "used_strings": used_strings,
+        "used_strings_with_locations": used_strings_with_locations,
+        "excluded_strings": excluded_strings,
+        "translation_keys": translation_keys_for_comparison,
+        "keys_by_language": keys_by_language_filtered,
+        "missing_translations": missing_translations,
+        "missing_by_language": missing_by_language,
+        "unused_translations": unused_translations,
+    }
+
+def main():
+    if not JSON_OUTPUT:
+        print("=" * 80)
+        print("Translation String Checker")
+        print("=" * 80)
+        print()
+
+    result = analyze(log=None if JSON_OUTPUT else print)
+    used_strings = result["used_strings"]
+    used_strings_with_locations = result["used_strings_with_locations"]
+    excluded_strings = result["excluded_strings"]
+    translation_keys_for_comparison = result["translation_keys"]
+    keys_by_language = result["keys_by_language"]
+    missing_translations = result["missing_translations"]
+    missing_by_language = result["missing_by_language"]
+    unused_translations = result["unused_translations"]
 
     # Output results
     if JSON_OUTPUT:

@@ -4,11 +4,14 @@ This script analyzes the DualShock Tools codebase to find translation strings an
 
 ## Features
 
+To apply the results automatically, run `python3 scripts/process_lang.py --auto` (add `--dry-run` to only print what would change): missing strings are added to every language file with an empty translation and unused (non-whitelisted) strings are removed.
+
 ### 1. **Source Code Analysis**
 
 - Scans HTML files for elements with the `ds-i18n` class
 - Scans JavaScript files for strings passed to the `l()` function
 - Handles both `l()` and `this.l()` function calls
+- Parses full JavaScript string literals, so strings with escaped quotes (e.g. `l('the controller\'s touchpad')`) or apostrophes inside double quotes are captured whole and compared using their runtime (unescaped) value
 - Strips simple HTML formatting tags (`<b>`, `<i>`, `<em>`, `<strong>`, `<span>`)
 - Decodes HTML entities and normalizes whitespace
 - **Automatically ignores commented-out code:**

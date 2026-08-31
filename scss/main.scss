@@ -113,6 +113,12 @@ dl.row {
 		i.fas.test-icon-buttons {
 			animation: bounce 0.6s ease-in-out infinite !important;
 		}
+		i.fas.test-icon-imu {
+			animation: pulse 1s ease-in-out infinite !important;
+		}
+		i.fas.test-icon-trackpad {
+			animation: pulse 1s ease-in-out infinite !important;
+		}
 		i.fas.test-icon-haptic {
 			animation: shake 0.5s ease-in-out infinite !important;
 		}
@@ -164,4 +170,71 @@ dl.row {
 
 .pulsing-text {
 	animation: pulse-text 0.75s ease-in-out infinite;
+}
+
+/* Quick test check badges (IMU, trackpad): bold glyphs, stable pill width */
+.test-check {
+	font-weight: 900;
+	font-size: 0.85em;
+	min-width: 1.8em;
+}
+
+/* IMU test center-zero bar meters (Bootstrap vars follow data-bs-theme) */
+.imu-bar {
+	position: relative;
+	height: 4px;
+	margin-bottom: 4px;
+	background: var(--bs-border-color);
+	border-radius: 3px;
+
+	&::before {
+		/* center (zero) marker */
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: -2px;
+		bottom: -2px;
+		width: 1px;
+		background: var(--bs-secondary-color);
+	}
+}
+
+.imu-bar-fill {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	border-radius: 3px;
+}
+
+/* VR2 button panel: pills light up light blue on capacitive touch and
+   dark blue while clicked */
+.vr2-btn {
+	/* Bootstrap theme variables follow data-bs-theme */
+	background-color: var(--bs-secondary-bg);
+	color: var(--bs-secondary-color);
+	font-size: 0.9rem;
+	transition: background-color 0.1s, color 0.1s;
+
+	&.touched {
+		background-color: #7ecbff; /* same light blue as the controller SVG body */
+		color: #0b3050;
+	}
+
+	&.pressed {
+		background-color: #1a237e; /* same dark blue as the SVG pressed infill */
+		color: #ffffff;
+	}
+}
+
+/* VR2 raw input report: one cell per byte, recently changed bytes highlighted */
+.vr2-raw-cell {
+	display: inline-block;
+	min-width: 2.6em;
+	text-align: center;
+	border-radius: 3px;
+}
+
+.vr2-raw-hot {
+	background-color: var(--bs-warning-bg-subtle);
+	color: var(--bs-warning-text-emphasis);
 }

@@ -1,8 +1,15 @@
 # Development Guide
 
+## Requirements
+
+- **Node.js v20 or higher** (v26 recommended). The build toolchain (Gulp 5, Rollup 4, yargs-parser) requires Node 20+; older versions fail with a WASM allocation crash or a `yargs-parser` version error. With [nvm](https://github.com/nvm-sh/nvm), run `nvm install && nvm use` to pick up the pinned version from `.nvmrc`.
+
 ## Quick Start
 
 ```bash
+# Use the pinned Node version (requires nvm)
+nvm install && nvm use
+
 # Install dependencies
 npm install
 
@@ -10,7 +17,7 @@ npm install
 npm run dev:full
 ```
 
-Open `https://localhost:8443` in your browser (accept the SSL certificate warning).
+Open `http://localhost:8080` in your browser (Chrome or Edge). WebHID works over HTTP on `localhost`.
 
 ## Available Scripts
 
@@ -19,9 +26,8 @@ Open `https://localhost:8443` in your browser (accept the SSL certificate warnin
 | `npm run build`       | Build for development (with source maps)                  |
 | `npm run build:prod`  | Build for production (minified, optimized)                |
 | `npm run clean`       | Clean the dist directory                                  |
-| `npm run serve:https` | Serve built app over HTTPS (required for WebHID)          |
-| `npm run serve`       | Serve built app over HTTP (WebHID won't work)             |
-| `npm run start`       | Build and serve over HTTPS                                |
+| `npm run serve`       | Serve built app over HTTP at `localhost:8080` (WebHID works on localhost)   |
+| `npm run start`       | Build and serve over HTTP at `localhost:8080`             |
 | `npm run dev:full`    | **Recommended**: Build, watch, and serve with auto-reload |
 | `npm run watch`       | Watch files and rebuild on changes                        |
 
@@ -37,7 +43,7 @@ This starts the complete development environment:
 
 - Builds the application
 - Watches for file changes
-- Serves over HTTPS at `https://localhost:8443`
+- Serves over HTTP at `http://localhost:8080`
 - Automatically rebuilds when you save files
 
 ### For Testing Built Version
@@ -48,24 +54,27 @@ npm run start
 
 This builds once and serves the result.
 
+### Docker
+
+To build and run without installing Node:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8080`. The container builds the production bundle and serves it over HTTP; WebHID still works because the browser sees `localhost`, which is a secure context. (Docker on Windows/macOS is fine here — the controller talks to the browser, not the container.)
+
 ## Important Notes
 
-### HTTPS Requirement
+### WebHID & Secure Contexts
 
-The WebHID API requires HTTPS. The development server uses self-signed certificates located at:
-
-- `server.crt` - SSL certificate
-- `server.key` - SSL private key
+The WebHID API requires a secure context. `localhost` counts as secure, so the HTTP dev server (`http://localhost:8080`) works for local development without any certificates. Reaching the app from another device would require HTTPS — use the production site for that.
 
 ### Browser Compatibility
 
 - **Chrome/Edge**: Full WebHID support ✅
 - **Firefox**: No WebHID support ❌
 - **Safari**: No WebHID support ❌
-
-### SSL Certificate Warning
-
-When first accessing `https://localhost:8443`, your browser will show a security warning because we're using a self-signed certificate. This is normal for development - click "Advanced" and "Proceed to localhost" to continue.
 
 ## File Structure
 
@@ -105,10 +114,10 @@ The build system uses Gulp with the following steps:
 
 ### Port Already in Use
 
-If port 8443 is busy:
+If port 8080 is busy:
 
 ```bash
-PORT=8444 npm run serve:https
+HTTP_PORT=8081 npm run serve
 ```
 
 ### Build Errors
@@ -120,17 +129,8 @@ npm run clean
 npm run build
 ```
 
-### SSL Certificate Issues
-
-The certificates are pre-generated. If you need new ones:
-
-```bash
-openssl req -x509 -newkey rsa:4096 -keyout server.key -out server.crt -days 365 -nodes -subj "/CN=localhost"
-```
-
 ### WebHID Not Working
 
-1. Make sure you're using HTTPS (`npm run serve:https`)
-2. Use Chrome or Edge browser
-3. Accept the SSL certificate warning
-4. Check browser console for errors
+1. Use Chrome or Edge browser (Firefox and Safari don't support WebHID)
+2. Open the app via `localhost` (a secure context) — `http://localhost:8080` is fine
+3. Check browser console for errors

@@ -13,36 +13,56 @@ import {
 } from '../utils.js';
 import { l } from '../translations.js';
 
-// DS5 Button mapping configuration
-const DS5_BUTTON_MAP = [
-  { name: 'up', byte: 0, mask: 0x0 }, // Disabled
-  { name: 'right', byte: 0, mask: 0x0 }, // Disabled
-  { name: 'down', byte: 0, mask: 0x0 }, // Disabled
-  { name: 'left', byte: 0, mask: 0x0 }, // Disabled
-  { name: 'square', byte: 9, mask: 0x10, svg: 'Square' },
-  { name: 'cross', byte: 9, mask: 0x20, svg: 'Cross' },
-  { name: 'circle', byte: 9, mask: 0x40, svg: 'Circle' },
-  { name: 'triangle', byte: 9, mask: 0x80, svg: 'Triangle' },
-  { name: 'l1', byte: 9, mask: 0x10, svg: 'L1' },
-  { name: 'l2', byte: 4, mask: 0xff }, // analog handled separately
-  { name: 'r1', byte: 9, mask: 0x20, svg: 'R1' },
-  { name: 'r2', byte: 4, mask: 0xff }, // analog handled separately
-  { name: 'create', byte: 10, mask: 0x01, svg: 'Create' },
-  { name: 'options', byte: 10, mask: 0x02, svg: 'Options' },
-  { name: 'l3', byte: 10, mask: 0x04, svg: 'L3' },
-  { name: 'r3', byte: 10, mask: 0x08, svg: 'R3' },
-  { name: 'ps', byte: 10, mask: 0x10, svg: 'PS' },
-  { name: 'touchpad', byte: 0, mask: 0x00, svg: 'Trackpad' },
-  { name: 'mute', byte: 0, mask: 0x00, svg: 'Mute' },
+// VR2 Sense controller button mapping, one map per hand. Report layout based
+// on https://gist.github.com/Swyter/4a4ea4c35dbedd144d22c10a7906facc shifted
+// down two bytes (that gist documents Bluetooth packets, which carry the 0x31
+// report ID plus one extra byte; USB via WebHID drops both), and verified on
+// hardware: bytes 0-1 stick X/Y, 2 trigger analog, 3 trigger capacitive,
+// 4 grip capacitive, byte 7 = face/grip/trigger buttons, byte 8 = system
+// buttons, byte 9 = capacitive touch bits.
+const VR2_LEFT_BUTTON_MAP = [
+  { name: 'square', byte: 7, mask: 0x01, svg: 'Square' },
+  { name: 'triangle', byte: 7, mask: 0x08, svg: 'Triangle' },
+  { name: 'l1', byte: 7, mask: 0x10, svg: 'L1' }, // Grip click
+  { name: 'l2', byte: 7, mask: 0x40, svg: 'L2' }, // Trigger half-pull; analog handled separately
+  { name: 'create', byte: 8, mask: 0x01, svg: 'Create' },
+  { name: 'l3', byte: 8, mask: 0x04, svg: 'L3' },
+  { name: 'touchTriangle', byte: 9, mask: 0x01 }, // Capacitive: finger resting on the button
+  { name: 'touchSquare', byte: 9, mask: 0x02 },
+  { name: 'touchStick', byte: 9, mask: 0x04 }, // Not confirmed on hardware yet
+  { name: 'touchGrip', byte: 9, mask: 0x08 },
+  { name: 'touchTrigger', byte: 8, mask: 0x80 }, // L2 capacitive rest (verified on right hand only)
 ];
 
-// DS5 Input processing configuration
-const DS5_INPUT_CONFIG = {
-  buttonMap: DS5_BUTTON_MAP,
-  dpadByte: 7,
-  l2AnalogByte: 4,
-  r2AnalogByte: 4,
-  touchpadOffset: 32,
+const VR2_RIGHT_BUTTON_MAP = [
+  { name: 'cross', byte: 7, mask: 0x02, svg: 'Cross' },
+  { name: 'circle', byte: 7, mask: 0x04, svg: 'Circle' },
+  { name: 'r1', byte: 7, mask: 0x20, svg: 'R1' }, // Grip click
+  { name: 'r2', byte: 7, mask: 0x80, svg: 'R2' }, // Trigger half-pull; analog handled separately
+  { name: 'options', byte: 8, mask: 0x02, svg: 'Options' },
+  { name: 'r3', byte: 8, mask: 0x08, svg: 'R3' },
+  { name: 'ps', byte: 8, mask: 0x10, svg: 'PS' },
+  { name: 'touchCircle', byte: 9, mask: 0x01 }, // Capacitive: finger resting on the button
+  { name: 'touchCross', byte: 9, mask: 0x02 },
+  { name: 'touchStick', byte: 9, mask: 0x04 }, // Not confirmed on hardware yet
+  { name: 'touchGrip', byte: 9, mask: 0x08 },
+  { name: 'touchTrigger', byte: 8, mask: 0x80 }, // R2 capacitive rest
+];
+
+// VR2 input processing configuration. The single stick lives at bytes 0-1,
+// the trigger analog at byte 2. No dpad, no touchpad and no mapped IMU (the
+// VR2 reports accel before gyro, unlike DS4/DS5): those fields are omitted
+// so they are not parsed from bytes that mean something else on this device.
+const VR2_LEFT_INPUT_CONFIG = {
+  buttonMap: VR2_LEFT_BUTTON_MAP,
+  l2AnalogByte: 2,
+  stickBytes: { lx: 0, ly: 1 },
+};
+
+const VR2_RIGHT_INPUT_CONFIG = {
+  buttonMap: VR2_RIGHT_BUTTON_MAP,
+  r2AnalogByte: 2,
+  stickBytes: { lx: 0, ly: 1 },
 };
 
 // DS5 Adaptive Trigger Effect Modes
@@ -200,6 +220,7 @@ class VR2Controller extends BaseController {
   constructor(device, isLeft) {
     super(device);
     this.model = "VR2";
+    this.isLeft = isLeft;
     this.finetuneMaxValue = 65535; // 16-bit max value for DS5
 
     // Initialize current output state to track controller settings
@@ -235,7 +256,7 @@ class VR2Controller extends BaseController {
   }
 
   getInputConfig() {
-    return DS5_INPUT_CONFIG;
+    return this.isLeft ? VR2_LEFT_INPUT_CONFIG : VR2_RIGHT_INPUT_CONFIG;
   }
 
   async getSerialNumber() {
@@ -592,13 +613,18 @@ class VR2Controller extends BaseController {
   * Parse DS5 battery status from input data
   */
   parseBatteryStatus(data) {
-    const bat = data.getUint8(52); // DS5 battery byte is at position 52
+    // Provisional: byte 52 (the DS5 position) is always 0x00 on VR2. Byte 41
+    // is the best candidate found on real hardware: it read 0x2a (fully
+    // charged, DS5-style decoding) on a USB-connected controller, and bytes
+    // 39/42 are the fallback candidates if this proves wrong. To verify:
+    // connect with a partially drained controller and check the percentage.
+    const bat = data.getUint8(41);
 
-    // DS5: bat_charge = low 4 bits, bat_status = high 4 bits
+    // bat_charge = low 4 bits, bat_status = high 4 bits
     const bat_charge = bat & 0x0f;
     const bat_status = bat >> 4;
 
-    let bat_capacity = 0;
+    let charge_level = 0;
     let cable_connected = false;
     let is_charging = false;
     let is_error = false;
@@ -606,22 +632,22 @@ class VR2Controller extends BaseController {
     switch (bat_status) {
       case 0:
         // On battery power
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        charge_level = Math.min(bat_charge * 10 + 5, 100);
         break;
       case 1:
         // Charging
-        bat_capacity = Math.min(bat_charge * 10 + 5, 100);
+        charge_level = Math.min(bat_charge * 10 + 5, 100);
         is_charging = true;
         cable_connected = true;
         break;
       case 2:
         // Fully charged
-        bat_capacity = 100;
+        charge_level = 100;
         cable_connected = true;
         break;
       case 15:
         // Battery is flat
-        bat_capacity = 0;
+        charge_level = 0;
         is_charging = true;
         cable_connected = true;
         break;
@@ -631,7 +657,7 @@ class VR2Controller extends BaseController {
         break;
     }
 
-    return { bat_capacity, cable_connected, is_charging, is_error };
+    return { charge_level, cable_connected, is_charging, is_error };
   }
 
   getNumberOfSticks() {

@@ -387,10 +387,10 @@
     "Draw on the trackpad below with one finger, touch it with two fingers at once, and click it until every check turns green.": "Проведіть одним пальцем по трекпаду нижче, одночасно торкніться його двома пальцями та натискайте на нього, доки всі індикатори не стануть зеленими.",
     "Movement": "Рух",
     "This test checks the trackpad's touch tracking, two-finger detection, and click.": "Цей тест перевіряє відстеження дотиків до трекпада, розпізнавання дотику двома пальцями та натискання.",
-    "Copy": "",
-    "Raw input report": "",
-    "Touch and click are shown in different colors:": "",
-    "click": "",
-    "touch": "",
+    "Copy": "Копіювати",
+    "Raw input report": "Звіт необроблених даних ввод",
+    "Touch and click are shown in different colors:": "Дотик і натискання позначаються різними кольорами:",
+    "click": "натискання",
+    "touch": "дотик",
     "": ""
 }

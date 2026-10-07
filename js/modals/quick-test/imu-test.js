@@ -197,11 +197,7 @@ export class ImuTest {
     if (stillWindow.length > IMU_STILL_WINDOW) {
       stillWindow.shift();
     }
-    if (stillWindow.length === IMU_STILL_WINDOW &&
-        IMU_AXES.every(axis => {
-          const values = stillWindow.map(s => s[axis]);
-          return Math.max(...values) - Math.min(...values) < IMU_STILL_SPREAD_DPS;
-        })) {
+    if (stillWindow.length === IMU_STILL_WINDOW && this._isStill(stillWindow)) {
       this.gyroBias = {
         x: stillWindow.reduce((acc, s) => acc + s.x, 0) / IMU_STILL_WINDOW,
         y: stillWindow.reduce((acc, s) => acc + s.y, 0) / IMU_STILL_WINDOW,
@@ -232,6 +228,24 @@ export class ImuTest {
     }
 
     this._checkComplete();
+  }
+
+  /**
+   * True when every axis in the window stays within IMU_STILL_SPREAD_DPS.
+   * Runs once per input report, so it avoids allocating.
+   */
+  _isStill(window) {
+    for (const axis of IMU_AXES) {
+      let min = Infinity;
+      let max = -Infinity;
+      for (const sample of window) {
+        const v = sample[axis];
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+      if (max - min >= IMU_STILL_SPREAD_DPS) return false;
+    }
+    return true;
   }
 
   /**
@@ -317,9 +331,9 @@ export class ImuTest {
     const bar = document.getElementById(id);
     if (!bar) return;
     const clamped = Math.max(-1, Math.min(1, value / scale));
-    const half = Math.abs(clamped) * 50;
-    bar.style.width = `${half}%`;
-    bar.style.left = clamped < 0 ? `${50 - half}%` : '50%';
+    // The fill spans the right half and grows from the center; a negative
+    // scale mirrors it to the left. transform skips layout, unlike left/width.
+    bar.style.transform = `scaleX(${clamped.toFixed(3)})`;
   }
 
   /**
@@ -345,11 +359,10 @@ export class ImuTest {
 
     // Symmetric auto-scale around zero, never below minScale
     let scale = minScale;
-    history.forEach(sample => {
-      IMU_AXES.forEach(axis => {
-        scale = Math.max(scale, Math.abs(sample[field][axis]));
-      });
-    });
+    for (const sample of history) {
+      const v = sample[field];
+      scale = Math.max(scale, Math.abs(v.x), Math.abs(v.y), Math.abs(v.z));
+    }
     scale *= 1.05;
 
     // Zero line
@@ -361,22 +374,53 @@ export class ImuTest {
     ctx.stroke();
 
     // Map samples to x by timestamp so the chart scrolls at the same speed
-    // regardless of the controller's report rate
+    // regardless of the controller's report rate. The window holds several
+    // samples per pixel column, so each column is collapsed to its min and
+    // max: same picture, spikes kept, a fraction of the path segments.
+    // Columns sit on a fixed time grid (not snapped to screen pixels) so they
+    // scroll with sub-pixel precision instead of jumping a whole pixel.
     const windowStart = performance.now() - IMU_HISTORY_MS;
+    const msPerCol = IMU_HISTORY_MS / width;
+    const colX = (col) => ((col + 0.5) * msPerCol - windowStart) / msPerCol;
     const colors = { x: '#dc3545', y: '#198754', z: '#0d6efd' };
     IMU_AXES.forEach(axis => {
       ctx.strokeStyle = colors[axis];
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      history.forEach((sample, i) => {
-        const px = ((sample.t - windowStart) / IMU_HISTORY_MS) * width;
-        const py = height / 2 - (sample[field][axis] / scale) * (height / 2);
-        if (i === 0) {
-          ctx.moveTo(px, py);
+      let col = null;
+      let minY = 0;
+      let maxY = 0;
+      let minAt = 0;
+      let maxAt = 0;
+      let first = true;
+      // Draw the column's two extremes in the order they occurred so slopes stay clean
+      const flush = () => {
+        const [y1, y2] = minAt <= maxAt ? [minY, maxY] : [maxY, minY];
+        if (first) {
+          ctx.moveTo(colX(col), y1);
+          first = false;
         } else {
-          ctx.lineTo(px, py);
+          ctx.lineTo(colX(col), y1);
+        }
+        if (y2 !== y1) ctx.lineTo(colX(col), y2);
+      };
+      history.forEach((sample, i) => {
+        const px = Math.floor(sample.t / msPerCol);
+        const py = height / 2 - (sample[field][axis] / scale) * (height / 2);
+        if (px !== col) {
+          if (col !== null) flush();
+          col = px;
+          minY = maxY = py;
+          minAt = maxAt = i;
+        } else if (py < minY) {
+          minY = py;
+          minAt = i;
+        } else if (py > maxY) {
+          maxY = py;
+          maxAt = i;
         }
       });
+      if (col !== null) flush();
       ctx.stroke();
     });
   }

@@ -596,7 +596,9 @@ export class QuickTestModal {
       handleButtonPress(() => this.markTestResult(activeTest, false));
     } else if (changes.triangle === true) {
       handleButtonPress(() => this.moveToPreviousTest());
-    } else if (changes.circle === true) {
+    } else if (changes.circle === true || changes.cross === true) {
+      // Cross only reaches here with no test active (it means Fail during
+      // a test, handled above) - there it mirrors circle and closes
       handleButtonPress(() => {
         if (activeTest) {
           // Skip the current test by expanding the next one

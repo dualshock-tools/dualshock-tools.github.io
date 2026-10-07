@@ -311,6 +311,8 @@ class DS5Controller extends BaseController {
       const fwversion2 = view.getUint32(52, true);
       const fwversion3 = view.getUint32(56, true);
 
+      const touchpad_id = await this.getSystemInfo(5, 2, 8, false);
+      const touchpad_fw = await this.getSystemInfo(5, 4, 8, false);
       const serial_number = await this.getSystemInfo(1, 19, 17);
       const color = ds5_color(serial_number);
       const infoItems = [
@@ -336,8 +338,9 @@ class DS5Controller extends BaseController {
         { key: l("Venom FW Version"), value: "0x" + dec2hex32(fwversion2), cat: "fw", isExtra: true },
         { key: l("Spider FW Version"), value: "0x" + dec2hex32(fwversion3), cat: "fw", isExtra: true },
 
-        { key: l("Touchpad ID"), value: await this.getSystemInfo(5, 2, 8, false), cat: "hw", isExtra: true, copyable: true },
-        { key: l("Touchpad FW Version"), value: await this.getSystemInfo(5, 4, 8, false), cat: "fw", isExtra: true },
+        // Newer boards (e.g. BDM-060) and clones don't answer the touchpad query
+        ...(touchpad_id !== l("error") ? [{ key: l("Touchpad ID"), value: touchpad_id, cat: "hw", isExtra: true, copyable: true }] : []),
+        ...(touchpad_fw !== l("error") ? [{ key: l("Touchpad FW Version"), value: touchpad_fw, cat: "fw", isExtra: true }] : []),
       ];
 
       const old_controller = build_date.search(/ 2020| 2021/);

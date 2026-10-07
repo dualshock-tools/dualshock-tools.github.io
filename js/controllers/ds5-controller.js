@@ -338,7 +338,8 @@ class DS5Controller extends BaseController {
         { key: l("Venom FW Version"), value: "0x" + dec2hex32(fwversion2), cat: "fw", isExtra: true },
         { key: l("Spider FW Version"), value: "0x" + dec2hex32(fwversion3), cat: "fw", isExtra: true },
 
-        // Newer boards (e.g. BDM-060) and clones don't answer the touchpad query
+        // Many controllers (any board, incl. BDM-010 on 2024 firmware) and clones
+        // don't answer the touchpad query
         ...(touchpad_id !== l("error") ? [{ key: l("Touchpad ID"), value: touchpad_id, cat: "hw", isExtra: true, copyable: true }] : []),
         ...(touchpad_fw !== l("error") ? [{ key: l("Touchpad FW Version"), value: touchpad_fw, cat: "fw", isExtra: true }] : []),
       ];

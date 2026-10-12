@@ -100,7 +100,7 @@ This will:
 
 ### Project Structure
 
-- `js/` - Source JavaScript files
+- `js/` - Source TypeScript files
 - `css/` - Source CSS files
 - `templates/` - HTML template files
 - `lang/` - Translation files

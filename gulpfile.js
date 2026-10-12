@@ -14,6 +14,7 @@ import crypto from 'crypto';
 import { rollup } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import rollupTerser from '@rollup/plugin-terser';
+import esbuild from 'rollup-plugin-esbuild';
 import fs from 'fs/promises';
 import path from 'path';
 import { glob } from 'glob';
@@ -30,8 +31,8 @@ const isProduction = argv.production || process.env.NODE_ENV === 'production';
 const paths = {
   src: {
     js: {
-      entry: 'js/core.js',
-      all: 'js/**/*.js'
+      entry: 'js/core.ts',
+      all: 'js/**/*.ts'
     },
     scss: ['scss/main.scss', 'scss/finetune.scss'],
     html: {
@@ -70,7 +71,9 @@ async function scripts() {
   const inputOptions = {
     input: paths.src.js.entry,
     plugins: [
-      nodeResolve(),
+      nodeResolve({ extensions: ['.mjs', '.js', '.ts', '.json'] }),
+      // Strips TypeScript types only; type checking is done by `tsc`.
+      esbuild({ include: /\.ts$/, target: 'es2022' }),
       ...(isProduction ? [
         rollupTerser({
           compress: {
@@ -209,7 +212,7 @@ async function html() {
   let htmlContent = await fs.readFile(paths.src.html.main, 'utf8');
   
   // Replace script and CSS references
-  htmlContent = htmlContent.replace('<script type="module" src="js/core.js"></script>', `<script type="module" src="${jsFile}"></script>`);
+  htmlContent = htmlContent.replace('<script type="module" src="js/core.ts"></script>', `<script type="module" src="${jsFile}"></script>`);
   htmlContent = htmlContent.replace('<link rel="stylesheet" href="css/main.css">', '');
   htmlContent = htmlContent.replace('<link rel="stylesheet" href="css/finetune.css">', `<link rel="stylesheet" href="${cssFile}">`);
 

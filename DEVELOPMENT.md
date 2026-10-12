@@ -79,8 +79,8 @@ The WebHID API requires a secure context. `localhost` counts as secure, so the H
 ## File Structure
 
 ```
-├── js/                 # Source JavaScript files
-│   ├── core.js        # Main application entry point
+├── js/                 # Source TypeScript files
+│   ├── core.ts        # Main application entry point
 │   ├── controllers/   # Controller-specific classes
 │   └── modals/        # Modal dialog handlers
 ├── css/               # Source CSS files
@@ -95,7 +95,7 @@ The WebHID API requires a secure context. `localhost` counts as secure, so the H
 
 The build system uses Gulp with the following steps:
 
-1. **JavaScript**: Bundled with Rollup, supports ES modules
+1. **TypeScript**: Type checked with `tsc` (`npm run typecheck`; also run by `build` and `build:prod`, so type errors fail the build), then bundled with Rollup, which strips the types with esbuild
 2. **CSS**: Concatenated and optionally minified
 3. **HTML**: Processed and optionally minified
 4. **Assets**: Copied to dist, SVGs can be inlined in production

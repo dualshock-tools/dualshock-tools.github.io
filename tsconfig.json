@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    // Only these packages' global declarations are visible.
+    // jQuery and Bootstrap are loaded from a CDN as globals; WebHID is not in lib.dom yet.
+    "types": ["jquery", "bootstrap", "w3c-web-hid"],
+    "allowUmdGlobalAccess": true,
+
+    // Rollup does the bundling; tsc is only used for type checking.
+    "noEmit": true,
+
+    "strict": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": ["js/**/*"]
+}

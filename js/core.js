@@ -396,12 +396,16 @@ async function continue_connection({data, device}) {
       }</p>`, true);
     }
 
-    // Save finetune parameters for DS5 and Edge controllers
-    if (model === "DS5" || model === "DS5_Edge") {
-      if (!controller.has_changes_to_write) {
+    // Save finetune parameters for DS5 and Edge controllers. Best-effort:
+    // a failure here must not abort the connection (issue #222).
+    if ((model === "DS5" || model === "DS5_Edge") && !isClone && !controller.has_changes_to_write) {
+      try {
         const finetuneData = await controllerInstance.getInMemoryModuleData();
-        const serialNumber = await controllerInstance.getSerialNumber();
-        FinetuneHistory.save(finetuneData, serialNumber);
+        if (finetuneData) {
+          FinetuneHistory.save(finetuneData, serialNumber);
+        }
+      } catch (e) {
+        console.warn('Could not save finetune history:', e);
       }
     }
   } catch(err) {

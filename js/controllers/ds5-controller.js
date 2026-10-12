@@ -347,6 +347,13 @@ class DS5Controller extends BaseController {
         disable_bits |= 2; // 2: outdated firmware
       }
 
+      const clone_reason = await this.detectClone(build_date);
+      if(clone_reason) {
+        la("clone", { "r": clone_reason });
+        disable_bits |= 1; // 1: clone
+      }
+      infoItems.push({ key: l("Device Type"), value: clone_reason ? l("clone") : l("original"), cat: "hw", severity: clone_reason ? 'danger' : undefined });
+
       const nv = await this.queryNvStatus();
       const bd_addr = await this.getBdAddr();
       infoItems.push({ key: l("Bluetooth Address"), value: bd_addr, cat: "hw", isExtra: true });
@@ -560,6 +567,30 @@ class DS5Controller extends BaseController {
     // TODO 0x12?
     if(a == 0x13) return "BDM-060X";
     return l("Unknown");
+  }
+
+  /**
+   * Look for signs that this is a counterfeit DualSense (issue #222).
+   * @param {string} build_date - FW build date from report 0x20, e.g. "Jan 29 2024"
+   * @returns {string|null} Short reason if it looks like a clone, otherwise null
+   */
+  async detectClone(build_date) {
+    // A firmware built in a future year can't be genuine (one clone reports "Jan 29 2034")
+    const build_year = parseInt(build_date.trim().slice(-4), 10);
+    if(build_year > new Date().getFullYear()) {
+      return "build_date";
+    }
+
+    // Every genuine controller answers the stick finetune query; this is also
+    // what the connect flow reads to save the finetune history
+    try {
+      if(!(await this.getInMemoryModuleData())) {
+        return "finetune";
+      }
+    } catch(_e) {
+      return "finetune";
+    }
+    return null;
   }
 
   async getInMemoryModuleData() {

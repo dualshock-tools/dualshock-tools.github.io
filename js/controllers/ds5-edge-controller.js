@@ -150,6 +150,7 @@ class DS5EdgeController extends DS5Controller {
 
       // This should trigger write into modules
       const data = await this.getInMemoryModuleData();
+      if (!data) throw new Error("Could not read the stick finetune data");
       await sleep(50);
       progressCallback(60);
       await this.writeFinetuneData(data);

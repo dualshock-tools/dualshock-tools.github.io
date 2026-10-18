@@ -224,6 +224,39 @@ function destroyCurrentInstance() {
   }
 }
 
+/**
+ * Whether the step-by-step center calibration modal is currently visible
+ */
+export function isCalibCenterVisible() {
+  const modal = document.getElementById('calibCenterModal');
+  return !!modal && modal.classList.contains('show');
+}
+
+/**
+ * Controller shortcuts while the calibration modal is open:
+ * cross starts/continues, square quick-calibrates, circle cancels.
+ * Each mirrors a button and follows that button's availability, so
+ * cross is ignored while sampling and circle only works when the
+ * close cross is shown (during steps 2-5 calibration can't be canceled).
+ */
+export function calib_center_handle_controller_input(changes) {
+  if (!currentCalibCenterInstance) return;
+
+  if (changes.cross === true) {
+    if (!$('#calibNext').prop('disabled')) {
+      calib_next();
+    }
+  } else if (changes.square === true) {
+    if ($('#quickCalibBtn').is(':visible')) {
+      quick_calibrate_instead();
+    }
+  } else if (changes.circle === true) {
+    if ($('#calibCross').is(':visible')) {
+      $('#calibCenterModal').modal('hide');
+    }
+  }
+}
+
 // Legacy function exports for backward compatibility
 export async function calibrate_stick_centers(controller, doneCallback = null) {
   currentCalibCenterInstance = new CalibCenterModal(controller, doneCallback);

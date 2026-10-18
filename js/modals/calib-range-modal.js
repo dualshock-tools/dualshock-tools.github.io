@@ -320,9 +320,13 @@ export class CalibRangeModal {
   }
 
   /**
-   * Update current stick positions for rendering
+   * Update current stick positions for rendering; cross clicks Done once
+   * the button has unlocked
    */
-  handleControllerInput({sticks}) {
+  handleControllerInput({sticks, cross}) {
+    if (cross === true && !$('#range-done-btn').prop('disabled')) {
+      calibrate_range_on_close();
+    }
     if (sticks?.left) {
       this.currentStickPositions.left = { ...sticks.left };
     }

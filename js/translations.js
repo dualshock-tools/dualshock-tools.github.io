@@ -23,6 +23,7 @@ const available_langs = {
   "pt_pt": { "name": "Português", "file": "pt_pt.json", "direction": "ltr"},
   "rs_rs": { "name": "Srpski", "file": "rs_rs.json", "direction": "ltr"},
   "ru_ru": { "name": "Русский", "file": "ru_ru.json", "direction": "ltr"},
+  "sk_sk": { "name": "Slovak", "file": "sk_sk.json", "direction": "ltr"},
   "tr_tr": { "name": "Türkçe", "file": "tr_tr.json", "direction": "ltr"},
   "ua_ua": { "name": "Українська", "file": "ua_ua.json", "direction": "ltr"},
   "vi_vn": { "name": "Tiếng Việt", "file": "vi_vn.json", "direction": "ltr"},

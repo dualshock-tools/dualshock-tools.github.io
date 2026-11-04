@@ -14,6 +14,7 @@ const available_langs = {
   "fa_fa": { "name": "فارسی", "file": "fa_fa.json", "direction": "rtl"},
   "fr_fr": { "name": "Français", "file": "fr_fr.json", "direction": "ltr"},
   "hu_hu": { "name": "Magyar", "file": "hu_hu.json", "direction": "ltr"},
+  "id_id": { "name": "Indonesia", "file": "id_id.json", "direction": "ltr"},
   "it_it": { "name": "Italiano", "file": "it_it.json", "direction": "ltr"},
   "jp_jp": { "name": "日本語", "file": "jp_jp.json", "direction": "ltr"},
   "ko_kr": { "name": "한국어", "file": "ko_kr.json", "direction": "ltr"},
@@ -40,18 +41,18 @@ export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb) {
   translationState = appState;
   handleLanguageChange = handleLanguageChangeCb;
   welcomeModal = welcomeModalCb;
-  
+
   let id_iter = 0;
   const items = document.getElementsByClassName('ds-i18n');
   for(let item of items) {
     if (item.id.length == 0) {
       item.id = `ds-i18n-${id_iter++}`;
     }
-    
+
     translationState.lang_orig_text[item.id] = $(item).html();
   }
   translationState.lang_orig_text[".title"] = document.title;
-  
+
   const force_lang = Storage.getString("force_lang");
   if (force_lang != null) {
     lang_set(force_lang, true).catch(error => {
@@ -67,7 +68,7 @@ export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb) {
       });
     }
   }
-  
+
   const langs = Object.keys(available_langs);
   const olangs = [
     '<li><a class="dropdown-item" href="#" onclick="lang_set(\'en_us\');">English</a></li>',
@@ -83,13 +84,13 @@ export function lang_init(appState, handleLanguageChangeCb, welcomeModalCb) {
 
 async function lang_set(lang, skip_modal=false) {
   la("lang_set", { l: lang });
-  
+
   lang_reset_page();
   if(lang != "en_us") {
     const { file, direction } = available_langs[lang];
     await lang_translate(file, lang, direction);
   }
-  
+
   await handleLanguageChange(lang);
   Storage.setString("force_lang", lang);
   if(!skip_modal && welcomeModal) {
@@ -139,7 +140,7 @@ export function l(text) {
 
   const [out] = translationState.lang_cur[text] || [];
   if(out) return out;
-  
+
   console.log(`Missing translation for "${text}"`);
   return text;
 }
